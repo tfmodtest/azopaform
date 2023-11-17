@@ -1,13 +1,13 @@
 {
- "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/API for FHIR/HealthcareAPIs_EnableByok_Audit.json": [
+ "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/API for FHIR/HealthcareAPIs_EnableByok_Audit.json": [
   "if",
   "then"
  ],
- "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/API for FHIR/HealthcareAPIs_PrivateLink_Audit.json": [
+ "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/API for FHIR/HealthcareAPIs_PrivateLink_Audit.json": [
   "if",
   "then"
  ],
- "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/API for FHIR/HealthcareAPIs_RestrictCORSAccess_Audit.json": [
+ "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/API for FHIR/HealthcareAPIs_RestrictCORSAccess_Audit.json": [
   "then",
   "if"
  ]

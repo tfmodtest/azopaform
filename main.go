@@ -11,13 +11,13 @@ import (
 )
 
 type Rule struct {
-	Properties PolicyRuleModel `json:"properties"`
-	Id         string          `json:"id"`
-	Name       string          `json:"name"`
+	Properties PolicyRuleModel
+	Id         string
+	Name       string
 }
 
 type PolicyRuleModel struct {
-	PolicyRule map[string]interface{} `json:"policyRule"`
+	PolicyRule map[string]interface{}
 }
 
 type RuleSet struct {
@@ -27,8 +27,8 @@ type RuleSet struct {
 }
 
 type SingleRule[T any] struct {
-	Field    string           `json:"field"`
-	Operator OperatorModel[T] `json:"operator"`
+	Field    any
+	Operator OperatorModel[T]
 }
 
 type OperatorModel[T any] struct {
@@ -36,8 +36,14 @@ type OperatorModel[T any] struct {
 	Value T
 }
 
-const path = "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions"
-const testPath = "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/API for FHIR"
+type CountOperatorModel[T any] struct {
+	FieldName string
+	Condition []RuleSet
+	Operator  OperatorModel[T]
+}
+
+const path = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions"
+const testPath = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/API for FHIR"
 
 const allOf = "allof"
 const anyOf = "anyof"
@@ -90,7 +96,13 @@ func main() {
 			fmt.Printf("cannot find conditions %+v\n", err)
 			return
 		}
-		fmt.Printf("condition is %+v\n", condition)
+		fmt.Printf("the whole condition is %+v\n", condition)
+		fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
+		err = os.WriteFile(fileName, []byte(""), 0644)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
 	jsonData, err := json.MarshalIndent(keyWordsCollection, "", " ")
@@ -230,7 +242,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 		return nil, err
 	}
 
-	var fieldName string
+	var fieldName any
 	var operatorName string
 	var operatorValue any
 	//var operatorValueType reflect.Type
@@ -243,9 +255,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 	whereRules := RuleSet{
 		Flag: "where",
 	}
-	countRules := RuleSet{
-		Flag: "count",
-	}
+	//countRules := SingleRule[any]{}
 
 	for k, v := range conditions {
 		switch strings.ToLower(k) {
@@ -303,7 +313,8 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 			//		whereRules.SingleRules = append(whereRules.SingleRules, rule.SingleRules...)
 			//	}
 			//}
-			return &whereRules, nil
+			operatorName = "where"
+			operatorValue = whereRules
 		case count:
 			countConditions := v.(map[string]interface{})
 			rule, err := conditionFinder(countConditions)
@@ -311,7 +322,17 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 				fmt.Printf("cannot find COUNT conditions %+v\n", err)
 				return nil, err
 			}
-			countRules.SingleRules = append(countRules.SingleRules, rule.SingleRules...)
+			countFieldName := SingleRule[any]{}
+			countFieldName.Field = rule.SingleRules[0].Field
+			countFieldName.Operator = rule.SingleRules[0].Operator
+			fieldName = countFieldName
+			//if reflect.TypeOf(rule.SingleRules[0].Operator.Value) == reflect.TypeOf("") {
+			//	fmt.Printf("the field name is %+v\n", rule.SingleRules[0].Field)
+			//	fmt.Printf("the condition is %+v\n", rule.SingleRules[0].Operator.Value)
+			//} else {
+			//	fmt.Printf("the condition is %+v\n", rule.SingleRules[0].Operator.Value)
+			//}
+			//countRules.Condition = rule.SingleRules[0].Operator.Value.(RuleSet).RuleSets
 		case field:
 			fieldName = v.(string)
 		default:
