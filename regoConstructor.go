@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// RuleSetReader takes a RuleSet and returns a string that can be used in a Rego file
 func (ruleSet RuleSet) RuleSetReader() (string, string, error) {
 	var result string
 	var conditionNames []string
@@ -82,9 +83,12 @@ func RegoWriter(fileName string, condition string) error {
 	defer f.Close()
 	if _, err := f.WriteString(condition); err != nil {
 		log.Println(err)
+		return err
 	}
+	return nil
 }
 
-func (ruleSet RuleSet) RuleSetParser() (string, error) {
-
-}
+//
+//func (ruleSet RuleSet) RuleSetParser() (string, error) {
+//
+//}
