@@ -22,39 +22,43 @@ type PolicyRuleModel struct {
 
 type RuleSet struct {
 	Flag        string
-	SingleRules []SingleRule[any]
+	SingleRules []SingleRule
 	RuleSets    []RuleSet
 }
 
-type SingleRule[T any] struct {
-	Field    any
-	Operator OperatorModel[T]
+type SingleRule struct {
+	Field          any
+	FieldOperation string
+	Operator       OperatorModel
 }
 
-type OperatorModel[T any] struct {
+type OperatorModel struct {
 	Name  string
-	Value T
+	Value any
 }
 
 type CountOperatorModel[T any] struct {
 	FieldName string
 	Condition []RuleSet
-	Operator  OperatorModel[T]
+	Operator  OperatorModel
 }
 
 const path = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions"
-const testPath = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/API for FHIR"
+const testPath = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/API Management"
 
 const allOf = "allof"
 const anyOf = "anyof"
 const count = "count"
-const containsKey = "containskey"
+const containsKey = "containsKey"
 const equals = "equals"
 const in = "in"
 const exists = "exists"
+const like = "like"
 const not = "not"
-const notEquals = "notequals"
+const notEquals = "notEquals"
+const greaterOrEquals = "greaterOrEquals"
 const field = "field"
+const value = "value"
 const where = "where"
 
 func main() {
@@ -96,9 +100,11 @@ func main() {
 			fmt.Printf("cannot find conditions %+v\n", err)
 			return
 		}
-		fmt.Printf("the whole condition is %+v\n", condition)
+		fmt.Printf("the whole condition is %+v\n", *condition)
 		fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
-		err = os.WriteFile(fileName, []byte(""), 0644)
+		conditionNames, result, err := condition.RuleSetReader()
+		fmt.Printf("the condition names are %+v\n", conditionNames)
+		err = os.WriteFile(fileName, []byte(result), 0644)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -247,14 +253,17 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 	var operatorValue any
 	//var operatorValueType reflect.Type
 	andRules := RuleSet{
-		Flag: "allof",
+		Flag: allOf,
 	}
 	orRules := RuleSet{
-		Flag: "anyof",
+		Flag: anyOf,
 	}
 	whereRules := RuleSet{
-		Flag: "where",
+		Flag: where,
 	}
+	//countRules := RuleSet{
+	//	Flag: count,
+	//}
 	//countRules := SingleRule[any]{}
 
 	for k, v := range conditions {
@@ -267,7 +276,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 					fmt.Printf("cannot find AND conditions %+v\n", err)
 					return nil, err
 				}
-				if rule.Flag == "allof" || rule.Flag == "anyof" {
+				if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count {
 					andRules.RuleSets = append(andRules.RuleSets, *rule)
 				} else {
 					andRules.SingleRules = append(andRules.SingleRules, rule.SingleRules...)
@@ -282,7 +291,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 					fmt.Printf("cannot find OR conditions %+v\n", err)
 					return nil, err
 				}
-				if rule.Flag == "allof" || rule.Flag == "anyof" {
+				if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count {
 					orRules.RuleSets = append(orRules.RuleSets, *rule)
 				} else {
 					orRules.SingleRules = append(orRules.SingleRules, rule.SingleRules...)
@@ -296,7 +305,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 				fmt.Printf("cannot find WHERE conditions %+v\n", err)
 				return nil, err
 			}
-			if rule.Flag == "allof" || rule.Flag == "anyof" {
+			if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count {
 				whereRules.RuleSets = append(whereRules.RuleSets, *rule)
 			} else {
 				whereRules.SingleRules = append(whereRules.SingleRules, rule.SingleRules...)
@@ -313,7 +322,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 			//		whereRules.SingleRules = append(whereRules.SingleRules, rule.SingleRules...)
 			//	}
 			//}
-			operatorName = "where"
+			operatorName = where
 			operatorValue = whereRules
 		case count:
 			countConditions := v.(map[string]interface{})
@@ -322,18 +331,21 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 				fmt.Printf("cannot find COUNT conditions %+v\n", err)
 				return nil, err
 			}
-			countFieldName := SingleRule[any]{}
-			countFieldName.Field = rule.SingleRules[0].Field
-			countFieldName.Operator = rule.SingleRules[0].Operator
-			fieldName = countFieldName
-			//if reflect.TypeOf(rule.SingleRules[0].Operator.Value) == reflect.TypeOf("") {
-			//	fmt.Printf("the field name is %+v\n", rule.SingleRules[0].Field)
-			//	fmt.Printf("the condition is %+v\n", rule.SingleRules[0].Operator.Value)
+			//if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count {
+			//	countRules.RuleSets = append(countRules.RuleSets, *rule)
 			//} else {
-			//	fmt.Printf("the condition is %+v\n", rule.SingleRules[0].Operator.Value)
+			//	countRules.SingleRules = append(countRules.SingleRules, rule.SingleRules...)
 			//}
-			//countRules.Condition = rule.SingleRules[0].Operator.Value.(RuleSet).RuleSets
+			//operatorName = count
+			//operatorValue = countRules
+			countSingleRule := SingleRule{}
+			countSingleRule.Field = rule.SingleRules[0].Field
+			countSingleRule.FieldOperation = count
+			countSingleRule.Operator = rule.SingleRules[0].Operator
+			fieldName = countSingleRule
 		case field:
+			fieldName = v.(string)
+		case value:
 			fieldName = v.(string)
 		default:
 			operatorName = k
@@ -344,17 +356,17 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 	//fmt.Printf("Field is %+v\n", fieldName)
 	//fmt.Printf("Operator is %+v\n", operatorValue)
 
-	operator := OperatorModel[any]{
+	operator := OperatorModel{
 		Name:  operatorName,
 		Value: operatorValue,
 	}
 
-	singleRule := SingleRule[any]{
+	singleRule := SingleRule{
 		Field:    fieldName,
 		Operator: operator,
 	}
 
-	var singleRules []SingleRule[any]
+	var singleRules []SingleRule
 	return &RuleSet{
 		Flag:        "single",
 		SingleRules: append(singleRules, singleRule),
