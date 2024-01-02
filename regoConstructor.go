@@ -8,7 +8,7 @@ import (
 )
 
 // RuleSetReader takes a RuleSet and returns a string that can be used in a Rego file
-func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
+func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string, error) {
 	var result string
 	var conditionNames []string
 
@@ -21,24 +21,48 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 				fmt.Printf("here is a singleRule with operator %+v\n", singleRule.Operator.Name)
 				switch singleRule.Operator.Name {
 				case equals:
-					fieldName := singleRule.Field.(string)
+					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
 					result = result + "\n"
 					result = strings.Join([]string{result, fieldName, "==", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
 				case notEquals:
-					fieldName := singleRule.Field.(string)
+					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
 					result = result + "\n"
 					result = strings.Join([]string{result, fieldName, "!=", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
 				case greaterOrEquals:
 					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
 					result = result + "\n"
 					result = strings.Join([]string{result, fieldName, ">=", fmt.Sprint(singleRule.Operator.Value)}, " ")
-					if len(subsetResult) != 0 {
-						subsetResult = strings.Join([]string{subsetResult, condition}, "")
-					} else {
-						subsetResult = condition
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
 					}
 				case exists:
-					//fmt.Printf("here is a exists case")
 					result = result + "\n"
 					if strings.EqualFold(singleRule.Operator.Value.(string), "true") {
 						fieldName := singleRule.Field.(string)
@@ -48,18 +72,23 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 						result = strings.Join([]string{result, fieldName, not}, " ")
 					}
 				case like:
-					//fmt.Printf("here is a like case")
 					fieldName := singleRule.Field.(string)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
 					result = result + "\n"
 					result = strings.Join([]string{result, " ", regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
 				case where:
 					fmt.Printf("here is a where case %+v\n", singleRule)
 					fieldName := singleRule.Field.(string)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
 					var exper string
 					switch singleRule.FieldOperation {
 					case count:
 						operator := singleRule.Operator.Value.(RuleSet)
-						subsetNames, subRule, err := operator.RuleSetReader()
+						subsetNames, subRule, err := operator.RuleSetReader("")
 						if err != nil {
 							return []string{}, "", err
 						}
@@ -79,7 +108,7 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 			if len(result) == 0 {
 				result = strings.Join([]string{result, "{"}, "")
 			}
-			subsetNames, subRule, err := thisSet.RuleSetReader()
+			subsetNames, subRule, err := thisSet.RuleSetReader("")
 			if err != nil {
 				return []string{}, "", err
 			}
@@ -106,11 +135,12 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 
 		if len(ruleSet.SingleRules) != 0 || len(ruleSet.RuleSets) != 0 {
 			conditionName := RandStringFromCharSet(andConditionLen, charNum)
+			if fieldNameReplacer != "" {
+				conditionName = conditionName + "(x)"
+			}
 			conditionNames = append(conditionNames, conditionName)
 			result = strings.Join([]string{conditionName, ifCondition, result}, " ")
 		}
-		//fmt.Printf("here is a subresult1 %s", result)
-		//fmt.Printf("conditions are %+v\n", conditionNames)
 
 		return conditionNames, result, nil
 	case anyOf:
@@ -118,16 +148,50 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 		if len(ruleSet.SingleRules) != 0 {
 			result = strings.Join([]string{result, "{"}, "")
 			for _, singleRule := range ruleSet.SingleRules {
-				fmt.Printf("here is a singleRule with operator %+v\n", singleRule.Operator.Name)
+				//fmt.Printf("here is a singleRule with operator %+v\n", singleRule.Operator.Name)
 				switch singleRule.Operator.Name {
 				case equals:
-					fieldName := singleRule.Field.(string)
+					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
 					result = result + "\n"
 					result = strings.Join([]string{result, fieldName, "!=", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
 				case notEquals:
-					fieldName := singleRule.Field.(string)
+					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
 					result = result + "\n"
 					result = strings.Join([]string{result, fieldName, "==", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
+				case greaterOrEquals:
+					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
+					result = result + "\n"
+					result = strings.Join([]string{result, fieldName, "<", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
 				case exists:
 					result = result + "\n"
 					if strings.EqualFold(singleRule.Operator.Value.(string), "true") {
@@ -147,7 +211,7 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 					switch singleRule.FieldOperation {
 					case count:
 						operator := singleRule.Operator.Value.(RuleSet)
-						subsetNames, subRule, err := operator.RuleSetReader()
+						subsetNames, subRule, err := operator.RuleSetReader("x")
 						if err != nil {
 							return []string{}, "", err
 						}
@@ -167,7 +231,7 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 			if len(result) == 0 {
 				result = strings.Join([]string{result, "{"}, "")
 			}
-			subsetNames, subRules, err := thisSet.RuleSetReader()
+			subsetNames, subRules, err := thisSet.RuleSetReader("")
 			if err != nil {
 				return []string{}, "", err
 			}
@@ -176,7 +240,6 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 			} else {
 				subsetResult = subRules
 			}
-			//conditionNames = append(conditionNames, subsetNames...)
 			for _, subnetName := range subsetNames {
 				result = result + "\n"
 				if len(subnetName) == andConditionLen {
@@ -194,6 +257,9 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 
 		if len(ruleSet.SingleRules) != 0 || len(ruleSet.RuleSets) != 0 {
 			conditionName := RandStringFromCharSet(orConditionLen, charNum)
+			if fieldNameReplacer != "" {
+				conditionName = conditionName + "(x)"
+			}
 			conditionNames = append(conditionNames, conditionName)
 			result = strings.Join([]string{conditionName, ifCondition, result}, " ")
 		}
@@ -208,13 +274,33 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 			for _, singleRule := range ruleSet.SingleRules {
 				switch singleRule.Operator.Name {
 				case equals:
-					fieldName := singleRule.Field.(string)
+					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
 					result = result + "\n"
 					result = strings.Join([]string{result, fieldName, "==", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
 				case notEquals:
-					fieldName := singleRule.Field.(string)
+					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
 					result = result + "\n"
 					result = strings.Join([]string{result, fieldName, "!=", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
 				case exists:
 					result = result + "\n"
 					if strings.EqualFold(singleRule.Operator.Value.(string), "true") {
@@ -236,7 +322,7 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 			if len(result) == 0 {
 				result = strings.Join([]string{result, "{"}, "")
 			}
-			subsetNames, subRules, err := thisSet.RuleSetReader()
+			subsetNames, subRules, err := thisSet.RuleSetReader("x")
 			if err != nil {
 				return []string{}, "", err
 			}
@@ -262,11 +348,17 @@ func (ruleSet RuleSet) RuleSetReader() ([]string, string, error) {
 			result = result + "\n" + "}"
 		}
 
+		result = result + "\n" + subsetResult
+
 		if len(ruleSet.SingleRules) != 0 || len(ruleSet.RuleSets) != 0 {
 			conditionName := RandStringFromCharSet(whereConditionLen, charNum)
+			if fieldNameReplacer != "" {
+				conditionName = conditionName + "(x)"
+			}
 			conditionNames = append(conditionNames, conditionName)
 			result = strings.Join([]string{conditionName, ifCondition, result}, " ")
 		}
+		return conditionNames, result, nil
 	}
 	return conditionNames, result, nil
 }
@@ -295,12 +387,12 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 	case where:
 		fieldName := singleRule.Field.(string)
 		operator := singleRule.Operator.Value.(RuleSet)
-		subsetNames, subRule, err := operator.RuleSetReader()
+		subsetNames, subRule, err := operator.RuleSetReader("x")
 		if err != nil {
 			return "", "", err
 		}
 		rules = subRule
-		exp := count + "(" + "{" + "x" + "|" + fieldName + "[x]" + ";" + subsetNames[0] + "(x)" + "}" + ")"
+		exp := count + "(" + "{" + "x" + "|" + fieldName + "[x]" + ";" + subsetNames[0] + "}" + ")"
 		result = strings.Join([]string{result, " ", exp}, " ")
 	}
 	return result, rules, nil
@@ -321,14 +413,8 @@ func FieldNameProcessor(fieldName interface{}) (string, string) {
 		rules = singleRule
 	}
 
-	fmt.Printf("here is a result %+v, and this is the end of it\n", result)
-	fmt.Printf("here is a rules %+v\n", rules)
 	return result, rules
 }
-
-//func (singleRule SingleRule[T]) ReverseSingleRuleReader() (string, error) {
-//
-//}
 
 func RegoWriter(fileName string, condition string) error {
 	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -342,8 +428,3 @@ func RegoWriter(fileName string, condition string) error {
 	}
 	return nil
 }
-
-//
-//func (ruleSet RuleSet) RuleSetParser() (string, error) {
-//
-//}

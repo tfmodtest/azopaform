@@ -102,7 +102,7 @@ func main() {
 		}
 		fmt.Printf("the whole condition is %+v\n", *condition)
 		fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
-		conditionNames, result, err := condition.RuleSetReader()
+		conditionNames, result, err := condition.RuleSetReader("")
 		fmt.Printf("the condition names are %+v\n", conditionNames)
 		err = os.WriteFile(fileName, []byte(result), 0644)
 		if err != nil {
