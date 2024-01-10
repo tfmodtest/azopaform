@@ -48,9 +48,11 @@ const testPath = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDef
 
 const allOf = "allof"
 const anyOf = "anyof"
+const single = "single"
 const count = "count"
 const containsKey = "containsKey"
 const equals = "equals"
+const notMatch = "notMatch"
 const in = "in"
 const exists = "exists"
 const like = "like"

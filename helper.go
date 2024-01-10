@@ -5,6 +5,7 @@ import "math/rand"
 const ifCondition = "if"
 const regexExp = "regex.match"
 const charNum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const singleConditionLen = 3
 const andConditionLen = 5
 const orConditionLen = 7
 const whereConditionLen = 9
