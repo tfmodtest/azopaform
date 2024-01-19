@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -82,12 +83,22 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				case exists:
 					result = result + "\n"
-					if strings.EqualFold(singleRule.Operator.Value.(string), "true") {
-						fieldName := singleRule.Field.(string)
-						result = strings.Join([]string{result, fieldName}, " ")
-					} else {
-						fieldName := singleRule.Field.(string)
-						result = strings.Join([]string{result, fieldName, not}, " ")
+					if reflect.String == reflect.TypeOf(singleRule.Operator.Value).Kind() {
+						if strings.EqualFold(singleRule.Operator.Value.(string), "true") {
+							fieldName := singleRule.Field.(string)
+							result = strings.Join([]string{result, fieldName}, " ")
+						} else {
+							fieldName := singleRule.Field.(string)
+							result = strings.Join([]string{result, fieldName, not}, " ")
+						}
+					} else if reflect.Bool == reflect.TypeOf(singleRule.Operator.Value).Kind() {
+						if singleRule.Operator.Value.(bool) {
+							fieldName := singleRule.Field.(string)
+							result = strings.Join([]string{result, fieldName}, " ")
+						} else {
+							fieldName := singleRule.Field.(string)
+							result = strings.Join([]string{result, fieldName, not}, " ")
+						}
 					}
 				case like:
 					fieldName := singleRule.Field.(string)
@@ -258,12 +269,22 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				case exists:
 					result = result + "\n"
-					if strings.EqualFold(singleRule.Operator.Value.(string), "true") {
-						fieldName := singleRule.Field.(string)
-						result = strings.Join([]string{result, fieldName, not}, " ")
-					} else {
-						fieldName := singleRule.Field.(string)
-						result = strings.Join([]string{result, fieldName}, " ")
+					if reflect.String == reflect.TypeOf(singleRule.Operator.Value).Kind() {
+						if strings.EqualFold(singleRule.Operator.Value.(string), "true") {
+							fieldName := singleRule.Field.(string)
+							result = strings.Join([]string{result, fieldName, not}, " ")
+						} else {
+							fieldName := singleRule.Field.(string)
+							result = strings.Join([]string{result, fieldName}, " ")
+						}
+					} else if reflect.Bool == reflect.TypeOf(singleRule.Operator.Value).Kind() {
+						if singleRule.Operator.Value.(bool) {
+							fieldName := singleRule.Field.(string)
+							result = strings.Join([]string{result, fieldName, not}, " ")
+						} else {
+							fieldName := singleRule.Field.(string)
+							result = strings.Join([]string{result, fieldName}, " ")
+						}
 					}
 				case like:
 					fieldName := singleRule.Field.(string)

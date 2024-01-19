@@ -44,7 +44,7 @@ type CountOperatorModel[T any] struct {
 }
 
 const path = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions"
-const testPath = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/API Management"
+const testPath = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/App Platform"
 
 const allOf = "allof"
 const anyOf = "anyof"
@@ -218,7 +218,6 @@ func readJsonFilePaths(path string) ([]string, error) {
 	return filePaths, nil
 }
 
-// func ruleIterator(path string) ([]string, map[string]bool, error) {\
 func ruleIterator(path string) (*Rule, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -235,12 +234,6 @@ func ruleIterator(path string) (*Rule, error) {
 	}
 
 	return &rule, nil
-	//rules, operatorSet, err := rule.Properties.listKeyWords()
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return nil, nil, err
-	//}
-	//return rules, operatorSet, nil
 }
 
 // In this function, the input is a single condition or a set of conditions(allof, anyof)
@@ -263,10 +256,6 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 	whereRules := RuleSet{
 		Flag: where,
 	}
-	//countRules := RuleSet{
-	//	Flag: count,
-	//}
-	//countRules := SingleRule[any]{}
 
 	for k, v := range conditions {
 		switch strings.ToLower(k) {
@@ -312,18 +301,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 			} else {
 				whereRules.SingleRules = append(whereRules.SingleRules, rule.SingleRules...)
 			}
-			//for _, condition := range whereConditions {
-			//	rule, err := conditionFinder(condition.(map[string]interface{}))
-			//	if err != nil {
-			//		fmt.Printf("cannot find WHERE conditions %+v\n", err)
-			//		return nil, err
-			//	}
-			//	if rule.Flag == "allof" || rule.Flag == "anyof" {
-			//		whereRules.RuleSets = append(whereRules.RuleSets, *rule)
-			//	} else {
-			//		whereRules.SingleRules = append(whereRules.SingleRules, rule.SingleRules...)
-			//	}
-			//}
+
 			operatorName = where
 			operatorValue = whereRules
 		case count:
@@ -333,13 +311,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 				fmt.Printf("cannot find COUNT conditions %+v\n", err)
 				return nil, err
 			}
-			//if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count {
-			//	countRules.RuleSets = append(countRules.RuleSets, *rule)
-			//} else {
-			//	countRules.SingleRules = append(countRules.SingleRules, rule.SingleRules...)
-			//}
-			//operatorName = count
-			//operatorValue = countRules
+
 			countSingleRule := SingleRule{}
 			countSingleRule.Field = rule.SingleRules[0].Field
 			countSingleRule.FieldOperation = count
@@ -351,13 +323,9 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 			fieldName = v.(string)
 		default:
 			operatorName = k
-			//operatorValueType = reflect.TypeOf(v)
 			operatorValue = v
 		}
 	}
-	//fmt.Printf("Field is %+v\n", fieldName)
-	//fmt.Printf("Operator is %+v\n", operatorValue)
-
 	operator := OperatorModel{
 		Name:  operatorName,
 		Value: operatorValue,
