@@ -81,6 +81,20 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							subsetResult = condition
 						}
 					}
+				case less:
+					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
+					result = result + "\n"
+					result = strings.Join([]string{result, fieldName, "<", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
 				case exists:
 					result = result + "\n"
 					if reflect.String == reflect.TypeOf(singleRule.Operator.Value).Kind() {
@@ -100,13 +114,16 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							result = strings.Join([]string{result, fieldName, not}, " ")
 						}
 					}
+				case contains:
+					result = result + "\n"
+					result = strings.Join([]string{result, "", regexExp, "(", "\"", ".*", fmt.Sprint(singleRule.Operator.Value), ".*", "\"", ",", fmt.Sprint(singleRule.Field), ")"}, "")
 				case like:
 					fieldName := singleRule.Field.(string)
 					if fieldNameReplacer != "" {
 						fieldName = fieldNameReplacer
 					}
 					result = result + "\n"
-					result = strings.Join([]string{result, " ", regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
+					result = strings.Join([]string{result, " ", regexExp, "(", "\"", fmt.Sprint(singleRule.Operator.Value), "\"", ",", fieldName, ")"}, "")
 				case where:
 					//fmt.Printf("here is a where case %+v\n", singleRule)
 					fieldName := singleRule.Field.(string)
@@ -130,6 +147,21 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case in:
+					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
+					result = result + "\n"
+					result = strings.Join([]string{result, "some", fieldName, "in", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
+				//TODO: notIn case is incorrectly addressed, should think of a way to espress "not in" in rego
+				case notIn:
 					fieldName, condition := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						fieldName = fieldNameReplacer
@@ -267,6 +299,20 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							subsetResult = condition
 						}
 					}
+				case less:
+					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
+					result = result + "\n"
+					result = strings.Join([]string{result, fieldName, ">=", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
 				case exists:
 					result = result + "\n"
 					if reflect.String == reflect.TypeOf(singleRule.Operator.Value).Kind() {
@@ -286,6 +332,9 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							result = strings.Join([]string{result, fieldName}, " ")
 						}
 					}
+				case contains:
+					result = result + "\n"
+					result = strings.Join([]string{result, "", not, " ", regexExp, "(", "\"", ".*", fmt.Sprint(singleRule.Operator.Value), ".*", "\"", ",", fmt.Sprint(singleRule.Field), ")"}, "")
 				case like:
 					fieldName := singleRule.Field.(string)
 					result = result + "\n"
@@ -308,6 +357,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							subsetResult = subRule
 						}
 					}
+				//TODO: notIn case is incorrectly addressed, should think of a way to espress "not in" in rego
 				case in:
 					fieldName, condition := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
@@ -322,7 +372,22 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							subsetResult = condition
 						}
 					}
+				case notIn:
+					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
+					result = result + "\n"
+					result = strings.Join([]string{result, "some", fieldName, "in", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
 				}
+
 			}
 		}
 
@@ -409,6 +474,9 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						fieldName := singleRule.Field.(string)
 						result = strings.Join([]string{result, fieldName, not}, " ")
 					}
+				case contains:
+					result = result + "\n"
+					result = strings.Join([]string{result, "", regexExp, "(", "\"", ".*", fmt.Sprint(singleRule.Operator.Value), ".*", "\"", ",", fmt.Sprint(singleRule.Field), ")"}, "")
 				case like:
 					fieldName := singleRule.Field.(string)
 					result = result + "\n"

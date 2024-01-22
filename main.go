@@ -44,16 +44,20 @@ type CountOperatorModel[T any] struct {
 }
 
 const path = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions"
-const testPath = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/App Platform"
+const testPath = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/App Service"
 
 const allOf = "allof"
 const anyOf = "anyof"
 const single = "single"
 const count = "count"
+const contains = "contains"
+const notContains = "notContains"
 const containsKey = "containsKey"
 const equals = "equals"
+const less = "less"
 const notMatch = "notMatch"
 const in = "in"
+const notIn = "notIn"
 const exists = "exists"
 const like = "like"
 const not = "not"
