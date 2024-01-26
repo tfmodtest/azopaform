@@ -117,6 +117,9 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 				case contains:
 					result = result + "\n"
 					result = strings.Join([]string{result, "", regexExp, "(", "\"", ".*", fmt.Sprint(singleRule.Operator.Value), ".*", "\"", ",", fmt.Sprint(singleRule.Field), ")"}, "")
+				case notContains:
+					result = result + "\n"
+					result = strings.Join([]string{result, "", not, " ", regexExp, "(", "\"", ".*", fmt.Sprint(singleRule.Operator.Value), ".*", "\"", ",", fmt.Sprint(singleRule.Field), ")"}, "")
 				case like:
 					fieldName := singleRule.Field.(string)
 					if fieldNameReplacer != "" {
@@ -160,14 +163,14 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							subsetResult = condition
 						}
 					}
-				//TODO: notIn case is incorrectly addressed, should think of a way to espress "not in" in rego
+				//TODO: notIn case is incorrectly addressed, should think of a way to express "not in" in rego
 				case notIn:
 					fieldName, condition := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						fieldName = fieldNameReplacer
 					}
 					result = result + "\n"
-					result = strings.Join([]string{result, "some", fieldName, "in", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					result = strings.Join([]string{result, "not", fieldName, "in", fmt.Sprint(singleRule.Operator.Value)}, " ")
 					if condition != "" {
 						if len(subsetResult) != 0 {
 							subsetResult = strings.Join([]string{subsetResult, condition}, "")
@@ -357,14 +360,14 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							subsetResult = subRule
 						}
 					}
-				//TODO: notIn case is incorrectly addressed, should think of a way to espress "not in" in rego
+				//TODO: notIn case is incorrectly addressed, should think of a way to express "not in" in rego
 				case in:
 					fieldName, condition := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						fieldName = fieldNameReplacer
 					}
 					result = result + "\n"
-					result = strings.Join([]string{result, "some", fieldName, "in", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					result = strings.Join([]string{result, "not", fieldName, "in", fmt.Sprint(singleRule.Operator.Value)}, " ")
 					if condition != "" {
 						if len(subsetResult) != 0 {
 							subsetResult = strings.Join([]string{subsetResult, condition}, "")
