@@ -338,6 +338,9 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 				case contains:
 					result = result + "\n"
 					result = strings.Join([]string{result, "", not, " ", regexExp, "(", "\"", ".*", fmt.Sprint(singleRule.Operator.Value), ".*", "\"", ",", fmt.Sprint(singleRule.Field), ")"}, "")
+				case notContains:
+					result = result + "\n"
+					result = strings.Join([]string{result, "", regexExp, "(", "\"", ".*", fmt.Sprint(singleRule.Operator.Value), ".*", "\"", ",", fmt.Sprint(singleRule.Field), ")"}, "")
 				case like:
 					fieldName := singleRule.Field.(string)
 					result = result + "\n"
@@ -480,6 +483,9 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 				case contains:
 					result = result + "\n"
 					result = strings.Join([]string{result, "", regexExp, "(", "\"", ".*", fmt.Sprint(singleRule.Operator.Value), ".*", "\"", ",", fmt.Sprint(singleRule.Field), ")"}, "")
+				case notContains:
+					result = result + "\n"
+					result = strings.Join([]string{result, "", not, " ", regexExp, "(", "\"", ".*", fmt.Sprint(singleRule.Operator.Value), ".*", "\"", ",", fmt.Sprint(singleRule.Field), ")"}, "")
 				case like:
 					fieldName := singleRule.Field.(string)
 					result = result + "\n"
