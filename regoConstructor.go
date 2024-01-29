@@ -127,6 +127,13 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 					result = result + "\n"
 					result = strings.Join([]string{result, " ", regexExp, "(", "\"", fmt.Sprint(singleRule.Operator.Value), "\"", ",", fieldName, ")"}, "")
+				case notLike:
+					fieldName := singleRule.Field.(string)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
+					result = result + "\n"
+					result = strings.Join([]string{result, " ", not, " ", regexExp, "(", "\"", fmt.Sprint(singleRule.Operator.Value), "\"", ",", fieldName, ")"}, "")
 				case where:
 					//fmt.Printf("here is a where case %+v\n", singleRule)
 					fieldName := singleRule.Field.(string)
@@ -180,12 +187,6 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				case not:
 					operatorValue := singleRule.Operator.Value.(map[string]interface{})
-					//notRule := SingleRule{}
-					//err := mapstructure.Decode(operatorValue, &notRule)
-					//if err != nil {
-					//	return []string{}, "", err
-					//}
-					//fmt.Printf("[WARN]here is a not case %+v\n", notRule)
 					res, err := conditionFinder(operatorValue)
 					if err != nil {
 						return []string{}, "", err
@@ -345,6 +346,13 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					fieldName := singleRule.Field.(string)
 					result = result + "\n"
 					result = strings.Join([]string{result, " ", not, " ", regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
+				case notLike:
+					fieldName := singleRule.Field.(string)
+					if fieldNameReplacer != "" {
+						fieldName = fieldNameReplacer
+					}
+					result = result + "\n"
+					result = strings.Join([]string{result, regexExp, "(", "\"", fmt.Sprint(singleRule.Operator.Value), "\"", ",", fieldName, ")"}, "")
 				case where:
 					fieldName := singleRule.Field.(string)
 					var exper string
@@ -490,6 +498,10 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					fieldName := singleRule.Field.(string)
 					result = result + "\n"
 					result = strings.Join([]string{result, " ", regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
+				case notLike:
+					fieldName := singleRule.Field.(string)
+					result = result + "\n"
+					result = strings.Join([]string{result, " ", not, " ", regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
 				}
 			}
 		}
@@ -560,6 +572,9 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 	case like:
 		fieldName := singleRule.Field.(string)
 		result = strings.Join([]string{result, " ", regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
+	case notLike:
+		fieldName := singleRule.Field.(string)
+		result = strings.Join([]string{result, " ", not, " ", regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
 	case where:
 		fieldName := singleRule.Field.(string)
 		operator := singleRule.Operator.Value.(RuleSet)
