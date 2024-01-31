@@ -44,7 +44,7 @@ type CountOperatorModel[T any] struct {
 }
 
 const path = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions"
-const testPath = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/App Service"
+const testPath = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/Guest Configuration"
 
 const allOf = "allof"
 const anyOf = "anyof"
@@ -60,6 +60,7 @@ const in = "in"
 const notIn = "notIn"
 const exists = "exists"
 const like = "like"
+const notLike = "notLike"
 const not = "not"
 const notEquals = "notEquals"
 const greaterOrEquals = "greaterOrEquals"
