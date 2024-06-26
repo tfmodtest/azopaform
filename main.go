@@ -44,7 +44,7 @@ type CountOperatorModel[T any] struct {
 }
 
 const path = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions"
-const testPath = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions/Guest Configuration"
+const testPath = "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/Internet of Things"
 
 const allOf = "allof"
 const anyOf = "anyof"
@@ -111,6 +111,7 @@ func main() {
 		fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
 		conditionNames, result, err := condition.RuleSetReader("")
 		fmt.Printf("the condition names are %+v\n", conditionNames)
+		result = "package main\n\n" + "import rego.v1\n\n" + result
 		err = os.WriteFile(fileName, []byte(result), 0644)
 		if err != nil {
 			fmt.Println(err)
