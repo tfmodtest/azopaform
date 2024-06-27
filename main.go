@@ -44,26 +44,27 @@ type CountOperatorModel[T any] struct {
 }
 
 const path = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions"
-const testPath = "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/Internet of Things"
+const testPath = "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/General"
 
 const allOf = "allof"
 const anyOf = "anyof"
 const single = "single"
 const count = "count"
 const contains = "contains"
-const notContains = "notContains"
-const containsKey = "containsKey"
+const notContains = "notcontains"
+const containsKey = "containskey"
 const equals = "equals"
 const less = "less"
-const notMatch = "notMatch"
+const notMatch = "notmatch"
 const in = "in"
-const notIn = "notIn"
+const notIn = "notin"
 const exists = "exists"
 const like = "like"
-const notLike = "notLike"
+const notLike = "notlike"
 const not = "not"
-const notEquals = "notEquals"
-const greaterOrEquals = "greaterOrEquals"
+const notEquals = "notequals"
+const greaterOrEquals = "greaterorequals"
+const lessOrEquals = "lessorequals"
 const field = "field"
 const value = "value"
 const where = "where"
@@ -262,6 +263,9 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 	whereRules := RuleSet{
 		Flag: where,
 	}
+	notRules := RuleSet{
+		Flag: not,
+	}
 
 	for k, v := range conditions {
 		switch strings.ToLower(k) {
@@ -295,8 +299,23 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 				}
 			}
 			return &orRules, nil
+		case not:
+			notCondition := v.(map[string]interface{})
+			rule, err := conditionFinder(notCondition)
+			if err != nil {
+				fmt.Printf("cannot find NOT conditions %+v\n", err)
+				return nil, err
+			}
+			fmt.Printf("the not rule is %+v\n", *rule)
+			if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count {
+				notRules.RuleSets = append(notRules.RuleSets, *rule)
+			} else {
+				notRules.SingleRules = append(notRules.SingleRules, rule.SingleRules...)
+			}
+			return &notRules, nil
 		case where:
 			whereConditions := v.(map[string]interface{})
+			fmt.Printf("the where conditions are %+v\n", whereConditions)
 			rule, err := conditionFinder(whereConditions)
 			if err != nil {
 				fmt.Printf("cannot find WHERE conditions %+v\n", err)
