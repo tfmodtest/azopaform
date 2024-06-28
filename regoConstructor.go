@@ -957,6 +957,16 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 	var result string
 	var rules string
+
+	//The same as "where" case below without operator name/value, without adding conditions suffix/prefix
+	if singleRule.Operator.Name == "" {
+		fieldName := singleRule.Field.(string)
+		if string(fieldName[len(fieldName)-3:]) == "[*]" {
+			fieldName = fieldName[:len(fieldName)-3]
+		}
+		exp := count + "(" + fieldName + ")"
+		result = strings.Join([]string{result, exp}, "")
+	}
 	switch strings.ToLower(singleRule.Operator.Name) {
 	case equals:
 		fieldName := singleRule.Field.(string)
@@ -979,7 +989,7 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 		fieldName := singleRule.Field.(string)
 		result = strings.Join([]string{result, " ", not, " ", regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
 	case where:
-		fmt.Printf("here is a where case %+v\n", singleRule)
+		//fmt.Printf("here is a where case %+v\n", singleRule)
 		var subNames []string
 		fieldName := singleRule.Field.(string)
 		switch singleRule.Operator.Value.(type) {
@@ -998,7 +1008,7 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 			subNames = subsetNames
 			rules = subRule
 		case RuleSet:
-			fmt.Printf("rule set hit. the field name is %s\n", fieldName)
+			//fmt.Printf("rule set hit. the field name is %s\n", fieldName)
 			operator := singleRule.Operator.Value.(RuleSet)
 			subsetNames, subRule, err := operator.RuleSetReader(fieldName)
 			if err != nil {
@@ -1028,6 +1038,7 @@ func FieldNameProcessor(fieldName interface{}) (string, string) {
 	case string:
 		result = fieldName.(string)
 	case SingleRule:
+		fmt.Printf("the field name is %+v\n", fieldName)
 		res, singleRule, err := fieldName.(SingleRule).SingleRuleReader()
 		if err != nil {
 			return "", ""

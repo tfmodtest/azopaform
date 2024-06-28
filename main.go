@@ -44,7 +44,7 @@ type CountOperatorModel[T any] struct {
 }
 
 const path = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions"
-const testPath = "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/General"
+const testPath = "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/Key Vault"
 
 const allOf = "allof"
 const anyOf = "anyof"
@@ -58,6 +58,7 @@ const less = "less"
 const notMatch = "notmatch"
 const in = "in"
 const notIn = "notin"
+const name = "name"
 const exists = "exists"
 const like = "like"
 const notLike = "notlike"
@@ -70,30 +71,34 @@ const value = "value"
 const where = "where"
 
 func main() {
-	policyPath := testPath
+	//policyPath := testPath
 
 	keyWordsCollection := make(map[string][]string)
 	operators := make(map[string]bool)
 
-	paths, err := readJsonFilePaths(policyPath)
-	if err != nil {
-		fmt.Printf("cannot find files in directory %+v\n", err)
-		return
-	}
-	for _, path := range paths {
-		//words, operatorSet, err := ruleIterator(path)
-		rule, err := ruleIterator(path)
-		if err != nil {
-			fmt.Printf("cannot find rules %+v\n", err)
-			return
-		}
+	////For batch translation
+	//paths, err := readJsonFilePaths(policyPath)
+	//if err != nil {
+	//	fmt.Printf("cannot find files in directory %+v\n", err)
+	//	return
+	//}
+	//for _, path := range paths {
+	//	//words, operatorSet, err := ruleIterator(path)
+	//	rule, err := ruleIterator(path)
+	//	if err != nil {
+	//		fmt.Printf("cannot find rules %+v\n", err)
+	//		return
+	//	}
+	//
+	//	words, operatorSet, err := rule.Properties.listKeyWords()
+	//	for k, v := range operatorSet {
+	//		operators[k] = v
+	//	}
+	//	keyWordsCollection[path] = words
+	//}
 
-		words, operatorSet, err := rule.Properties.listKeyWords()
-		for k, v := range operatorSet {
-			operators[k] = v
-		}
-		keyWordsCollection[path] = words
-	}
+	//Override for hard cases
+	paths := []string{"/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/Key Vault/AzureKeyVaultPrivateEndpointEnabled_Audit.json"}
 
 	for _, path := range paths {
 		rule, err := ruleIterator(path)
