@@ -55,6 +55,7 @@ const notContains = "notcontains"
 const containsKey = "containskey"
 const equals = "equals"
 const less = "less"
+const greater = "greater"
 const notMatch = "notmatch"
 const in = "in"
 const notIn = "notin"
@@ -98,7 +99,7 @@ func main() {
 	//}
 
 	//Override for hard cases
-	paths := []string{"/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/Key Vault/AzureKeyVaultPrivateEndpointEnabled_Audit.json"}
+	paths := []string{"/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/Key Vault/KeyVault_SoftDeleteMustBeEnabled_Audit.json"}
 
 	for _, path := range paths {
 		rule, err := ruleIterator(path)
@@ -282,7 +283,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 					fmt.Printf("cannot find AND conditions %+v\n", err)
 					return nil, err
 				}
-				if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count {
+				if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count || rule.Flag == not {
 					andRules.RuleSets = append(andRules.RuleSets, *rule)
 				} else {
 					andRules.SingleRules = append(andRules.SingleRules, rule.SingleRules...)
@@ -297,7 +298,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 					fmt.Printf("cannot find OR conditions %+v\n", err)
 					return nil, err
 				}
-				if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count {
+				if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count || rule.Flag == not {
 					orRules.RuleSets = append(orRules.RuleSets, *rule)
 				} else {
 					orRules.SingleRules = append(orRules.SingleRules, rule.SingleRules...)
@@ -312,11 +313,9 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 				return nil, err
 			}
 			fmt.Printf("the not rule is %+v\n", *rule)
-			if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count {
-				notRules.RuleSets = append(notRules.RuleSets, *rule)
-			} else {
-				notRules.SingleRules = append(notRules.SingleRules, rule.SingleRules...)
-			}
+
+			notRules.RuleSets = append(notRules.RuleSets, *rule)
+			notRules.SingleRules = append(notRules.SingleRules, rule.SingleRules...)
 			return &notRules, nil
 		case where:
 			whereConditions := v.(map[string]interface{})
@@ -326,7 +325,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 				fmt.Printf("cannot find WHERE conditions %+v\n", err)
 				return nil, err
 			}
-			if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count {
+			if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count || rule.Flag == not {
 				whereRules.RuleSets = append(whereRules.RuleSets, *rule)
 			} else {
 				whereRules.SingleRules = append(whereRules.SingleRules, rule.SingleRules...)
