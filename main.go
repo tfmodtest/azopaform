@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -72,47 +73,61 @@ const value = "value"
 const where = "where"
 
 func main() {
-	//policyPath := testPath
+	singlePath := flag.String("path", "", "The path of policy definition file")
+	dir := flag.String("dir", "", "The dir which contains policy definitions")
+	flag.Parse()
+	if err := realMain(*singlePath, *dir); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
 
+func realMain(policyPath string, dir string) error {
+	//policyPath := testPath
+	var paths []string
 	keyWordsCollection := make(map[string][]string)
 	operators := make(map[string]bool)
 
 	////For batch translation
-	//paths, err := readJsonFilePaths(policyPath)
-	//if err != nil {
-	//	fmt.Printf("cannot find files in directory %+v\n", err)
-	//	return
-	//}
-	//for _, path := range paths {
-	//	//words, operatorSet, err := ruleIterator(path)
-	//	rule, err := ruleIterator(path)
-	//	if err != nil {
-	//		fmt.Printf("cannot find rules %+v\n", err)
-	//		return
-	//	}
-	//
-	//	words, operatorSet, err := rule.Properties.listKeyWords()
-	//	for k, v := range operatorSet {
-	//		operators[k] = v
-	//	}
-	//	keyWordsCollection[path] = words
-	//}
+	if dir != "" {
+		paths, err := readJsonFilePaths(dir)
+		if err != nil {
+			fmt.Printf("cannot find files in directory %+v\n", err)
+			return err
+		}
+		for _, path := range paths {
+			//words, operatorSet, err := ruleIterator(path)
+			rule, err := ruleIterator(path)
+			if err != nil {
+				fmt.Printf("cannot find rules %+v\n", err)
+				return err
+			}
+
+			words, operatorSet, err := rule.Properties.listKeyWords()
+			for k, v := range operatorSet {
+				operators[k] = v
+			}
+			keyWordsCollection[path] = words
+		}
+	}
 
 	//Override for hard cases
-	paths := []string{"/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/Key Vault/KeyVault_SoftDeleteMustBeEnabled_Audit.json"}
-
+	//paths := []string{"/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/Key Vault/KeyVault_SoftDeleteMustBeEnabled_Audit.json"}
+	if policyPath != "" {
+		paths = []string{policyPath}
+	}
 	for _, path := range paths {
 		rule, err := ruleIterator(path)
 		if err != nil {
 			fmt.Printf("cannot find rules %+v\n", err)
-			return
+			return err
 		}
 
 		conditions := rule.Properties.PolicyRule["if"]
 		condition, err := conditionFinder(conditions.(map[string]interface{}))
 		if err != nil {
 			fmt.Printf("cannot find conditions %+v\n", err)
-			return
+			return err
 		}
 		fmt.Printf("the whole condition is %+v\n", *condition)
 		fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
@@ -122,31 +137,32 @@ func main() {
 		err = os.WriteFile(fileName, []byte(result), 0644)
 		if err != nil {
 			fmt.Println(err)
-			return
+			return err
 		}
 	}
 
 	jsonData, err := json.MarshalIndent(keyWordsCollection, "", " ")
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	err = os.WriteFile("keyWords.json", jsonData, 0644)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 
 	jsonSet, err := json.MarshalIndent(operators, "", " ")
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
 	err = os.WriteFile("operators.json", jsonSet, 0644)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return err
 	}
+	return nil
 }
 
 func (policyRule PolicyRuleModel) listKeyWords() ([]string, map[string]bool, error) {
