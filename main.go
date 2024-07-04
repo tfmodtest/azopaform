@@ -328,14 +328,14 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 				fmt.Printf("cannot find NOT conditions %+v\n", err)
 				return nil, err
 			}
-			fmt.Printf("the not rule is %+v\n", *rule)
+			//fmt.Printf("the not rule is %+v\n", *rule)
 
 			notRules.RuleSets = append(notRules.RuleSets, *rule)
 			notRules.SingleRules = append(notRules.SingleRules, rule.SingleRules...)
 			return &notRules, nil
 		case where:
 			whereConditions := v.(map[string]interface{})
-			fmt.Printf("the where conditions are %+v\n", whereConditions)
+			//fmt.Printf("the where conditions are %+v\n", whereConditions)
 			rule, err := conditionFinder(whereConditions)
 			if err != nil {
 				fmt.Printf("cannot find WHERE conditions %+v\n", err)
