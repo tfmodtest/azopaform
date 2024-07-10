@@ -90,11 +90,12 @@ func realMain(policyPath string, dir string) error {
 
 	////For batch translation
 	if dir != "" {
-		paths, err := readJsonFilePaths(dir)
+		res, err := readJsonFilePaths(dir)
 		if err != nil {
 			fmt.Printf("cannot find files in directory %+v\n", err)
 			return err
 		}
+		paths = res
 		for _, path := range paths {
 			//words, operatorSet, err := ruleIterator(path)
 			rule, err := ruleIterator(path)
