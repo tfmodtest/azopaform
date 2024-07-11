@@ -852,3 +852,22 @@ func FieldNameReplacer(fieldName string, replacer string) string {
 
 	return fieldName
 }
+
+//func FieldNameParser(fieldNameRaw, resourceType string) (string, error) {
+//
+//	b, err := os.ReadFile("output.json")
+//	if err != nil {
+//		return "", err
+//	}
+//	t, err := aztfq.BuildLookupTable(b, nil)
+//	if err != nil {
+//		return "", err
+//	}
+//	if tt, ok := t[strings.ToUpper(resourceType)]; ok {
+//		if ttt, ok := tt[version]; ok {
+//			if results, ok := ttt[prop]; ok {
+//				fmt.Println(results)
+//			}
+//		}
+//	}
+//}

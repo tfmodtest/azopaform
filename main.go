@@ -47,6 +47,8 @@ type CountOperatorModel[T any] struct {
 const path = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinitions"
 const testPath = "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/Key Vault"
 
+var rt string
+
 const allOf = "allof"
 const anyOf = "anyof"
 const single = "single"
@@ -71,6 +73,7 @@ const lessOrEquals = "lessorequals"
 const field = "field"
 const value = "value"
 const where = "where"
+const resourceType = "type"
 
 func main() {
 	singlePath := flag.String("path", "", "The path of policy definition file")
@@ -130,6 +133,7 @@ func realMain(policyPath string, dir string) error {
 			fmt.Printf("cannot find conditions %+v\n", err)
 			return err
 		}
+		fmt.Printf("the resource type is %+v\n", rt)
 		fmt.Printf("the whole condition is %+v\n", *condition)
 		fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
 		conditionNames, result, err := condition.RuleSetReader("")
@@ -380,6 +384,10 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 	singleRule := SingleRule{
 		Field:    fieldName,
 		Operator: operator,
+	}
+
+	if fieldName == resourceType {
+		rt = operatorValue.(string)
 	}
 
 	var singleRules []SingleRule
