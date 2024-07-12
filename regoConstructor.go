@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/magodo/aztfq/aztfq"
 	"log"
 	"os"
 	"reflect"
@@ -787,9 +788,13 @@ func FieldNameProcessor(fieldName interface{}) (string, string) {
 	var rules string
 	switch fieldName.(type) {
 	case string:
-		result = fieldName.(string)
+		res, err := FieldNameParser(fieldName.(string), rt, "")
+		if err != nil {
+			return "", ""
+		}
+		result = res
 	case SingleRule:
-		fmt.Printf("the field name is %+v\n", fieldName)
+		//fmt.Printf("the field name is %+v\n", fieldName)
 		res, singleRule, err := fieldName.(SingleRule).SingleRuleReader()
 		if err != nil {
 			return "", ""
@@ -853,21 +858,72 @@ func FieldNameReplacer(fieldName string, replacer string) string {
 	return fieldName
 }
 
-//func FieldNameParser(fieldNameRaw, resourceType string) (string, error) {
+func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error) {
+	if fieldNameRaw == typeOfResource {
+		return fieldNameRaw, nil
+	}
+	prop, _ := strings.CutPrefix(fieldNameRaw, resourceType)
+	b, err := os.ReadFile("output.json")
+	if err != nil {
+		return "", err
+	}
+	t, err := aztfq.BuildLookupTable(b, nil)
+	if err != nil {
+		return "", err
+	}
+	if tt, ok := t[strings.ToUpper(resourceType)]; ok {
+		if ttt, ok := tt[version]; ok {
+			if results, ok := ttt[prop]; ok {
+				return results[0].PropertyAddr, nil
+			}
+		}
+	}
+
+	return fieldNameRaw, nil
+}
+
+func ResourceTypeParser(resourceType string) (string, error) {
+	b, err := os.ReadFile("output.json")
+	if err != nil {
+		return "", err
+	}
+	t, err := aztfq.BuildLookupTable(b, nil)
+	if err != nil {
+		return "", err
+	}
+	if tt, ok := t[strings.ToUpper(resourceType)]; ok {
+		if ttt, ok := tt[""]; ok {
+			for _, v := range ttt {
+				return v[0].ResourceType, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("cannot find the resource type %s in the lookup table", resourceType)
+}
+
+//func schemaConverter(set *RuleSet) (*RuleSet, error) {
+//	if set == nil {
+//		err := errors.New("cannot find conditions")
+//		return nil, err
+//	}
 //
-//	b, err := os.ReadFile("output.json")
-//	if err != nil {
-//		return "", err
+//	for _, ruleSet := range set.RuleSets {
+//		schemaConverter(&ruleSet)
 //	}
-//	t, err := aztfq.BuildLookupTable(b, nil)
-//	if err != nil {
-//		return "", err
-//	}
-//	if tt, ok := t[strings.ToUpper(resourceType)]; ok {
-//		if ttt, ok := tt[version]; ok {
-//			if results, ok := ttt[prop]; ok {
-//				fmt.Println(results)
+//
+//	for _, singleRule := range set.SingleRules {
+//		if singleRule.Field == resourceType {
+//			operatorValue, err := FieldNameParser(fmt.Sprint(singleRule.Operator.Value), rt, "")
+//			if err != nil {
+//				return nil, fmt.Errorf("cannot find resource type %+v\n", err)
 //			}
+//			singleRule.Operator.Value = operatorValue
+//		} else {
+//
+//			singleRule.Field = FieldNameParser()
 //		}
 //	}
+//
+//	return set, nil
 //}

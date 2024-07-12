@@ -49,32 +49,6 @@ const testPath = "/Users/jiaweitao/workZone/azure-policy/built-in-policies/polic
 
 var rt string
 
-const allOf = "allof"
-const anyOf = "anyof"
-const single = "single"
-const count = "count"
-const contains = "contains"
-const notContains = "notcontains"
-const containsKey = "containskey"
-const equals = "equals"
-const less = "less"
-const greater = "greater"
-const notMatch = "notmatch"
-const in = "in"
-const notIn = "notin"
-const name = "name"
-const exists = "exists"
-const like = "like"
-const notLike = "notlike"
-const not = "not"
-const notEquals = "notequals"
-const greaterOrEquals = "greaterorequals"
-const lessOrEquals = "lessorequals"
-const field = "field"
-const value = "value"
-const where = "where"
-const resourceType = "type"
-
 func main() {
 	singlePath := flag.String("path", "", "The path of policy definition file")
 	dir := flag.String("dir", "", "The dir which contains policy definitions")
@@ -386,8 +360,14 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 		Operator: operator,
 	}
 
-	if fieldName == resourceType {
+	if fieldName == typeOfResource {
 		rt = operatorValue.(string)
+		v, err := ResourceTypeParser(rt)
+		if err != nil {
+			fmt.Printf("cannot find resource type %+v\n", err)
+			return nil, err
+		}
+		singleRule.Operator.Value = v
 	}
 
 	var singleRules []SingleRule
