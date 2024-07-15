@@ -863,6 +863,10 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 		return fieldNameRaw, nil
 	}
 	prop, _ := strings.CutPrefix(fieldNameRaw, resourceType)
+	prop = strings.Replace(prop, ".", "/", -1)
+	prop = strings.TrimPrefix(prop, "/")
+	prop = "/properties/" + prop
+	//fmt.Printf("the prop is %s\n", prop)
 	b, err := os.ReadFile("output.json")
 	if err != nil {
 		return "", err
