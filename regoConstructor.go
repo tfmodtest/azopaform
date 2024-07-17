@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
@@ -61,7 +62,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 				//fmt.Printf("here is a singleRule with operator %+v\n", singleRule.Operator.Name)
 				switch strings.ToLower(singleRule.Operator.Name) {
 				case equals:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						if fieldName[len(fieldName)-3:] == "[*]" {
 							fieldName = fieldName[:len(fieldName)-3]
@@ -80,7 +81,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				case notEquals:
 					//fmt.Printf("here is a notEquals case %+v\n", singleRule.Operator.Value)
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						if fieldName[len(fieldName)-3:] == "[*]" {
 							fieldName = fieldName[:len(fieldName)-3]
@@ -98,7 +99,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case greaterOrEquals:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						if fieldName[len(fieldName)-3:] == "[*]" {
 							fieldName = fieldName[:len(fieldName)-3]
@@ -116,7 +117,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case lessOrEquals:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 
 					result = result + "\n"
@@ -129,7 +130,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case less:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						if fieldName[len(fieldName)-3:] == "[*]" {
 							fieldName = fieldName[:len(fieldName)-3]
@@ -147,7 +148,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case greater:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 
 					result = result + "\n"
@@ -163,7 +164,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					result = result + "\n"
 					if reflect.String == reflect.TypeOf(singleRule.Operator.Value).Kind() {
 						if strings.EqualFold(singleRule.Operator.Value.(string), "true") {
-							fieldName, condition := FieldNameProcessor(singleRule.Field)
+							fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 							fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 							result = strings.Join([]string{result, fieldName}, " ")
 							if condition != "" {
@@ -174,7 +175,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 								}
 							}
 						} else {
-							fieldName, condition := FieldNameProcessor(singleRule.Field)
+							fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 							fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 							result = strings.Join([]string{result, not, fieldName}, " ")
 							if condition != "" {
@@ -187,7 +188,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					} else if reflect.Bool == reflect.TypeOf(singleRule.Operator.Value).Kind() {
 						if singleRule.Operator.Value.(bool) {
-							fieldName, condition := FieldNameProcessor(singleRule.Field)
+							fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 							fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 							result = strings.Join([]string{result, fieldName}, " ")
 							if condition != "" {
@@ -198,7 +199,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 								}
 							}
 						} else {
-							fieldName, condition := FieldNameProcessor(singleRule.Field)
+							fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 							fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 							result = strings.Join([]string{result, not, fieldName}, " ")
 							if condition != "" {
@@ -214,56 +215,31 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					//fmt.Printf("Field name replacer is %s\n", fieldNameReplacer)
 					result = result + "\n"
 					fieldName := fmt.Sprint(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
-					}
+					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 
 					result = strings.Join([]string{result, " ", regexExp, "(", "\"", ".*", fmt.Sprint(singleRule.Operator.Value), ".*", "\"", ",", fieldName, ")"}, "")
 				case notContains:
-					fieldName := fmt.Sprint(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
-					}
-
 					result = result + "\n"
+					fieldName := fmt.Sprint(singleRule.Field)
+					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
+
 					result = strings.Join([]string{result, " ", not, " ", regexExp, "(", "\"", ".*", fmt.Sprint(singleRule.Operator.Value), ".*", "\"", ",", fmt.Sprint(singleRule.Field), ")"}, "")
 				case like:
 					fieldName := singleRule.Field.(string)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
-					}
+					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 
 					result = result + "\n"
 					result = strings.Join([]string{result, " ", regexExp, "(", "\"", fmt.Sprint(singleRule.Operator.Value), "\"", ",", fieldName, ")"}, "")
 				case notLike:
 					fieldName := singleRule.Field.(string)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
-					}
+					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 
 					result = result + "\n"
 					result = strings.Join([]string{result, " ", not, " ", regexExp, "(", "\"", fmt.Sprint(singleRule.Operator.Value), "\"", ",", fieldName, ")"}, "")
 				case where:
 					//fmt.Printf("here is a where case %+v\n", singleRule)
 					fieldName := singleRule.Field.(string)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
-					}
+					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 
 					var exper string
 					switch singleRule.FieldOperation {
@@ -287,14 +263,9 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case in:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					// Find the common substring, replace it with the fieldNameReplacer with suffix [x]
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
-					}
+					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 
 					result = result + "\n"
 					result = strings.Join([]string{result, "some", fieldName, "in", SliceConstructor(singleRule.Operator.Value)}, " ")
@@ -307,19 +278,8 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				//TODO: notIn case is incorrectly addressed, should think of a way to express "not in" in rego
 				case notIn:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if strings.Contains(fieldName, fieldNameReplacer) {
-							//fmt.Printf("it really contains...%s\n", fieldName)
-							if fieldNameReplacer[len(fieldNameReplacer)-3:] == "[*]" {
-								//fmt.Printf("it really needs to replace...%s\n", fieldName)
-								newFieldNameReplacer := fieldNameReplacer[:len(fieldNameReplacer)-3] + "[x]"
-								//fmt.Printf("let's replace this %s with %s\n", fieldNameReplacer, newFieldNameReplacer)
-								fieldName = strings.Replace(fieldName, fieldNameReplacer, newFieldNameReplacer, 1)
-								//fmt.Printf("after replacing %s\n", fieldName)
-							}
-						}
-					}
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
+					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 
 					result = result + "\n"
 					result = strings.Join([]string{result, "not", fieldName, "in", SliceConstructor(singleRule.Operator.Value)}, " ")
@@ -383,7 +343,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 				//fmt.Printf("here is a singleRule with operator %+v\n", singleRule.Operator.Name)
 				switch strings.ToLower(singleRule.Operator.Name) {
 				case equals:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						if fieldName[len(fieldName)-3:] == "[*]" {
 							fieldName = fieldName[:len(fieldName)-3]
@@ -400,7 +360,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case notEquals:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						if fieldName[len(fieldName)-3:] == "[*]" {
 							fieldName = fieldName[:len(fieldName)-3]
@@ -417,7 +377,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case greaterOrEquals:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						if fieldName[len(fieldName)-3:] == "[*]" {
 							fieldName = fieldName[:len(fieldName)-3]
@@ -434,7 +394,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case less:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						if fieldName[len(fieldName)-3:] == "[*]" {
 							fieldName = fieldName[:len(fieldName)-3]
@@ -451,7 +411,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case greater:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						if fieldName[len(fieldName)-3:] == "[*]" {
 							fieldName = fieldName[:len(fieldName)-3]
@@ -471,7 +431,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					result = result + "\n"
 					if reflect.String == reflect.TypeOf(singleRule.Operator.Value).Kind() {
 						if strings.EqualFold(singleRule.Operator.Value.(string), "true") {
-							fieldName, condition := FieldNameProcessor(singleRule.Field)
+							fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 							fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 							result = strings.Join([]string{result, not, fieldName}, " ")
 							if condition != "" {
@@ -482,7 +442,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 								}
 							}
 						} else {
-							fieldName, condition := FieldNameProcessor(singleRule.Field)
+							fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 							fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 							result = strings.Join([]string{result, fieldName}, " ")
 							if condition != "" {
@@ -495,7 +455,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					} else if reflect.Bool == reflect.TypeOf(singleRule.Operator.Value).Kind() {
 						if singleRule.Operator.Value.(bool) {
-							fieldName, condition := FieldNameProcessor(singleRule.Field)
+							fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 							fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 							result = strings.Join([]string{result, not, fieldName}, " ")
 							if condition != "" {
@@ -506,7 +466,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 								}
 							}
 						} else {
-							fieldName, condition := FieldNameProcessor(singleRule.Field)
+							fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 							fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 							result = strings.Join([]string{result, fieldName}, " ")
 							if condition != "" {
@@ -563,7 +523,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				//TODO: notIn case is incorrectly addressed, should think of a way to express "not in" in rego
 				case in:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 					result = result + "\n"
 					result = strings.Join([]string{result, "not", fieldName, "in", SliceConstructor(singleRule.Operator.Value)}, " ")
@@ -575,7 +535,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case notIn:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 					result = result + "\n"
 					result = strings.Join([]string{result, "some", fieldName, "in", SliceConstructor(singleRule.Operator.Value)}, " ")
@@ -641,7 +601,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 			for _, singleRule := range ruleSet.SingleRules {
 				switch strings.ToLower(singleRule.Operator.Name) {
 				case equals:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 
 					result = result + "\n"
@@ -654,7 +614,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case notEquals:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 					result = result + "\n"
 					result = strings.Join([]string{result, fieldName, "!=", fmt.Sprint(singleRule.Operator.Value)}, " ")
@@ -697,7 +657,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					result = result + "\n"
 					result = strings.Join([]string{result, " ", not, " ", regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
 				case in:
-					fieldName, condition := FieldNameProcessor(singleRule.Field)
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 					result = result + "\n"
 					result = strings.Join([]string{result, "some", fieldName, "in", fmt.Sprint(singleRule.Operator.Value)}, " ")
@@ -773,13 +733,13 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 	switch strings.ToLower(singleRule.Operator.Name) {
 	case equals:
 		//fmt.Printf("print this single rule field ! %+v\n", singleRule.Field)
-		fieldName, _ := FieldNameProcessor(singleRule.Field)
+		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
 		//fmt.Printf("the conditions from the field processor is %s\n", condition)
 
 		//fieldName := singleRule.Field.(string)
 		result = strings.Join([]string{fieldName, "==", fmt.Sprint(singleRule.Operator.Value)}, " ")
 	case notEquals:
-		fieldName, _ := FieldNameProcessor(singleRule.Field)
+		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
 		result = strings.Join([]string{fieldName, "!=", fmt.Sprint(singleRule.Operator.Value)}, " ")
 	case exists:
 		if strings.EqualFold(singleRule.Operator.Value.(string), "true") {
@@ -790,15 +750,15 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 			result = strings.Join([]string{not, fieldName}, " ")
 		}
 	case like:
-		fieldName, _ := FieldNameProcessor(singleRule.Field)
+		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
 		result = strings.Join([]string{regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
 	case notLike:
-		fieldName, _ := FieldNameProcessor(singleRule.Field)
+		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
 		result = strings.Join([]string{not, " ", regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
 	case where:
 		//fmt.Printf("here is a where case %+v\n", singleRule)
 		var subNames []string
-		fieldName, _ := FieldNameProcessor(singleRule.Field)
+		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
 		switch singleRule.Operator.Value.(type) {
 		case SingleRule:
 			//fmt.Printf("here is a singlerule case %+v\n", singleRule.Operator.Value)
@@ -833,33 +793,33 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 		exp := count + "(" + "{" + "x" + "|" + fieldName + ";" + subNames[0] + "}" + ")"
 		result = exp
 	case in:
-		fieldName, _ := FieldNameProcessor(singleRule.Field)
+		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
 		result = strings.Join([]string{"some", fieldName, "in", fmt.Sprint(singleRule.Operator.Value)}, " ")
 	}
 	return result, rules, nil
 }
 
-func FieldNameProcessor(fieldName interface{}) (string, string) {
+func FieldNameProcessor(fieldName interface{}) (string, string, error) {
 	var result string
 	var rules string
 	switch fieldName.(type) {
 	case string:
 		res, err := FieldNameParser(fieldName.(string), rt, "")
 		if err != nil {
-			return "", ""
+			return "", "", err
 		}
 		result = res
 	case SingleRule:
 		//fmt.Printf("the field name is %+v\n", fieldName)
 		res, singleRule, err := fieldName.(SingleRule).SingleRuleReader()
 		if err != nil {
-			return "", ""
+			return "", "", err
 		}
 		result = res
 		rules = singleRule
 	}
 
-	return result, rules
+	return result, rules, nil
 }
 
 func RegoWriter(fileName string, condition string) error {
@@ -900,13 +860,9 @@ func SliceConstructor(input any) string {
 func FieldNameReplacer(fieldName string, replacer string) string {
 	if replacer != "" {
 		if strings.Contains(fieldName, replacer) {
-			//fmt.Printf("it really contains...%s\n", fieldName)
 			if replacer[len(replacer)-3:] == "[*]" {
-				//fmt.Printf("it really needs to replace...%s\n", fieldName)
 				newFieldNameReplacer := replacer[:len(replacer)-3] + "[x]"
-				//fmt.Printf("let's replace this %s with %s\n", fieldNameReplacer, newFieldNameReplacer)
 				fieldName = strings.Replace(fieldName, replacer, newFieldNameReplacer, 1)
-				//fmt.Printf("after replacing %s\n", fieldName)
 			}
 		}
 	}
@@ -921,7 +877,7 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 	prop, _ := strings.CutPrefix(fieldNameRaw, resourceType)
 	prop = strings.Replace(prop, ".", "/", -1)
 	prop = strings.TrimPrefix(prop, "/")
-	prop = "/properties/" + prop
+	prop = "properties/" + prop
 	//fmt.Printf("the prop is %s\n", prop)
 	b, err := os.ReadFile("output.json")
 	if err != nil {
@@ -932,19 +888,33 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 		return "", err
 	}
 	if tt, ok := t[strings.ToUpper(resourceType)]; ok {
+		fmt.Printf("find the resource type.")
 		if ttt, ok := tt[version]; ok {
+			fmt.Printf("find the version.")
 			if results, ok := ttt[prop]; ok {
+				fmt.Printf("find the property.")
 				return results[0].PropertyAddr, nil
-				//} else {
-				//	for _, propName := range ttt {
-				//		if ok, err := regexp.MatchString(propName[0].PropertyAddr, prop); ok {
-				//			return propName[0].PropertyAddr
-				//		}
-				//	}
+			} else {
+				for _, propName := range ttt {
+					ok, err := regexp.MatchString(propName[0].PropertyAddr, prop)
+					if err != nil {
+						return "", fmt.Errorf("cannot match the property %s with %s", propName[0].PropertyAddr, prop)
+					}
+					if ok {
+						attrs := strings.Split(prop, "/")
+						stopAttr := attrs[len(attrs)-1]
+						before, _, found := strings.Cut(propName[0].PropertyAddr, stopAttr)
+						if found {
+							return before + stopAttr, nil
+						}
+						return "", fmt.Errorf("cannot find the path of the property %s in the full path", prop)
+					}
+				}
 			}
 		}
 	}
 
+	fmt.Printf("cannot find the property %s in the lookup table\n", prop)
 	return prop, nil
 }
 
