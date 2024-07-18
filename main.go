@@ -95,6 +95,8 @@ func realMain(policyPath string, dir string) error {
 		paths = []string{policyPath}
 	}
 	for _, path := range paths {
+		fmt.Printf("the path is %+v\n", path)
+
 		rule, err := ruleIterator(path)
 		if err != nil {
 			fmt.Printf("cannot find rules %+v\n", err)

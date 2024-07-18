@@ -59,7 +59,6 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 		if len(ruleSet.SingleRules) != 0 {
 			result = strings.Join([]string{result, "{"}, "")
 			for _, singleRule := range ruleSet.SingleRules {
-				//fmt.Printf("here is a singleRule with operator %+v\n", singleRule.Operator.Name)
 				switch strings.ToLower(singleRule.Operator.Name) {
 				case equals:
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
@@ -80,7 +79,6 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						}
 					}
 				case notEquals:
-					//fmt.Printf("here is a notEquals case %+v\n", singleRule.Operator.Value)
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					if fieldNameReplacer != "" {
 						if fieldName[len(fieldName)-3:] == "[*]" {
@@ -244,6 +242,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					var exper string
 					switch singleRule.FieldOperation {
 					case count:
+						//fmt.Printf("here is a count case %+v\n", singleRule)
 						operator := singleRule.Operator.Value.(RuleSet)
 						subsetNames, subRule, err := operator.RuleSetReader(fieldName)
 						if err != nil {
@@ -252,7 +251,10 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						//fmt.Printf("The field name is %s", fieldName)
 						if string(fieldName[len(fieldName)-3:]) == "[*]" {
 							//fmt.Printf("here is a fieldname %+v\n", fieldName)
-							fieldName = fieldName[:len(fieldName)-3] + "[x]"
+							fieldName, _, _ = FieldNameProcessor(fieldName[:len(fieldName)-3])
+							fieldName = fieldName + "[x]"
+						} else {
+							fieldName, _, _ = FieldNameProcessor(fieldName)
 						}
 						exper = count + "(" + "{" + "x" + "|" + fieldName + ";" + subsetNames[0] + "}" + ")"
 						result = strings.Join([]string{result, " ", exper, fmt.Sprint(singleRule.Operator.Value)}, "")
@@ -510,8 +512,11 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							return []string{}, "", err
 						}
 						if string(fieldName[len(fieldName)-3:]) == "[*]" {
-							fmt.Printf("here is a fieldname %+v\n", fieldName)
-							fieldName = fieldName[:len(fieldName)-3] + "[x]"
+							//fmt.Printf("here is a fieldname %+v\n", fieldName)
+							fieldName, _, _ = FieldNameProcessor(fieldName[:len(fieldName)-3])
+							fieldName = fieldName + "[x]"
+						} else {
+							fieldName, _, _ = FieldNameProcessor(fieldName)
 						}
 						exper = count + "(" + "{" + "x" + "|" + fieldName + ";" + subsetNames[0] + "}" + ")"
 						result = strings.Join([]string{result, " ", exper, fmt.Sprint(singleRule.Operator.Value)}, "")
@@ -725,7 +730,9 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 	if singleRule.Operator.Name == "" {
 		fieldName := singleRule.Field.(string)
 		if string(fieldName[len(fieldName)-3:]) == "[*]" {
-			fieldName = fieldName[:len(fieldName)-3]
+			fieldName, _, _ = FieldNameProcessor(fieldName[:len(fieldName)-3])
+		} else {
+			fieldName, _, _ = FieldNameProcessor(fieldName)
 		}
 		exp := count + "(" + fieldName + ")"
 		result = strings.Join([]string{result, exp}, "")
@@ -838,7 +845,7 @@ func RegoWriter(fileName string, condition string) error {
 func SliceConstructor(input any) string {
 	var array []string
 	var res string
-	fmt.Printf("the input type is %+v\n", reflect.TypeOf(input))
+	//fmt.Printf("the input type is %+v\n", reflect.TypeOf(input))
 	switch input.(type) {
 	case []interface{}:
 		for _, v := range input.([]interface{}) {
@@ -877,6 +884,7 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 	prop, _ := strings.CutPrefix(fieldNameRaw, resourceType)
 	prop = strings.Replace(prop, ".", "/", -1)
 	prop = strings.TrimPrefix(prop, "/")
+	originalProp := prop
 	prop = "properties/" + prop
 	//fmt.Printf("the prop is %s\n", prop)
 	b, err := os.ReadFile("output.json")
@@ -888,19 +896,23 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 		return "", err
 	}
 	if tt, ok := t[strings.ToUpper(resourceType)]; ok {
-		fmt.Printf("find the resource type.")
+		//fmt.Printf("find the resource type.")
 		if ttt, ok := tt[version]; ok {
-			fmt.Printf("find the version.")
+			//fmt.Printf("find the version.")
 			if results, ok := ttt[prop]; ok {
-				fmt.Printf("find the property.")
+				//fmt.Printf("find the property.")
+				return results[0].PropertyAddr, nil
+			} else if results, ok := ttt[originalProp]; ok {
 				return results[0].PropertyAddr, nil
 			} else {
 				for _, propName := range ttt {
+					//fmt.Printf("the prop is %s\n", prop)
 					ok, err := regexp.MatchString(propName[0].PropertyAddr, prop)
 					if err != nil {
 						return "", fmt.Errorf("cannot match the property %s with %s", propName[0].PropertyAddr, prop)
 					}
 					if ok {
+						//fmt.Printf("the found propaddr is %s\n", propName[0].PropertyAddr)
 						attrs := strings.Split(prop, "/")
 						stopAttr := attrs[len(attrs)-1]
 						before, _, found := strings.Cut(propName[0].PropertyAddr, stopAttr)
