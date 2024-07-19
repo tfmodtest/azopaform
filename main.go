@@ -363,13 +363,27 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 	}
 
 	if fieldName == typeOfResource {
-		rt = operatorValue.(string)
-		v, err := ResourceTypeParser(rt)
-		if err != nil {
-			fmt.Printf("cannot find resource type %+v\n", err)
-			return nil, err
+		switch operatorValue.(type) {
+		case string:
+			rt = operatorValue.(string)
+			v, err := ResourceTypeParser(rt)
+			if err != nil {
+				fmt.Printf("cannot find resource type %+v\n", err)
+				return nil, err
+			}
+			singleRule.Operator.Value = v
+		case []interface{}:
+			var res []string
+			for _, v := range operatorValue.([]interface{}) {
+				parsedType, err := ResourceTypeParser(v.(string))
+				if err != nil {
+					fmt.Printf("cannot find resource type %+v\n", err)
+					return nil, err
+				}
+				res = append(res, parsedType)
+			}
+			singleRule.Operator.Value = res
 		}
-		singleRule.Operator.Value = v
 	}
 
 	var singleRules []SingleRule

@@ -665,7 +665,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
 					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 					result = result + "\n"
-					result = strings.Join([]string{result, "some", fieldName, "in", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					result = strings.Join([]string{result, "some", fieldName, "in", SliceConstructor(singleRule.Operator.Value)}, " ")
 					if condition != "" {
 						if len(subsetResult) != 0 {
 							subsetResult = strings.Join([]string{subsetResult, condition}, "")
@@ -801,7 +801,7 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 		result = exp
 	case in:
 		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
-		result = strings.Join([]string{"some", fieldName, "in", fmt.Sprint(singleRule.Operator.Value)}, " ")
+		result = strings.Join([]string{"some", fieldName, "in", SliceConstructor(singleRule.Operator.Value)}, " ")
 	}
 	return result, rules, nil
 }
@@ -849,11 +849,11 @@ func SliceConstructor(input any) string {
 	switch input.(type) {
 	case []interface{}:
 		for _, v := range input.([]interface{}) {
-			array = append(array, fmt.Sprint(v))
+			array = append(array, "\""+fmt.Sprint(v)+"\"")
 		}
 	case []string:
 		for _, v := range input.([]string) {
-			array = append(array, fmt.Sprint(v))
+			array = append(array, "\""+fmt.Sprint(v)+"\"")
 		}
 	case string:
 		array = append(array, fmt.Sprint(input))
