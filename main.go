@@ -19,6 +19,7 @@ type Rule struct {
 
 type PolicyRuleModel struct {
 	PolicyRule map[string]interface{}
+	Parameters map[string]interface{}
 }
 
 type RuleSet struct {
@@ -48,6 +49,7 @@ const path = "/home/jiawei/workZone/azure-policy/built-in-policies/policyDefinit
 const testPath = "/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/Key Vault"
 
 var rt string
+var action string
 
 func main() {
 	singlePath := flag.String("path", "", "The path of policy definition file")
@@ -103,6 +105,25 @@ func realMain(policyPath string, dir string) error {
 			return err
 		}
 
+		effectParams := rule.Properties.Parameters["effect"].(map[string]interface{})
+		then := rule.Properties.PolicyRule["then"].(map[string]interface{})
+		if effect := then["effect"]; effect != nil {
+			effect = strings.ToLower(effect.(string))
+			if effect == deny {
+				action = deny
+			} else if effect == "[parameters('effect')]" {
+				defaultEffect := effectParams["defaultValue"].(string)
+				defaultEffect = strings.ToLower(defaultEffect)
+				if defaultEffect == deny {
+					action = deny
+				} else if defaultEffect == audit {
+					action = warn
+				} else if defaultEffect == disabled {
+					action = disabled
+				}
+			}
+		}
+		fmt.Printf("the effect is %+v\n", action)
 		conditions := rule.Properties.PolicyRule["if"]
 		condition, err := conditionFinder(conditions.(map[string]interface{}))
 		if err != nil {
@@ -114,7 +135,17 @@ func realMain(policyPath string, dir string) error {
 		fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
 		conditionNames, result, err := condition.RuleSetReader("")
 		fmt.Printf("the condition names are %+v\n", conditionNames)
-		result = "package main\n\n" + "import rego.v1\n\n" + result
+		if action == disabled {
+			result = "package main\n\n" + "import rego.v1\n\n" + "default allow := true\n\n" + result
+		} else if action == deny {
+			top := "deny if {\n" + " " + conditionNames[0] + "\n}\n"
+			result = "package main\n\n" + "import rego.v1\n\n" + top + result
+		} else if action == warn {
+			top := "warn if {\n" + " " + conditionNames[0] + "\n}\n"
+			result = "package main\n\n" + "import rego.v1\n\n" + top + result
+		} else {
+			result = "package main\n\n" + "import rego.v1\n\n" + result
+		}
 		err = os.WriteFile(fileName, []byte(result), 0644)
 		if err != nil {
 			fmt.Println(err)

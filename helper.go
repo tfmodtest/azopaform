@@ -36,6 +36,12 @@ const value = "value"
 const where = "where"
 const typeOfResource = "type"
 
+const deny = "deny"
+const disabled = "disabled"
+const allow = "allow"
+const audit = "audit"
+const warn = "warn"
+
 func RandStringFromCharSet(strlen int, charSet string) string {
 	result := make([]byte, strlen)
 	for i := 0; i < strlen; i++ {

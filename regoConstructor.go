@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"reflect"
-	"regexp"
 	"strings"
 )
 
@@ -70,7 +69,11 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 
 					result = result + "\n"
-					result = strings.Join([]string{result, fieldName, "==", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					operatorValue := fmt.Sprint(singleRule.Operator.Value)
+					if operatorValue == "" {
+						operatorValue = "\"\""
+					}
+					result = strings.Join([]string{result, fieldName, "==", operatorValue}, " ")
 					if condition != "" {
 						if len(subsetResult) != 0 {
 							subsetResult = strings.Join([]string{subsetResult, condition}, "")
@@ -88,7 +91,11 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 
 					result = result + "\n"
-					result = strings.Join([]string{result, fieldName, "!=", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					operatorValue := fmt.Sprint(singleRule.Operator.Value)
+					if operatorValue == "" {
+						operatorValue = "\"\""
+					}
+					result = strings.Join([]string{result, fieldName, "!=", operatorValue}, " ")
 					if condition != "" {
 						if len(subsetResult) != 0 {
 							subsetResult = strings.Join([]string{subsetResult, condition}, "")
@@ -353,7 +360,11 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
 					}
 					result = result + "\n"
-					result = strings.Join([]string{result, fieldName, "!=", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					operatorValue := fmt.Sprint(singleRule.Operator.Value)
+					if operatorValue == "" {
+						operatorValue = "\"\""
+					}
+					result = strings.Join([]string{result, fieldName, "!=", operatorValue}, " ")
 					if condition != "" {
 						if len(subsetResult) != 0 {
 							subsetResult = strings.Join([]string{subsetResult, condition}, "")
@@ -370,7 +381,11 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
 					}
 					result = result + "\n"
-					result = strings.Join([]string{result, fieldName, "==", fmt.Sprint(singleRule.Operator.Value)}, " ")
+					operatorValue := fmt.Sprint(singleRule.Operator.Value)
+					if operatorValue == "" {
+						operatorValue = "\"\""
+					}
+					result = strings.Join([]string{result, fieldName, "==", operatorValue}, " ")
 					if condition != "" {
 						if len(subsetResult) != 0 {
 							subsetResult = strings.Join([]string{subsetResult, condition}, "")
@@ -469,6 +484,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							}
 						} else {
 							fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
+							fmt.Printf("after processing the field name is %s\n", fieldName)
 							fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 							result = strings.Join([]string{result, fieldName}, " ")
 							if condition != "" {
@@ -904,24 +920,28 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 				return results[0].PropertyAddr, nil
 			} else if results, ok := ttt[originalProp]; ok {
 				return results[0].PropertyAddr, nil
-			} else {
-				for _, propName := range ttt {
-					//fmt.Printf("the prop is %s\n", prop)
-					ok, err := regexp.MatchString(propName[0].PropertyAddr, prop)
-					if err != nil {
-						return "", fmt.Errorf("cannot match the property %s with %s", propName[0].PropertyAddr, prop)
-					}
-					if ok {
-						//fmt.Printf("the found propaddr is %s\n", propName[0].PropertyAddr)
-						attrs := strings.Split(prop, "/")
-						stopAttr := attrs[len(attrs)-1]
-						before, _, found := strings.Cut(propName[0].PropertyAddr, stopAttr)
-						if found {
-							return before + stopAttr, nil
-						}
-						return "", fmt.Errorf("cannot find the path of the property %s in the full path", prop)
-					}
-				}
+				//} else {
+				//	for key, propName := range ttt {
+				//		//fmt.Printf("the prop is %s\n", prop)
+				//		//fmt.Printf("the property name addr is %s\n", propName[0].PropertyAddr)
+				//		ok, err := regexp.MatchString(prop, key)
+				//		if err != nil {
+				//			return "", fmt.Errorf("cannot match the property %s with %s", propName[0].PropertyAddr, prop)
+				//		}
+				//		if ok {
+				//			fmt.Printf("the found propaddr is %s\n", propName[0].PropertyAddr)
+				//			attrs := strings.Split(prop, "/")
+				//			stopAttr := attrs[len(attrs)-1]
+				//			if stopAttr[len(stopAttr)-1] == 's' {
+				//				stopAttr = stopAttr[:len(stopAttr)-1]
+				//			}
+				//			fmt.Printf("the stop word is %s\n", stopAttr)
+				//			if before, _, found := strings.Cut(propName[0].PropertyAddr, stopAttr); found {
+				//				return before + stopAttr, nil
+				//			}
+				//			return "", fmt.Errorf("cannot find the path of the property %s in the full path", prop)
+				//		}
+				//	}
 			}
 		}
 	}
@@ -949,29 +969,3 @@ func ResourceTypeParser(resourceType string) (string, error) {
 
 	return "", fmt.Errorf("cannot find the resource type %s in the lookup table", resourceType)
 }
-
-//func schemaConverter(set *RuleSet) (*RuleSet, error) {
-//	if set == nil {
-//		err := errors.New("cannot find conditions")
-//		return nil, err
-//	}
-//
-//	for _, ruleSet := range set.RuleSets {
-//		schemaConverter(&ruleSet)
-//	}
-//
-//	for _, singleRule := range set.SingleRules {
-//		if singleRule.Field == resourceType {
-//			operatorValue, err := FieldNameParser(fmt.Sprint(singleRule.Operator.Value), rt, "")
-//			if err != nil {
-//				return nil, fmt.Errorf("cannot find resource type %+v\n", err)
-//			}
-//			singleRule.Operator.Value = operatorValue
-//		} else {
-//
-//			singleRule.Field = FieldNameParser()
-//		}
-//	}
-//
-//	return set, nil
-//}
