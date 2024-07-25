@@ -42,6 +42,8 @@ const allow = "allow"
 const audit = "audit"
 const warn = "warn"
 
+const resourcePrefix = "r."
+
 func RandStringFromCharSet(strlen int, charSet string) string {
 	result := make([]byte, strlen)
 	for i := 0; i < strlen; i++ {

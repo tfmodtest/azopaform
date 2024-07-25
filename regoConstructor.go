@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -242,14 +243,12 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					result = result + "\n"
 					result = strings.Join([]string{result, " ", not, " ", regexExp, "(", "\"", fmt.Sprint(singleRule.Operator.Value), "\"", ",", fieldName, ")"}, "")
 				case where:
-					//fmt.Printf("here is a where case %+v\n", singleRule)
 					fieldName := singleRule.Field.(string)
 					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 
 					var exper string
 					switch singleRule.FieldOperation {
 					case count:
-						//fmt.Printf("here is a count case %+v\n", singleRule)
 						operator := singleRule.Operator.Value.(RuleSet)
 						subsetNames, subRule, err := operator.RuleSetReader(fieldName)
 						if err != nil {
@@ -798,8 +797,6 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 			subNames = subsetNames
 			rules = subRule
 		case RuleSet:
-			//fmt.Printf("rule set hit. the field name is %s\n", fieldName)
-			//fmt.Printf("rule set hit. The whole rule set is %+v\n", singleRule.Operator.Value)
 			operator := singleRule.Operator.Value.(RuleSet)
 			subsetNames, subRule, err := operator.RuleSetReader(fieldName)
 			if err != nil {
@@ -831,7 +828,7 @@ func FieldNameProcessor(fieldName interface{}) (string, string, error) {
 		if err != nil {
 			return "", "", err
 		}
-		result = res
+		result = TFNameMapping(res)
 	case SingleRule:
 		//fmt.Printf("the field name is %+v\n", fieldName)
 		res, singleRule, err := fieldName.(SingleRule).SingleRuleReader()
@@ -968,4 +965,21 @@ func ResourceTypeParser(resourceType string) (string, error) {
 	}
 
 	return "", fmt.Errorf("cannot find the resource type %s in the lookup table", resourceType)
+}
+
+func TFNameMapping(fieldName string) string {
+	var result string
+	attributes := strings.Split(fieldName, "/")
+	for _, v := range attributes {
+		if v == "" {
+			continue
+		}
+		if _, err := strconv.Atoi(v); err != nil {
+			result = result + "." + v
+		} else {
+			result = result + "[" + v + "]"
+		}
+	}
+
+	return result
 }

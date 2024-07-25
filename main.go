@@ -136,16 +136,16 @@ func realMain(policyPath string, dir string) error {
 		conditionNames, result, err := condition.RuleSetReader("")
 		fmt.Printf("the condition names are %+v\n", conditionNames)
 		if action == disabled {
-			result = "package main\n\n" + "import rego.v1\n\n" + "default allow := true\n\n" + result
+			result = "default allow := true\n\n" + result
 		} else if action == deny {
 			top := "deny if {\n" + " " + conditionNames[0] + "\n}\n"
-			result = "package main\n\n" + "import rego.v1\n\n" + top + result
+			result = top + result
 		} else if action == warn {
 			top := "warn if {\n" + " " + conditionNames[0] + "\n}\n"
-			result = "package main\n\n" + "import rego.v1\n\n" + top + result
-		} else {
-			result = "package main\n\n" + "import rego.v1\n\n" + result
+			result = top + result
 		}
+
+		result = "package main\n\n" + "import rego.v1\n\n" + "r := tfplan.resource_changes[_]\n\n" + result
 		err = os.WriteFile(fileName, []byte(result), 0644)
 		if err != nil {
 			fmt.Println(err)
@@ -199,7 +199,6 @@ func (policyRule PolicyRuleModel) listKeyWords() ([]string, map[string]bool, err
 
 func findAllOperators(entries map[string]interface{}) (map[string]bool, error) {
 	operatorSet := make(map[string]bool)
-	//fmt.Printf("the entry type is %+v\n", reflect.TypeOf(entries))
 	for k, v := range entries {
 		operatorSet[k] = true
 		if reflect.TypeOf(v) != reflect.TypeOf("") {
