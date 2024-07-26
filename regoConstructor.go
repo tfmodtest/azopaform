@@ -824,6 +824,9 @@ func FieldNameProcessor(fieldName interface{}) (string, string, error) {
 	var rules string
 	switch fieldName.(type) {
 	case string:
+		if fieldName.(string) == typeOfResource {
+			return fieldName.(string), "", nil
+		}
 		res, err := FieldNameParser(fieldName.(string), rt, "")
 		if err != nil {
 			return "", "", err
@@ -980,6 +983,7 @@ func TFNameMapping(fieldName string) string {
 			result = result + "[" + v + "]"
 		}
 	}
+	result = "r.change.after" + result
 
 	return result
 }
