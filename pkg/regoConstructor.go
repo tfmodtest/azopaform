@@ -963,7 +963,12 @@ func ResourceTypeParser(resourceType string) (string, error) {
 	if tt, ok := t[strings.ToUpper(resourceType)]; ok {
 		if ttt, ok := tt[""]; ok {
 			for _, v := range ttt {
-				return v[0].ResourceType, nil
+				result := v[0].ResourceType
+				// The `azurerm_app_service_plan` resource has been superseded by the `azurerm_service_plan` resource.
+				if result == "azurerm_app_service_plan" {
+					result = "azurerm_service_plan"
+				}
+				return result, nil
 			}
 		}
 	}
