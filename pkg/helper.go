@@ -9,6 +9,10 @@ const singleConditionLen = 3
 const andConditionLen = 5
 const orConditionLen = 7
 const whereConditionLen = 9
+const singleConditionLenPlusX = 6
+const andConditionLenPlusX = 8
+const orConditionLenPlusX = 10
+const whereConditionLenPlusX = 12
 
 const allOf = "allof"
 const anyOf = "anyof"

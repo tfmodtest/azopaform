@@ -63,11 +63,10 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 				switch strings.ToLower(singleRule.Operator.Name) {
 				case equals:
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
+					if fieldNameReplacer != "" && fieldName[len(fieldName)-3:] == "[*]" {
+						fieldName = strings.Join([]string{fieldName[:len(fieldName)-3], "[", fieldNameReplacer, "]"}, "")
+					} else {
+						fieldName = strings.Replace(fieldName, "*", "x", -1)
 					}
 
 					result = result + "\n"
@@ -85,11 +84,8 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				case notEquals:
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
+					if fieldNameReplacer != "" && fieldName[len(fieldName)-3:] == "[*]" {
+						fieldName = strings.Join([]string{fieldName[:len(fieldName)-3], "[", fieldNameReplacer, "]"}, "")
 					}
 
 					result = result + "\n"
@@ -107,11 +103,8 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				case greaterOrEquals:
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
+					if fieldNameReplacer != "" && fieldName[len(fieldName)-3:] == "[*]" {
+						fieldName = strings.Join([]string{fieldName[:len(fieldName)-3], "[", fieldNameReplacer, "]"}, "")
 					}
 
 					result = result + "\n"
@@ -138,11 +131,8 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				case less:
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
+					if fieldNameReplacer != "" && fieldName[len(fieldName)-3:] == "[*]" {
+						fieldName = strings.Join([]string{fieldName[:len(fieldName)-3], "[", fieldNameReplacer, "]"}, "")
 					}
 
 					result = result + "\n"
@@ -317,14 +307,14 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 				subsetResult = subRule
 			}
 			//conditionNames = append(conditionNames, subsetNames...)
-			for _, subnetName := range subsetNames {
+			for _, subsetName := range subsetNames {
 				result = result + "\n"
-				if len(subnetName) == andConditionLen {
-					result = strings.Join([]string{result, subnetName}, " ")
-				} else if len(subnetName) == orConditionLen {
-					result = strings.Join([]string{result, not, subnetName}, " ")
-				} else if len(subnetName) == singleConditionLen {
-					result = strings.Join([]string{result, subnetName}, " ")
+				if len(subsetName) == andConditionLen || len(subsetName) == andConditionLenPlusX {
+					result = strings.Join([]string{result, subsetName}, " ")
+				} else if len(subsetName) == orConditionLen || len(subsetName) == orConditionLenPlusX {
+					result = strings.Join([]string{result, not, subsetName}, " ")
+				} else if len(subsetName) == singleConditionLen || len(subsetName) == singleConditionLenPlusX {
+					result = strings.Join([]string{result, subsetName}, " ")
 				}
 			}
 		}
@@ -353,11 +343,8 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 				switch strings.ToLower(singleRule.Operator.Name) {
 				case equals:
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
+					if fieldNameReplacer != "" && fieldName[len(fieldName)-3:] == "[*]" {
+						fieldName = strings.Join([]string{fieldName[:len(fieldName)-3], "[", fieldNameReplacer, "]"}, "")
 					}
 					result = result + "\n"
 					operatorValue := fmt.Sprint(singleRule.Operator.Value)
@@ -374,11 +361,8 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				case notEquals:
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
+					if fieldNameReplacer != "" && fieldName[len(fieldName)-3:] == "[*]" {
+						fieldName = strings.Join([]string{fieldName[:len(fieldName)-3], "[", fieldNameReplacer, "]"}, "")
 					}
 					result = result + "\n"
 					operatorValue := fmt.Sprint(singleRule.Operator.Value)
@@ -395,11 +379,8 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				case greaterOrEquals:
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
+					if fieldNameReplacer != "" && fieldName[len(fieldName)-3:] == "[*]" {
+						fieldName = strings.Join([]string{fieldName[:len(fieldName)-3], "[", fieldNameReplacer, "]"}, "")
 					}
 					result = result + "\n"
 					result = strings.Join([]string{result, fieldName, "<", fmt.Sprint(singleRule.Operator.Value)}, " ")
@@ -412,11 +393,8 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				case less:
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
+					if fieldNameReplacer != "" && fieldName[len(fieldName)-3:] == "[*]" {
+						fieldName = strings.Join([]string{fieldName[:len(fieldName)-3], "[", fieldNameReplacer, "]"}, "")
 					}
 					result = result + "\n"
 					result = strings.Join([]string{result, fieldName, ">=", fmt.Sprint(singleRule.Operator.Value)}, " ")
@@ -429,12 +407,10 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 					}
 				case greater:
 					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
-					if fieldNameReplacer != "" {
-						if fieldName[len(fieldName)-3:] == "[*]" {
-							fieldName = fieldName[:len(fieldName)-3]
-						}
-						fieldName = strings.Join([]string{fieldName, "[", fieldNameReplacer, "]"}, "")
+					if fieldNameReplacer != "" && fieldName[len(fieldName)-3:] == "[*]" {
+						fieldName = strings.Join([]string{fieldName[:len(fieldName)-3], "[", fieldNameReplacer, "]"}, "")
 					}
+
 					result = result + "\n"
 					result = strings.Join([]string{result, fieldName, "<=", fmt.Sprint(singleRule.Operator.Value)}, " ")
 					if condition != "" {
@@ -484,7 +460,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							}
 						} else {
 							fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
-							fmt.Printf("after processing the field name is %s\n", fieldName)
+							//fmt.Printf("after processing the field name is %s\n", fieldName)
 							fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
 							result = strings.Join([]string{result, fieldName}, " ")
 							if condition != "" {
@@ -586,14 +562,14 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 				subsetResult = subRules
 			}
 			//The subrule set also need to be the opposite
-			for _, subnetName := range subsetNames {
+			for _, subsetName := range subsetNames {
 				result = result + "\n"
-				if len(subnetName) == andConditionLen {
-					result = strings.Join([]string{result, not, subnetName}, " ")
-				} else if len(subnetName) == orConditionLen {
-					result = strings.Join([]string{result, subnetName}, " ")
-				} else if len(subnetName) == singleConditionLen {
-					result = strings.Join([]string{result, subnetName}, " ")
+				if len(subsetName) == andConditionLen || len(subsetName) == andConditionLenPlusX {
+					result = strings.Join([]string{result, not, subsetName}, " ")
+				} else if len(subsetName) == orConditionLen || len(subsetName) == orConditionLenPlusX {
+					result = strings.Join([]string{result, subsetName}, " ")
+				} else if len(subsetName) == singleConditionLen || len(subsetName) == singleConditionLenPlusX {
+					result = strings.Join([]string{result, subsetName}, " ")
 				}
 			}
 		}
@@ -694,6 +670,7 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 		}
 
 		for _, thisSet := range ruleSet.RuleSets {
+			//fmt.Printf("The rule set is %+v\n", thisSet)
 			if len(result) == 0 {
 				result = strings.Join([]string{result, "{"}, "")
 			}
@@ -707,14 +684,14 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 				subsetResult = subRules
 			}
 			//conditionNames = append(conditionNames, subsetNames...)
-			for _, subnetName := range subsetNames {
+			for _, subsetName := range subsetNames {
 				result = result + "\n"
-				if len(subnetName) == andConditionLen {
-					result = strings.Join([]string{result, subnetName}, " ")
-				} else if len(subnetName) == orConditionLen {
-					result = strings.Join([]string{result, not, subnetName}, " ")
-				} else if len(subnetName) == singleConditionLen {
-					result = strings.Join([]string{result, subnetName}, " ")
+				if len(subsetName) == andConditionLen || len(subsetName) == andConditionLenPlusX {
+					result = strings.Join([]string{result, subsetName}, " ")
+				} else if len(subsetName) == orConditionLen || len(subsetName) == orConditionLenPlusX {
+					result = strings.Join([]string{result, not, subsetName}, " ")
+				} else if len(subsetName) == singleConditionLen || len(subsetName) == singleConditionLenPlusX {
+					result = strings.Join([]string{result, subsetName}, " ")
 				}
 			}
 		}
@@ -967,6 +944,9 @@ func ResourceTypeParser(resourceType string) (string, error) {
 				// The `azurerm_app_service_plan` resource has been superseded by the `azurerm_service_plan` resource.
 				if result == "azurerm_app_service_plan" {
 					result = "azurerm_service_plan"
+				}
+				if result == "azurerm_app_service_environment" {
+					result = "azurerm_app_service_environment_v3"
 				}
 				return result, nil
 			}

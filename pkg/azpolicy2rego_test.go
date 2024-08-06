@@ -11,6 +11,72 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const count_json = `{
+  "properties": {
+    "displayName": "App Service Environment should have TLS 1.0 and 1.1 disabled",
+    "policyType": "BuiltIn",
+    "mode": "Indexed",
+    "description": "TLS 1.0 and 1.1 are out-of-date protocols that do not support modern cryptographic algorithms. Disabling inbound TLS 1.0 and 1.1 traffic helps secure apps in an App Service Environment.",
+    "metadata": {
+      "version": "2.0.1",
+      "category": "App Service"
+    },
+    "version": "2.0.1",
+    "parameters": {
+      "effect": {
+        "type": "string",
+        "defaultValue": "Audit",
+        "allowedValues": [
+          "Audit",
+          "Deny",
+          "Disabled"
+        ],
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        }
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.Web/hostingEnvironments"
+          },
+          {
+            "field": "kind",
+            "like": "ASE*"
+          },
+          {
+            "count": {
+              "field": "Microsoft.Web/HostingEnvironments/clusterSettings[*]",
+              "where": {
+                "allOf": [
+                  {
+                    "field": "Microsoft.Web/HostingEnvironments/clusterSettings[*].name",
+                    "equals": "DisableTls1.0"
+                  },
+                  {
+                    "field": "Microsoft.Web/HostingEnvironments/clusterSettings[*].value",
+                    "equals": "1"
+                  }
+                ]
+              }
+            },
+            "less": 1
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]"
+      }
+    }
+  },
+  "id": "/providers/Microsoft.Authorization/policyDefinitions/d6545c6b-dd9d-4265-91e6-0b451e2f1c50",
+  "name": "d6545c6b-dd9d-4265-91e6-0b451e2f1c50"
+}`
+
 const deny_json = `{
   "properties": {
     "displayName": "App Service apps should use a SKU that supports private link",
@@ -132,7 +198,7 @@ warn if {
  aaaaa
 }
 aaaaa if {
- type == azurerm_app_service_plan
+ type == azurerm_service_plan
  aaaaa
 }
 aaaaa if {
@@ -140,6 +206,30 @@ aaaaa if {
  not r.change.after.sku_name in ["B1","B2","B3","S1","S2","S3","EP1","EP2","EP3","P1","P2","P3","P1V2","P2V2","P3V2","P0V3","P1V3","P2V3","P3V3","P1MV3","P2MV3","P3MV3","P4MV3","P5MV3","I1","I2","I3","I1V2","I2V2","I3V2","I4V2","I5V2","I6V2","WS1","WS2","WS3"]
 }
 `
+
+	expectedCountRego := `package main
+
+import rego.v1
+
+r := tfplan.resource_changes[_]
+
+warn if {
+ aaaaa
+}
+aaaaa if {
+ type == azurerm_app_service_environment_v3
+ regex.match("ASE*",kind)
+ count({x|r.change.after.properties.Microsoft.Web.HostingEnvironments.clusterSettings[x];aaaaaaaaa(x)}) < 1
+}
+aaaaaaaaa(x) if {
+ aaaaa(x)
+}
+aaaaa(x) if {
+ r.change.after.properties.Microsoft.Web.HostingEnvironments.clusterSettings[x].name == DisableTls1.0
+ r.change.after.properties.Microsoft.Web.HostingEnvironments.clusterSettings[x].value == 1
+}
+`
+
 	cases := []struct {
 		desc         string
 		inputDirPath string
@@ -176,6 +266,16 @@ aaaaa if {
 			expected: map[string]string{
 				"deny1.rego": expectedDenyRego,
 				"deny2.rego": expectedDenyRego,
+			},
+		},
+		{
+			desc:         "policy contains count operator",
+			inputDirPath: "",
+			mockFs: map[string]string{
+				"count.json": count_json,
+			},
+			expected: map[string]string{
+				"count.rego": expectedCountRego,
 			},
 		},
 	}
