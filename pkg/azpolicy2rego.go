@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -18,8 +17,88 @@ type Rule struct {
 }
 
 type PolicyRuleModel struct {
-	PolicyRule map[string]interface{}
-	Parameters map[string]interface{}
+	PolicyRule *PolicyRuleBody
+	Parameters *PolicyRuleParameters
+}
+
+type PolicyRuleBody struct {
+	Then *ThenBody
+	If   map[string]any `json:"if,omitempty"`
+}
+
+type IfBody map[string]any
+
+func (i IfBody) condition() (*RuleSet, error) {
+	return conditionFinder(i)
+}
+
+func (p *PolicyRuleBody) GetThen() *ThenBody {
+	if p == nil {
+		return nil
+	}
+	return p.Then
+}
+
+func (p *PolicyRuleBody) GetIf() IfBody {
+	if p == nil {
+		return nil
+	}
+	return p.If
+}
+
+type ThenBody struct {
+	Effect string `json:"effect,omitempty"`
+}
+
+func (t *ThenBody) GetEffect() string {
+	if t == nil {
+		return ""
+	}
+	return t.Effect
+}
+
+func (t *ThenBody) MapEffectToAction(defaultEffect string) (string, error) {
+	effect := t.GetEffect()
+	if effect == "" {
+		return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
+	}
+	effect = strings.ToLower(effect)
+	if effect == deny {
+		return deny, nil
+	}
+	if effect != "[parameters('effect')]" {
+		return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
+	}
+	defaultEffect = strings.ToLower(defaultEffect)
+	if defaultEffect == audit {
+		return warn, nil
+	}
+	if defaultEffect == deny || defaultEffect == disabled {
+		return defaultEffect, nil
+	}
+	return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
+}
+
+type PolicyRuleParameters struct {
+	Effect *EffectBody
+}
+
+func (p *PolicyRuleParameters) GetEffect() *EffectBody {
+	if p == nil {
+		return nil
+	}
+	return p.Effect
+}
+
+type EffectBody struct {
+	DefaultValue string `json:"defaultValue"`
+}
+
+func (e *EffectBody) GetDefaultValue() string {
+	if e == nil {
+		return ""
+	}
+	return e.DefaultValue
 }
 
 type RuleSet struct {
@@ -48,7 +127,6 @@ type CountOperatorModel[T any] struct {
 var Fs = afero.NewOsFs()
 
 var rt string
-var action string
 
 func AzurePolicyToRego(policyPath string, dir string) error {
 	//policyPath := testPath
@@ -78,6 +156,7 @@ func AzurePolicyToRego(policyPath string, dir string) error {
 }
 
 func azPolicy2Rego(path string) error {
+	var action string
 	fmt.Printf("the path is %+v\n", path)
 
 	rule, err := ruleIterator(path)
@@ -86,27 +165,13 @@ func azPolicy2Rego(path string) error {
 		return err
 	}
 
-	effectParams := rule.Properties.Parameters["effect"].(map[string]interface{})
-	then := rule.Properties.PolicyRule["then"].(map[string]interface{})
-	if effect := then["effect"]; effect != nil {
-		effect = strings.ToLower(effect.(string))
-		if effect == deny {
-			action = deny
-		} else if effect == "[parameters('effect')]" {
-			defaultEffect := effectParams["defaultValue"].(string)
-			defaultEffect = strings.ToLower(defaultEffect)
-			if defaultEffect == deny {
-				action = deny
-			} else if defaultEffect == audit {
-				action = warn
-			} else if defaultEffect == disabled {
-				action = disabled
-			}
-		}
+	then := rule.Properties.PolicyRule.GetThen()
+	action, err = then.MapEffectToAction(rule.Properties.Parameters.GetEffect().GetDefaultValue())
+	if err != nil {
+		return err
 	}
 	fmt.Printf("the effect is %+v\n", action)
-	conditions := rule.Properties.PolicyRule["if"]
-	condition, err := conditionFinder(conditions.(map[string]interface{}))
+	condition, err := rule.Properties.PolicyRule.GetIf().condition()
 	if err != nil {
 		fmt.Printf("cannot find conditions %+v\n", err)
 		return err
@@ -145,62 +210,6 @@ func jsonFiles(dir string) ([]string, error) {
 	return res, nil
 }
 
-func (policyRule PolicyRuleModel) listKeyWords() ([]string, map[string]bool, error) {
-	var words []string
-	operatorSet := make(map[string]bool)
-	for k, v := range policyRule.PolicyRule {
-		words = append(words, k)
-		if k == "if" && reflect.TypeOf(v) == reflect.TypeOf(map[string]interface{}{}) {
-			result, error := findAllOperators(v.(map[string]interface{}))
-			//operatorSet = result
-			if error != nil {
-				fmt.Printf("cannot find operators %+v\n", error)
-				return nil, nil, error
-			}
-			for key, value := range result {
-				operatorSet[key] = value
-			}
-		}
-	}
-	return words, operatorSet, nil
-}
-
-func findAllOperators(entries map[string]interface{}) (map[string]bool, error) {
-	operatorSet := make(map[string]bool)
-	for k, v := range entries {
-		operatorSet[k] = true
-		if reflect.TypeOf(v) != reflect.TypeOf("") {
-			if reflect.TypeOf(v) == reflect.TypeOf([]interface{}{}) {
-				for _, value := range v.([]interface{}) {
-					if reflect.TypeOf(value) == reflect.TypeOf(map[string]interface{}{}) {
-						subSet, error := findAllOperators(value.(map[string]interface{}))
-						if error != nil {
-							fmt.Printf("cannot find operators %+v\n", error)
-							return nil, error
-						}
-						for key, value := range subSet {
-							operatorSet[key] = value
-						}
-					}
-				}
-				continue
-			}
-			if reflect.TypeOf(v) == reflect.TypeOf(map[string]interface{}{}) {
-				subSet, error := findAllOperators(v.(map[string]interface{}))
-				if error != nil {
-					fmt.Printf("cannot find operators %+v\n", error)
-					return nil, error
-				}
-				for key, value := range subSet {
-					operatorSet[key] = value
-				}
-				continue
-			}
-		}
-	}
-	return operatorSet, nil
-}
-
 func readJsonFilePaths(path string) ([]string, error) {
 	var filePaths []string
 
@@ -216,6 +225,7 @@ func readJsonFilePaths(path string) ([]string, error) {
 				return nil, err
 			}
 			filePaths = append(filePaths, subFilePaths...)
+			continue
 		}
 		if filepath.Ext(entry.Name()) != ".json" {
 			continue
@@ -249,8 +259,7 @@ func ruleIterator(path string) (*Rule, error) {
 // In this function, the input is a single condition or a set of conditions(allof, anyof)
 func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 	if conditions == nil {
-		err := errors.New("cannot find conditions")
-		return nil, err
+		return nil, errors.New("cannot find conditions")
 	}
 
 	var fieldName any

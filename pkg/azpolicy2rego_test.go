@@ -269,6 +269,18 @@ aaaaa(x) if {
 			},
 		},
 		{
+			desc:         "json files in grandson's folders",
+			inputDirPath: "/config",
+			mockFs: map[string]string{
+				"/config/deny1/deny1.json": deny_json,
+				"/config/deny2/deny2.json": deny_json,
+			},
+			expected: map[string]string{
+				"deny1.rego": expectedDenyRego,
+				"deny2.rego": expectedDenyRego,
+			},
+		},
+		{
 			desc:         "policy contains count operator",
 			inputDirPath: "",
 			mockFs: map[string]string{
@@ -318,4 +330,67 @@ func fakeFs(files map[string]string) afero.Fs {
 		_ = afero.WriteFile(fs, n, []byte(content), 0644)
 	}
 	return fs
+}
+
+func TestMapEffectToAction(t *testing.T) {
+	tests := []struct {
+		name          string
+		thenBody      *ThenBody
+		defaultEffect string
+		expected      string
+		expectError   bool
+	}{
+		{
+			name: "Effect is deny",
+			thenBody: &ThenBody{
+				Effect: "deny",
+			},
+			defaultEffect: "",
+			expected:      "deny",
+		},
+		{
+			name: "Effect is [parameters('effect')] and defaultEffect is deny",
+			thenBody: &ThenBody{
+				Effect: "[parameters('effect')]",
+			},
+			defaultEffect: "deny",
+			expected:      "deny",
+		},
+		{
+			name: "Effect is [parameters('effect')] and defaultEffect is audit",
+			thenBody: &ThenBody{
+				Effect: "[parameters('effect')]",
+			},
+			defaultEffect: "audit",
+			expected:      "warn",
+		},
+		{
+			name: "Effect is [parameters('effect')] and defaultEffect is disabled",
+			thenBody: &ThenBody{
+				Effect: "[parameters('effect')]",
+			},
+			defaultEffect: "disabled",
+			expected:      "disabled",
+		},
+		{
+			name: "Effect is empty and defaultEffect is deny",
+			thenBody: &ThenBody{
+				Effect: "",
+			},
+			defaultEffect: "deny",
+			expected:      "",
+			expectError:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := tt.thenBody.MapEffectToAction(tt.defaultEffect)
+			if tt.expectError {
+				assert.NotNil(t, err)
+				return
+			}
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }
