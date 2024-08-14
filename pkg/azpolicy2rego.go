@@ -19,7 +19,29 @@ type Rule struct {
 
 type PolicyRuleModel struct {
 	PolicyRule map[string]interface{}
-	Parameters map[string]interface{}
+	Parameters *PolicyRuleParameters
+}
+
+type PolicyRuleParameters struct {
+	Effect *EffectBody
+}
+
+func (p *PolicyRuleParameters) GetEffect() *EffectBody {
+	if p == nil {
+		return nil
+	}
+	return p.Effect
+}
+
+type EffectBody struct {
+	DefaultValue string `json:"defaultValue"`
+}
+
+func (e *EffectBody) GetDefaultValue() string {
+	if e == nil {
+		return ""
+	}
+	return e.DefaultValue
 }
 
 type RuleSet struct {
@@ -86,14 +108,13 @@ func azPolicy2Rego(path string) error {
 		return err
 	}
 
-	effectParams := rule.Properties.Parameters["effect"].(map[string]interface{})
 	then := rule.Properties.PolicyRule["then"].(map[string]interface{})
 	if effect := then["effect"]; effect != nil {
 		effect = strings.ToLower(effect.(string))
 		if effect == deny {
 			action = deny
 		} else if effect == "[parameters('effect')]" {
-			defaultEffect := effectParams["defaultValue"].(string)
+			defaultEffect := rule.Properties.Parameters.GetEffect().GetDefaultValue()
 			defaultEffect = strings.ToLower(defaultEffect)
 			if defaultEffect == deny {
 				action = deny
