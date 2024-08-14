@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -18,8 +17,38 @@ type Rule struct {
 }
 
 type PolicyRuleModel struct {
-	PolicyRule map[string]interface{}
+	PolicyRule *PolicyRuleBody
 	Parameters *PolicyRuleParameters
+}
+
+type PolicyRuleBody struct {
+	Then *ThenBody
+	If   map[string]any `json:"if,omitempty"`
+}
+
+func (p *PolicyRuleBody) GetThen() *ThenBody {
+	if p == nil {
+		return nil
+	}
+	return p.Then
+}
+
+func (p *PolicyRuleBody) GetIf() map[string]any {
+	if p == nil {
+		return nil
+	}
+	return p.If
+}
+
+type ThenBody struct {
+	Effect string `json:"effect,omitempty"`
+}
+
+func (t *ThenBody) GetEffect() string {
+	if t == nil {
+		return ""
+	}
+	return t.Effect
 }
 
 type PolicyRuleParameters struct {
@@ -108,9 +137,9 @@ func azPolicy2Rego(path string) error {
 		return err
 	}
 
-	then := rule.Properties.PolicyRule["then"].(map[string]interface{})
-	if effect := then["effect"]; effect != nil {
-		effect = strings.ToLower(effect.(string))
+	then := rule.Properties.PolicyRule.GetThen()
+	if effect := then.GetEffect(); effect != "" {
+		effect = strings.ToLower(effect)
 		if effect == deny {
 			action = deny
 		} else if effect == "[parameters('effect')]" {
@@ -126,8 +155,8 @@ func azPolicy2Rego(path string) error {
 		}
 	}
 	fmt.Printf("the effect is %+v\n", action)
-	conditions := rule.Properties.PolicyRule["if"]
-	condition, err := conditionFinder(conditions.(map[string]interface{}))
+	conditions := rule.Properties.PolicyRule.GetIf()
+	condition, err := conditionFinder(conditions)
 	if err != nil {
 		fmt.Printf("cannot find conditions %+v\n", err)
 		return err
@@ -164,62 +193,6 @@ func jsonFiles(dir string) ([]string, error) {
 		return nil, err
 	}
 	return res, nil
-}
-
-func (policyRule PolicyRuleModel) listKeyWords() ([]string, map[string]bool, error) {
-	var words []string
-	operatorSet := make(map[string]bool)
-	for k, v := range policyRule.PolicyRule {
-		words = append(words, k)
-		if k == "if" && reflect.TypeOf(v) == reflect.TypeOf(map[string]interface{}{}) {
-			result, error := findAllOperators(v.(map[string]interface{}))
-			//operatorSet = result
-			if error != nil {
-				fmt.Printf("cannot find operators %+v\n", error)
-				return nil, nil, error
-			}
-			for key, value := range result {
-				operatorSet[key] = value
-			}
-		}
-	}
-	return words, operatorSet, nil
-}
-
-func findAllOperators(entries map[string]interface{}) (map[string]bool, error) {
-	operatorSet := make(map[string]bool)
-	for k, v := range entries {
-		operatorSet[k] = true
-		if reflect.TypeOf(v) != reflect.TypeOf("") {
-			if reflect.TypeOf(v) == reflect.TypeOf([]interface{}{}) {
-				for _, value := range v.([]interface{}) {
-					if reflect.TypeOf(value) == reflect.TypeOf(map[string]interface{}{}) {
-						subSet, error := findAllOperators(value.(map[string]interface{}))
-						if error != nil {
-							fmt.Printf("cannot find operators %+v\n", error)
-							return nil, error
-						}
-						for key, value := range subSet {
-							operatorSet[key] = value
-						}
-					}
-				}
-				continue
-			}
-			if reflect.TypeOf(v) == reflect.TypeOf(map[string]interface{}{}) {
-				subSet, error := findAllOperators(v.(map[string]interface{}))
-				if error != nil {
-					fmt.Printf("cannot find operators %+v\n", error)
-					return nil, error
-				}
-				for key, value := range subSet {
-					operatorSet[key] = value
-				}
-				continue
-			}
-		}
-	}
-	return operatorSet, nil
 }
 
 func readJsonFilePaths(path string) ([]string, error) {
