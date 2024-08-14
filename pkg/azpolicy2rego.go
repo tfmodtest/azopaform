@@ -48,7 +48,6 @@ type CountOperatorModel[T any] struct {
 var Fs = afero.NewOsFs()
 
 var rt string
-var action string
 
 func AzurePolicyToRego(policyPath string, dir string) error {
 	//policyPath := testPath
@@ -78,6 +77,7 @@ func AzurePolicyToRego(policyPath string, dir string) error {
 }
 
 func azPolicy2Rego(path string) error {
+	var action string
 	fmt.Printf("the path is %+v\n", path)
 
 	rule, err := ruleIterator(path)
