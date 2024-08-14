@@ -727,89 +727,21 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 	return conditionNames, result, nil
 }
 
+var predicateFactory = map[string]Predicate{
+	"":        EmptyPredicate{},
+	equals:    EqualsPredicate{},
+	notEquals: NotEqualsPredicate{},
+	exists:    ExistsPredicate{},
+	like:      LikePredicate{},
+	notLike:   NotLikePredicate{},
+	where:     WherePredicate{},
+	in:        InPredicate{},
+	notIn:     NotInPredicate{},
+}
+
 func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
-	var result string
-	var rules string
-
-	//The same as "where" case below without operator name/value, without adding conditions suffix/prefix
-	if singleRule.Operator.Name == "" {
-		fieldName := singleRule.Field.(string)
-		if string(fieldName[len(fieldName)-3:]) == "[*]" {
-			fieldName, _, _ = FieldNameProcessor(fieldName[:len(fieldName)-3])
-		} else {
-			fieldName, _, _ = FieldNameProcessor(fieldName)
-		}
-		exp := count + "(" + fieldName + ")"
-		result = strings.Join([]string{result, exp}, "")
-	}
-	switch strings.ToLower(singleRule.Operator.Name) {
-	case equals:
-		//fmt.Printf("print this single rule field ! %+v\n", singleRule.Field)
-		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
-		//fmt.Printf("the conditions from the field processor is %s\n", condition)
-
-		//fieldName := singleRule.Field.(string)
-		result = strings.Join([]string{fieldName, "==", fmt.Sprint(singleRule.Operator.Value)}, " ")
-	case notEquals:
-		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
-		result = strings.Join([]string{fieldName, "!=", fmt.Sprint(singleRule.Operator.Value)}, " ")
-	case exists:
-		if strings.EqualFold(singleRule.Operator.Value.(string), "true") {
-			fieldName := singleRule.Field.(string)
-			result = fieldName
-		} else {
-			fieldName := singleRule.Field.(string)
-			result = strings.Join([]string{not, fieldName}, " ")
-		}
-	case like:
-		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
-		result = strings.Join([]string{regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
-	case notLike:
-		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
-		result = strings.Join([]string{not, " ", regexExp, "(", fmt.Sprint(singleRule.Operator.Value), ",", fieldName, ")"}, "")
-	case where:
-		//fmt.Printf("here is a where case %+v\n", singleRule)
-		var subNames []string
-		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
-		switch singleRule.Operator.Value.(type) {
-		case SingleRule:
-			//fmt.Printf("here is a singlerule case %+v\n", singleRule.Operator.Value)
-			operator := singleRule.Operator.Value.(SingleRule)
-			operatorSet := RuleSet{
-				Flag:        "allOf",
-				SingleRules: []SingleRule{operator},
-				RuleSets:    nil,
-			}
-			subsetNames, subRule, err := operatorSet.RuleSetReader("x")
-			if err != nil {
-				return "", "", err
-			}
-			subNames = subsetNames
-			rules = subRule
-		case RuleSet:
-			operator := singleRule.Operator.Value.(RuleSet)
-			subsetNames, subRule, err := operator.RuleSetReader(fieldName)
-			if err != nil {
-				return "", "", err
-			}
-			subNames = subsetNames
-			rules = subRule
-		}
-
-		//fmt.Printf("The rules are %+v\n", rules)
-		if string(fieldName[len(fieldName)-3:]) == "[*]" {
-			fieldName = fieldName[:len(fieldName)-3] + "[x]"
-		}
-		exp := count + "(" + "{" + "x" + "|" + fieldName + ";" + subNames[0] + "}" + ")"
-		result = exp
-	case in:
-		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
-		result = strings.Join([]string{"some", fieldName, "in", SliceConstructor(singleRule.Operator.Value)}, " ")
-	case notIn:
-		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
-		result = strings.Join([]string{"not", fieldName, "in", SliceConstructor(singleRule.Operator.Value)}, " ")
-	}
-	return result, rules, nil
+	predicate := predicateFactory[strings.ToLower(singleRule.Operator.Name)]
+	return predicate.Evaluate(singleRule)
 }
 
 func FieldNameProcessor(fieldName interface{}) (string, string, error) {
