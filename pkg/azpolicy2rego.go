@@ -26,6 +26,12 @@ type PolicyRuleBody struct {
 	If   map[string]any `json:"if,omitempty"`
 }
 
+type IfBody map[string]any
+
+func (i IfBody) condition() (*RuleSet, error) {
+	return conditionFinder(i)
+}
+
 func (p *PolicyRuleBody) GetThen() *ThenBody {
 	if p == nil {
 		return nil
@@ -33,7 +39,7 @@ func (p *PolicyRuleBody) GetThen() *ThenBody {
 	return p.Then
 }
 
-func (p *PolicyRuleBody) GetIf() map[string]any {
+func (p *PolicyRuleBody) GetIf() IfBody {
 	if p == nil {
 		return nil
 	}
@@ -49,6 +55,28 @@ func (t *ThenBody) GetEffect() string {
 		return ""
 	}
 	return t.Effect
+}
+
+func (t *ThenBody) MapEffectToAction(defaultEffect string) (string, error) {
+	effect := t.GetEffect()
+	if effect == "" {
+		return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
+	}
+	effect = strings.ToLower(effect)
+	if effect == deny {
+		return deny, nil
+	}
+	if effect != "[parameters('effect')]" {
+		return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
+	}
+	defaultEffect = strings.ToLower(defaultEffect)
+	if defaultEffect == audit {
+		return warn, nil
+	}
+	if defaultEffect == deny || defaultEffect == disabled {
+		return defaultEffect, nil
+	}
+	return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
 }
 
 type PolicyRuleParameters struct {
@@ -138,25 +166,12 @@ func azPolicy2Rego(path string) error {
 	}
 
 	then := rule.Properties.PolicyRule.GetThen()
-	if effect := then.GetEffect(); effect != "" {
-		effect = strings.ToLower(effect)
-		if effect == deny {
-			action = deny
-		} else if effect == "[parameters('effect')]" {
-			defaultEffect := rule.Properties.Parameters.GetEffect().GetDefaultValue()
-			defaultEffect = strings.ToLower(defaultEffect)
-			if defaultEffect == deny {
-				action = deny
-			} else if defaultEffect == audit {
-				action = warn
-			} else if defaultEffect == disabled {
-				action = disabled
-			}
-		}
+	action, err = then.MapEffectToAction(rule.Properties.Parameters.GetEffect().GetDefaultValue())
+	if err != nil {
+		return err
 	}
 	fmt.Printf("the effect is %+v\n", action)
-	conditions := rule.Properties.PolicyRule.GetIf()
-	condition, err := conditionFinder(conditions)
+	condition, err := rule.Properties.PolicyRule.GetIf().condition()
 	if err != nil {
 		fmt.Printf("cannot find conditions %+v\n", err)
 		return err
