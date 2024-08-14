@@ -269,6 +269,18 @@ aaaaa(x) if {
 			},
 		},
 		{
+			desc:         "json files in grandson's folders",
+			inputDirPath: "/config",
+			mockFs: map[string]string{
+				"/config/deny1/deny1.json": deny_json,
+				"/config/deny2/deny2.json": deny_json,
+			},
+			expected: map[string]string{
+				"deny1.rego": expectedDenyRego,
+				"deny2.rego": expectedDenyRego,
+			},
+		},
+		{
 			desc:         "policy contains count operator",
 			inputDirPath: "",
 			mockFs: map[string]string{

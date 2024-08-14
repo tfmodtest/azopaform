@@ -225,6 +225,7 @@ func readJsonFilePaths(path string) ([]string, error) {
 				return nil, err
 			}
 			filePaths = append(filePaths, subFilePaths...)
+			continue
 		}
 		if filepath.Ext(entry.Name()) != ".json" {
 			continue
@@ -258,8 +259,7 @@ func ruleIterator(path string) (*Rule, error) {
 // In this function, the input is a single condition or a set of conditions(allof, anyof)
 func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 	if conditions == nil {
-		err := errors.New("cannot find conditions")
-		return nil, err
+		return nil, errors.New("cannot find conditions")
 	}
 
 	var fieldName any
