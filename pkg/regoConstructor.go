@@ -665,6 +665,18 @@ func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string) ([]string, string
 							subsetResult = condition
 						}
 					}
+				case notIn:
+					fieldName, condition, _ := FieldNameProcessor(singleRule.Field)
+					fieldName = FieldNameReplacer(fieldName, fieldNameReplacer)
+					result = result + "\n"
+					result = strings.Join([]string{result, "not", fieldName, "in", SliceConstructor(singleRule.Operator.Value)}, " ")
+					if condition != "" {
+						if len(subsetResult) != 0 {
+							subsetResult = strings.Join([]string{subsetResult, condition}, "")
+						} else {
+							subsetResult = condition
+						}
+					}
 				}
 			}
 		}
@@ -793,6 +805,9 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 	case in:
 		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
 		result = strings.Join([]string{"some", fieldName, "in", SliceConstructor(singleRule.Operator.Value)}, " ")
+	case notIn:
+		fieldName, _, _ := FieldNameProcessor(singleRule.Field)
+		result = strings.Join([]string{"not", fieldName, "in", SliceConstructor(singleRule.Operator.Value)}, " ")
 	}
 	return result, rules, nil
 }
