@@ -747,12 +747,12 @@ func (singleRule SingleRule) SingleRuleReader() (string, string, error) {
 func FieldNameProcessor(fieldName interface{}) (string, string, error) {
 	var result string
 	var rules string
-	switch fieldName.(type) {
+	switch fn := fieldName.(type) {
 	case string:
-		if fieldName.(string) == typeOfResource {
-			return fieldName.(string), "", nil
+		if fn == typeOfResource {
+			return fn, "", nil
 		}
-		res, err := FieldNameParser(fieldName.(string), rt, "")
+		res, err := FieldNameParser(fn, rt, "")
 		if err != nil {
 			return "", "", err
 		}
@@ -818,6 +818,41 @@ func FieldNameReplacer(fieldName string, replacer string) string {
 	return fieldName
 }
 
+type LookupTable aztfq.LookupTable
+
+func (t LookupTable) QueryProperty(resourceType, apiVersion, propertyAddress string) ([]aztfq.TFResult, bool) {
+	m, ok := t.QueryResource(resourceType, apiVersion)
+	if !ok {
+		return nil, false
+	}
+	r, ok := m[propertyAddress]
+	return r, ok
+}
+
+func (t LookupTable) QueryResource(resourceType, apiVersion string) (map[string][]aztfq.TFResult, bool) {
+	l2, ok := t[resourceType]
+	if !ok {
+		return nil, false
+	}
+	l3, ok := l2[apiVersion]
+	if !ok {
+		return nil, false
+	}
+	return l3, true
+}
+
+var lookupTable = func() LookupTable {
+	b, err := os.ReadFile("output.json")
+	if err != nil {
+		panic(err.Error())
+	}
+	t, err := aztfq.BuildLookupTable(b, nil)
+	if err != nil {
+		panic(err.Error())
+	}
+	return LookupTable(t)
+}()
+
 func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error) {
 	if fieldNameRaw == typeOfResource {
 		return fieldNameRaw, nil
@@ -828,47 +863,12 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 	originalProp := prop
 	prop = "properties/" + prop
 	//fmt.Printf("the prop is %s\n", prop)
-	b, err := os.ReadFile("output.json")
-	if err != nil {
-		return "", err
+	upperRt := strings.ToUpper(resourceType)
+	if results, ok := lookupTable.QueryProperty(upperRt, version, prop); ok {
+		return results[0].PropertyAddr, nil
 	}
-	t, err := aztfq.BuildLookupTable(b, nil)
-	if err != nil {
-		return "", err
-	}
-	if tt, ok := t[strings.ToUpper(resourceType)]; ok {
-		//fmt.Printf("find the resource type.")
-		if ttt, ok := tt[version]; ok {
-			//fmt.Printf("find the version.")
-			if results, ok := ttt[prop]; ok {
-				//fmt.Printf("find the property.")
-				return results[0].PropertyAddr, nil
-			} else if results, ok := ttt[originalProp]; ok {
-				return results[0].PropertyAddr, nil
-				//} else {
-				//	for key, propName := range ttt {
-				//		//fmt.Printf("the prop is %s\n", prop)
-				//		//fmt.Printf("the property name addr is %s\n", propName[0].PropertyAddr)
-				//		ok, err := regexp.MatchString(prop, key)
-				//		if err != nil {
-				//			return "", fmt.Errorf("cannot match the property %s with %s", propName[0].PropertyAddr, prop)
-				//		}
-				//		if ok {
-				//			fmt.Printf("the found propaddr is %s\n", propName[0].PropertyAddr)
-				//			attrs := strings.Split(prop, "/")
-				//			stopAttr := attrs[len(attrs)-1]
-				//			if stopAttr[len(stopAttr)-1] == 's' {
-				//				stopAttr = stopAttr[:len(stopAttr)-1]
-				//			}
-				//			fmt.Printf("the stop word is %s\n", stopAttr)
-				//			if before, _, found := strings.Cut(propName[0].PropertyAddr, stopAttr); found {
-				//				return before + stopAttr, nil
-				//			}
-				//			return "", fmt.Errorf("cannot find the path of the property %s in the full path", prop)
-				//		}
-				//	}
-			}
-		}
+	if results, ok := lookupTable.QueryProperty(upperRt, version, originalProp); ok {
+		return results[0].PropertyAddr, nil
 	}
 
 	fmt.Printf("cannot find the property %s in the lookup table\n", prop)
@@ -876,31 +876,23 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 }
 
 func ResourceTypeParser(resourceType string) (string, error) {
-	b, err := os.ReadFile("output.json")
-	if err != nil {
-		return "", err
+	upperRt := strings.ToUpper(resourceType)
+	ttt, ok := lookupTable.QueryResource(upperRt, "")
+	if !ok || len(ttt) == 0 {
+		return "", fmt.Errorf("cannot find the resource type %s in the lookup table", resourceType)
 	}
-	t, err := aztfq.BuildLookupTable(b, nil)
-	if err != nil {
-		return "", err
+	var result string
+	for _, v := range ttt {
+		result = v[0].ResourceType
+		break
 	}
-	if tt, ok := t[strings.ToUpper(resourceType)]; ok {
-		if ttt, ok := tt[""]; ok {
-			for _, v := range ttt {
-				result := v[0].ResourceType
-				// The `azurerm_app_service_plan` resource has been superseded by the `azurerm_service_plan` resource.
-				if result == "azurerm_app_service_plan" {
-					result = "azurerm_service_plan"
-				}
-				if result == "azurerm_app_service_environment" {
-					result = "azurerm_app_service_environment_v3"
-				}
-				return result, nil
-			}
-		}
+	// The `azurerm_app_service_plan` resource has been superseded by the `azurerm_service_plan` resource.
+	if result == "azurerm_app_service_plan" {
+		result = "azurerm_service_plan"
+	} else if result == "azurerm_app_service_environment" {
+		result = "azurerm_app_service_environment_v3"
 	}
-
-	return "", fmt.Errorf("cannot find the resource type %s in the lookup table", resourceType)
+	return result, nil
 }
 
 func TFNameMapping(fieldName string) string {
@@ -910,11 +902,11 @@ func TFNameMapping(fieldName string) string {
 		if v == "" {
 			continue
 		}
+		next := result + "[" + v + "]"
 		if _, err := strconv.Atoi(v); err != nil {
-			result = result + "." + v
-		} else {
-			result = result + "[" + v + "]"
+			next = result + "." + v
 		}
+		result = next
 	}
 	result = "r.change.after" + result
 
