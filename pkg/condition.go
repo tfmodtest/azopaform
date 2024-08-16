@@ -165,7 +165,7 @@ func (i InOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{"some", fieldName, "in", SliceConstructor(fieldName)}, " "), nil
+	return strings.Join([]string{"some", fieldName, "in", SliceConstructor(i.Values)}, " "), nil
 }
 
 var _ Rego = NotInOperation{}
@@ -180,7 +180,7 @@ func (n NotInOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{"not", fieldName, "in", SliceConstructor(fieldName)}, " "), nil
+	return strings.Join([]string{"not", fieldName, "in", SliceConstructor(n.Values)}, " "), nil
 }
 
 var _ Rego = ContainsKeyOperation{}
