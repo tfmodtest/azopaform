@@ -27,6 +27,135 @@ type operation struct {
 	Subject Rego
 }
 
+var operationFactory = map[string]func(Rego, any) Rego{
+	"equals": func(s Rego, input any) Rego {
+		return EqualsOperation{
+			operation: operation{Subject: s},
+			Value:     input.(string),
+		}
+	},
+	"notEquals": func(s Rego, input any) Rego {
+		return NotEqualsOperation{
+			operation: operation{Subject: s},
+			Value:     input.(string),
+		}
+	},
+	"like": func(s Rego, input any) Rego {
+		return LikeOperation{
+			operation: operation{Subject: s},
+			Value:     input.(string),
+		}
+	},
+	"notLike": func(s Rego, input any) Rego {
+		return NotLikeOperation{
+			operation: operation{Subject: s},
+			Value:     input.(string),
+		}
+	},
+	"match": func(s Rego, input any) Rego {
+		return MatchOperation{
+			operation: operation{Subject: s},
+			Value:     input.(string),
+		}
+	},
+	"matchInsensitively": func(s Rego, input any) Rego {
+		return MatchInsensitivelyOperation{
+			operation: operation{Subject: s},
+			Value:     input.(string),
+		}
+	},
+	"notMatch": func(s Rego, input any) Rego {
+		return NotMatchOperation{
+			operation: operation{Subject: s},
+			Value:     input.(string),
+		}
+	},
+	"notMatchInsensitively": func(s Rego, input any) Rego {
+		return NotMatchInsensitivelyOperation{
+			operation: operation{Subject: s},
+			Value:     input.(string),
+		}
+	},
+	"contains": func(s Rego, input any) Rego {
+		return ContainsOperation{
+			operation: operation{Subject: s},
+			Value:     input.(string),
+		}
+	},
+	"notContains": func(s Rego, input any) Rego {
+		return NotContainsOperation{
+			operation: operation{Subject: s},
+			Value:     input.(string),
+		}
+	},
+	"in": func(s Rego, input any) Rego {
+		return InOperation{
+			operation: operation{Subject: s},
+			Values: func() []string {
+				var v []string
+				for _, i := range input.([]any) {
+					v = append(v, i.(string))
+				}
+				return v
+			}(),
+		}
+	},
+	"notIn": func(s Rego, input any) Rego {
+		return NotInOperation{
+			operation: operation{Subject: s},
+			Values: func() []string {
+				var v []string
+				for _, i := range input.([]any) {
+					v = append(v, i.(string))
+				}
+				return v
+			}(),
+		}
+	},
+	"containsKey": func(s Rego, input any) Rego {
+		return ContainsKeyOperation{
+			operation: operation{Subject: s},
+			KeyName:   input.(string),
+		}
+	},
+	"notContainsKey": func(s Rego, input any) Rego {
+		return NotContainsKeyOperation{
+			operation: operation{Subject: s},
+			KeyName:   input.(string),
+		}
+	},
+	"less": func(s Rego, input any) Rego {
+		return LessOperation{
+			operation: operation{Subject: s},
+			Value:     input,
+		}
+	},
+	"lessOrEquals": func(s Rego, input any) Rego {
+		return LessOrEqualsOperation{
+			operation: operation{Subject: s},
+			Value:     input,
+		}
+	},
+	"greater": func(s Rego, input any) Rego {
+		return GreaterOperation{
+			operation: operation{Subject: s},
+			Value:     input,
+		}
+	},
+	"greaterOrEquals": func(s Rego, input any) Rego {
+		return GreaterOrEqualsOperation{
+			operation: operation{Subject: s},
+			Value:     input,
+		}
+	},
+	"exists": func(s Rego, input any) Rego {
+		return ExistsOperation{
+			operation: operation{Subject: s},
+			Value:     input.(bool),
+		}
+	},
+}
+
 var _ Rego = EqualsOperation{}
 
 type EqualsOperation struct {

@@ -41,7 +41,34 @@ func NewPolicyRuleModel(input map[string]any) *PolicyRuleModel {
 }
 
 func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
-	panic("implement me")
+	ifBody := input["if"]
+	if ifLogicalOperator, ok := ifBody.([]any); ok {
+		panic(fmt.Sprintf("not impleemented yet: %v", ifLogicalOperator))
+	}
+	conditionMap := ifBody.(map[string]any)
+	var subject Rego
+	var creator func(subject Rego, input any) Rego
+	var cv any
+	for key, conditionValue := range conditionMap {
+		if key == field {
+			subject = OperationField(conditionValue.(string))
+			continue
+		}
+		if key == value {
+			subject = OperationValue(conditionValue.(string))
+			continue
+		}
+		factory, ok := operationFactory[key]
+		if !ok {
+			panic(fmt.Sprintf("unknown condition: %s", key))
+		}
+		creator = factory
+		cv = conditionValue
+	}
+	return &PolicyRuleBody{
+		Then:   nil,
+		IfBody: creator(subject, cv),
+	}
 }
 
 func NewPolicyRuleMetaData(input map[string]any) *PolicyRuleMetaData {
@@ -68,8 +95,9 @@ type PolicyRuleModel struct {
 }
 
 type PolicyRuleBody struct {
-	Then *ThenBody
-	If   map[string]any `json:"if,omitempty"`
+	Then   *ThenBody
+	If     map[string]any `json:"if,omitempty"`
+	IfBody Rego
 }
 
 type IfBody map[string]any
