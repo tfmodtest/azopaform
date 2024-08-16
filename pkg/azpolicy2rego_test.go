@@ -313,7 +313,7 @@ aaaaa(x) if {
 					policyPath = n
 				}
 			}
-			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath))
+			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, NewContext()))
 			for n, expected := range c.expected {
 				content, err := afero.ReadFile(mockFs, n)
 				require.NoError(t, err)

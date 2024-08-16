@@ -1,24 +1,70 @@
 package pkg
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/emirpasic/gods/stacks/arraystack"
 	"path/filepath"
 	"strings"
 
+	"github.com/emirpasic/gods/stacks"
 	"github.com/spf13/afero"
 )
 
 type Rule struct {
-	Properties PolicyRuleModel
+	Properties *PolicyRuleModel
 	Id         string
 	Name       string
 }
 
+func NewRule(input map[string]any) *Rule {
+	return &Rule{
+		Id:         input["id"].(string),
+		Name:       input["name"].(string),
+		Properties: NewPolicyRuleModel(input["properties"].(map[string]any)),
+	}
+}
+
+func NewPolicyRuleModel(input map[string]any) *PolicyRuleModel {
+	return &PolicyRuleModel{
+		DisplayName: input["displayName"].(string),
+		PolicyType:  input["policyType"].(string),
+		Mode:        input["mode"].(string),
+		Description: input["description"].(string),
+		Version:     input["version"].(string),
+		Metadata:    NewPolicyRuleMetaData(input["metadata"].(map[string]any)),
+		PolicyRule:  NewPolicyRuleBody(input["policyRule"].(map[string]any)),
+		Parameters:  NewPolicyRuleParameters(input["parameters"].(map[string]any)),
+	}
+}
+
+func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
+	panic("implement me")
+}
+
+func NewPolicyRuleMetaData(input map[string]any) *PolicyRuleMetaData {
+	return &PolicyRuleMetaData{
+		Version:  input["version"].(string),
+		Category: input["category"].(string),
+	}
+}
+
+type PolicyRuleMetaData struct {
+	Version  string
+	Category string
+}
+
 type PolicyRuleModel struct {
-	PolicyRule *PolicyRuleBody
-	Parameters *PolicyRuleParameters
+	PolicyRule  *PolicyRuleBody
+	Parameters  *PolicyRuleParameters
+	DisplayName string
+	PolicyType  string
+	Mode        string
+	Description string
+	Version     string
+	Metadata    *PolicyRuleMetaData
 }
 
 type PolicyRuleBody struct {
@@ -28,8 +74,8 @@ type PolicyRuleBody struct {
 
 type IfBody map[string]any
 
-func (i IfBody) condition() (*RuleSet, error) {
-	return conditionFinder(i)
+func (i IfBody) condition(ctx context.Context) (*RuleSet, error) {
+	return conditionFinder(i, ctx)
 }
 
 func (p *PolicyRuleBody) GetThen() *ThenBody {
@@ -79,8 +125,76 @@ func (t *ThenBody) MapEffectToAction(defaultEffect string) (string, error) {
 	return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
 }
 
+type PolicyRuleParameterType string
+
+const (
+	PolicyRuleParameterTypeString   PolicyRuleParameterType = "string"
+	PolicyRuleParameterTypeArray    PolicyRuleParameterType = "array"
+	PolicyRuleParameterTypeObject   PolicyRuleParameterType = "object"
+	PolicyRuleParameterTypeBool     PolicyRuleParameterType = "boolean"
+	PolicyRuleParameterTypeInteger  PolicyRuleParameterType = "integer"
+	PolicyRuleParameterTypeFloat    PolicyRuleParameterType = "float"
+	PolicyRuleParameterTypeDateTime PolicyRuleParameterType = "dateTime"
+)
+
+type PolicyRuleParameterMetaData struct {
+	Description string
+	DisplayName string
+	Deprecated  bool
+}
+
+func NewPolicyRuleParameterMetaData(input map[string]any) *PolicyRuleParameterMetaData {
+	if input == nil {
+		return nil
+	}
+	return &PolicyRuleParameterMetaData{
+		Deprecated:  input["deprecated"].(bool),
+		Description: input["description"].(string),
+	}
+}
+
+type PolicyRuleParameter struct {
+	Name         string
+	Type         PolicyRuleParameterType
+	DefaultValue any
+	MetaData     *PolicyRuleParameterMetaData
+}
+
+func NewPolicyRuleParameter(input map[string]any) *PolicyRuleParameter {
+	if input == nil {
+		return nil
+	}
+	r := &PolicyRuleParameter{
+		Name:         input["name"].(string),
+		Type:         input["type"].(PolicyRuleParameterType),
+		DefaultValue: input["defaultValue"],
+	}
+	if metaData, ok := input["metadata"].(map[string]any); ok {
+		r.MetaData = NewPolicyRuleParameterMetaData(metaData)
+	}
+	return r
+}
+
 type PolicyRuleParameters struct {
-	Effect *EffectBody
+	Effect     *EffectBody
+	Parameters map[string]*PolicyRuleParameter
+}
+
+func NewPolicyRuleParameters(input map[string]any) *PolicyRuleParameters {
+	if input == nil {
+		return nil
+	}
+	parameters := make(map[string]*PolicyRuleParameter)
+	for k, v := range input {
+		i, ok := v.(map[string]any)
+		if !ok {
+			continue
+		}
+		parameters[k] = NewPolicyRuleParameter(i)
+	}
+	return &PolicyRuleParameters{
+		Parameters: parameters,
+	}
 }
 
 func (p *PolicyRuleParameters) GetEffect() *EffectBody {
@@ -126,9 +240,7 @@ type CountOperatorModel[T any] struct {
 
 var Fs = afero.NewOsFs()
 
-var rt string
-
-func AzurePolicyToRego(policyPath string, dir string) error {
+func AzurePolicyToRego(policyPath string, dir string, ctx context.Context) error {
 	//policyPath := testPath
 	var paths []string
 	var err error
@@ -147,7 +259,7 @@ func AzurePolicyToRego(policyPath string, dir string) error {
 		paths = []string{policyPath}
 	}
 	for _, path := range paths {
-		err = azPolicy2Rego(path)
+		err = azPolicy2Rego(path, ctx)
 		if err != nil {
 			return err
 		}
@@ -155,7 +267,12 @@ func AzurePolicyToRego(policyPath string, dir string) error {
 	return nil
 }
 
-func azPolicy2Rego(path string) error {
+func NewContext() context.Context {
+	ctx := context.WithValue(context.Background(), "resourceType", arraystack.New())
+	return ctx
+}
+
+func azPolicy2Rego(path string, ctx context.Context) error {
 	var action string
 	fmt.Printf("the path is %+v\n", path)
 
@@ -171,15 +288,19 @@ func azPolicy2Rego(path string) error {
 		return err
 	}
 	fmt.Printf("the effect is %+v\n", action)
-	condition, err := rule.Properties.PolicyRule.GetIf().condition()
+	condition, err := rule.Properties.PolicyRule.GetIf().condition(ctx)
 	if err != nil {
 		fmt.Printf("cannot find conditions %+v\n", err)
+		return err
+	}
+	rt, err := currentResourceType(ctx)
+	if err != nil {
 		return err
 	}
 	fmt.Printf("the resource type is %+v\n", rt)
 	fmt.Printf("the whole condition is %+v\n", *condition)
 	fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
-	conditionNames, result, err := condition.RuleSetReader("")
+	conditionNames, result, err := condition.RuleSetReader("", ctx)
 	fmt.Printf("the condition names are %+v\n", conditionNames)
 	if action == disabled {
 		result = "default allow := true\n\n" + result
@@ -199,6 +320,32 @@ func azPolicy2Rego(path string) error {
 		return err
 	}
 	return nil
+}
+
+func currentResourceType(ctx context.Context) (string, error) {
+	resourceTypeStack := ctx.Value("resourceType").(stacks.Stack)
+	if resourceTypeStack == nil {
+		return "", fmt.Errorf("cannot find the resource type in the context")
+	}
+	resourceType, ok := resourceTypeStack.Peek()
+	if !ok {
+		return "", fmt.Errorf("cannot find the resource type in the context")
+	}
+	rt, ok := resourceType.(string)
+	if !ok {
+		return "", fmt.Errorf("cannot convert the resource type to string")
+	}
+	return rt, nil
+}
+
+func pushResourceType(ctx context.Context, rt string) {
+	resourceTypeStack := ctx.Value("resourceType").(stacks.Stack)
+	resourceTypeStack.Push(rt)
+}
+
+func popResourceType(ctx context.Context) {
+	resourceTypeStack := ctx.Value("resourceType").(stacks.Stack)
+	resourceTypeStack.Pop()
 }
 
 func jsonFiles(dir string) ([]string, error) {
@@ -252,12 +399,14 @@ func ruleIterator(path string) (*Rule, error) {
 		fmt.Printf("unable to unmarshal json %+v\n\n", err)
 		return nil, err
 	}
+	m := make(map[string]any)
+	json.Unmarshal(data, &m)
 
 	return &rule, nil
 }
 
 // In this function, the input is a single condition or a set of conditions(allof, anyof)
-func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
+func conditionFinder(conditions map[string]interface{}, ctx context.Context) (*RuleSet, error) {
 	if conditions == nil {
 		return nil, errors.New("cannot find conditions")
 	}
@@ -284,7 +433,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 		case allOf:
 			allOfConditions := v.([]interface{})
 			for _, condition := range allOfConditions {
-				rule, err := conditionFinder(condition.(map[string]interface{}))
+				rule, err := conditionFinder(condition.(map[string]interface{}), ctx)
 				if err != nil {
 					fmt.Printf("cannot find AND conditions %+v\n", err)
 					return nil, err
@@ -299,7 +448,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 		case anyOf:
 			anyOfConditions := v.([]interface{})
 			for _, condition := range anyOfConditions {
-				rule, err := conditionFinder(condition.(map[string]interface{}))
+				rule, err := conditionFinder(condition.(map[string]interface{}), ctx)
 				if err != nil {
 					fmt.Printf("cannot find OR conditions %+v\n", err)
 					return nil, err
@@ -313,7 +462,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 			return &orRules, nil
 		case not:
 			notCondition := v.(map[string]interface{})
-			rule, err := conditionFinder(notCondition)
+			rule, err := conditionFinder(notCondition, ctx)
 			if err != nil {
 				fmt.Printf("cannot find NOT conditions %+v\n", err)
 				return nil, err
@@ -326,7 +475,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 		case where:
 			whereConditions := v.(map[string]interface{})
 			//fmt.Printf("the where conditions are %+v\n", whereConditions)
-			rule, err := conditionFinder(whereConditions)
+			rule, err := conditionFinder(whereConditions, ctx)
 			if err != nil {
 				fmt.Printf("cannot find WHERE conditions %+v\n", err)
 				return nil, err
@@ -341,7 +490,7 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 			operatorValue = whereRules
 		case count:
 			countConditions := v.(map[string]interface{})
-			rule, err := conditionFinder(countConditions)
+			rule, err := conditionFinder(countConditions, ctx)
 			if err != nil {
 				fmt.Printf("cannot find COUNT conditions %+v\n", err)
 				return nil, err
@@ -374,7 +523,8 @@ func conditionFinder(conditions map[string]interface{}) (*RuleSet, error) {
 	if fieldName == typeOfResource {
 		switch operatorValue.(type) {
 		case string:
-			rt = operatorValue.(string)
+			rt := operatorValue.(string)
+			pushResourceType(ctx, rt)
 			v, err := ResourceTypeParser(rt)
 			if err != nil {
 				fmt.Printf("cannot find resource type %+v\n", err)

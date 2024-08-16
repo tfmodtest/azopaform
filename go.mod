@@ -1,8 +1,11 @@
 module json-rule-finder
 
-go 1.20
+go 1.21
+
+toolchain go1.22.6
 
 require (
+	github.com/emirpasic/gods v1.18.1
 	github.com/magodo/aztfq v0.0.0-20240708071155-2f711bf87077
 	github.com/prashantv/gostub v1.1.0
 	github.com/spf13/afero v1.11.0
@@ -18,7 +21,6 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
 	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.4.1 // indirect
