@@ -27,10 +27,18 @@ type operation struct {
 	Subject Rego
 }
 
-var operationFactory = map[string]func(Rego, any) Rego{
-	"equals": func(s Rego, input any) Rego {
+var conditionFactory = map[string]func(Rego, any) Rego{
+	"anyOf": func(s Rego, input any) Rego {
+		return AnyOf(input.([]Rego))
+	},
+	"not": func(s Rego, input any) Rego {
+		return NotOperator{
+			Body: input.(Rego),
+		}
+	},
+	"equals": func(subject Rego, input any) Rego {
 		return EqualsOperation{
-			operation: operation{Subject: s},
+			operation: operation{Subject: subject},
 			Value:     input.(string),
 		}
 	},

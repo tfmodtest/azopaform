@@ -58,7 +58,7 @@ func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
 			subject = OperationValue(conditionValue.(string))
 			continue
 		}
-		factory, ok := operationFactory[key]
+		factory, ok := conditionFactory[key]
 		if !ok {
 			panic(fmt.Sprintf("unknown condition: %s", key))
 		}
