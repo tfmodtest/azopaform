@@ -42,14 +42,23 @@ func NewPolicyRuleModel(input map[string]any) *PolicyRuleModel {
 
 func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
 	ifBody := input["if"]
-	if ifLogicalOperator, ok := ifBody.([]any); ok {
-		panic(fmt.Sprintf("not impleemented yet: %v", ifLogicalOperator))
-	}
+
 	conditionMap := ifBody.(map[string]any)
 	var subject Rego
 	var creator func(subject Rego, input any) Rego
 	var cv any
 	for key, conditionValue := range conditionMap {
+		if key == allOf {
+			operationFactory, ok := operatorFactories[key]
+			if !ok {
+				panic(fmt.Sprintf("unknown operation: %s", key))
+			}
+			conditionSet := operationFactory(conditionValue)
+			return &PolicyRuleBody{
+				Then:   nil,
+				IfBody: conditionSet,
+			}
+		}
 		if key == field {
 			subject = OperationField(conditionValue.(string))
 			continue

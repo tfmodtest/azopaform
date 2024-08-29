@@ -1,11 +1,13 @@
 package pkg
 
-import "context"
+import (
+	"context"
+)
 
 var operatorFactories = make(map[string]func(input any) Rego)
 
 func init() {
-	operatorFactories["allOf"] = func(input any) Rego {
+	operatorFactories[allOf] = func(input any) Rego {
 		items := input.([]any)
 		var body []Rego
 		for _, item := range items {
@@ -61,8 +63,15 @@ var _ Rego = &AllOf{}
 type AllOf []Rego
 
 func (a AllOf) Rego(ctx context.Context) (string, error) {
-	//TODO implement me
-	panic("implement me")
+	var res string
+	for _, item := range a {
+		condition, err := item.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		res += condition
+	}
+	return res, nil
 }
 
 var _ Rego = &AnyOf{}

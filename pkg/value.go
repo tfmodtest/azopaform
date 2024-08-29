@@ -4,7 +4,7 @@ import "context"
 
 var subjectFactories = map[string]func(input any) Rego{
 	"field": func(input any) Rego {
-		return &FieldValue{
+		return FieldValue{
 			Name: input.(string),
 		}
 	},

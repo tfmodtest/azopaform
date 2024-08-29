@@ -200,6 +200,41 @@ func TestNewPolicyRuleBody(t *testing.T) {
 		expected *PolicyRuleBody
 	}{
 		{
+			name: "AllOfOperation",
+			input: map[string]any{
+				"allof": []any{
+					map[string]any{
+						"field":  "type",
+						"equals": "Microsoft.HealthcareApis/services",
+					},
+					map[string]any{
+						"field":  "Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri",
+						"exists": false,
+					},
+				},
+			},
+			expected: &PolicyRuleBody{
+				IfBody: AllOf{
+					EqualsOperation{
+						operation: operation{
+							Subject: FieldValue{
+								Name: "type",
+							},
+						},
+						Value: "Microsoft.HealthcareApis/services",
+					},
+					ExistsOperation{
+						operation: operation{
+							Subject: FieldValue{
+								Name: "Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri",
+							},
+						},
+						Value: false,
+					},
+				},
+			},
+		},
+		{
 			name: "EqualsOperation",
 			input: map[string]any{
 				"field":  "type",
