@@ -200,6 +200,41 @@ func TestNewPolicyRuleBody(t *testing.T) {
 		expected *PolicyRuleBody
 	}{
 		{
+			name: "AnyOfOperation",
+			input: map[string]any{
+				"anyof": []any{
+					map[string]any{
+						"field":  "Microsoft.Sql/servers/minimalTlsVersion",
+						"exists": false,
+					},
+					map[string]any{
+						"field": "Microsoft.Sql/servers/minimalTlsVersion",
+						"less":  "1.2",
+					},
+				},
+			},
+			expected: &PolicyRuleBody{
+				IfBody: AnyOf{
+					ExistsOperation{
+						operation: operation{
+							Subject: FieldValue{
+								Name: "Microsoft.Sql/servers/minimalTlsVersion",
+							},
+						},
+						Value: false,
+					},
+					LessOperation{
+						operation: operation{
+							Subject: FieldValue{
+								Name: "Microsoft.Sql/servers/minimalTlsVersion",
+							},
+						},
+						Value: "1.2",
+					},
+				},
+			},
+		},
+		{
 			name: "AllOfOperation",
 			input: map[string]any{
 				"allof": []any{
