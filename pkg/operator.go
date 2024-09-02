@@ -85,6 +85,29 @@ func init() {
 		}
 		return AnyOf(body)
 	}
+	operatorFactories[not] = func(input any) Rego {
+		itemMap := input.(map[string]any)
+		var cf func(Rego, any) Rego
+		var conditionKey string
+		var subjectKey string
+		for k, _ := range itemMap {
+			if f, ok := conditionFactory[k]; ok {
+				cf = f
+				conditionKey = k
+				continue
+			}
+		}
+		for k, _ := range itemMap {
+			if k == conditionKey {
+				continue
+			}
+			subjectKey = k
+		}
+		subject := subjectFactories[subjectKey](itemMap[subjectKey])
+		return NotOperator{
+			Body: cf(subject, itemMap[conditionKey]),
+		}
+	}
 }
 
 var _ Rego = &NotOperator{}
@@ -108,7 +131,10 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		res += condition
+		if res != "" {
+			res = res + "\n"
+		}
+		res = res + condition
 	}
 	return res, nil
 }

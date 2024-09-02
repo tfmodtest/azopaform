@@ -28,14 +28,14 @@ type operation struct {
 }
 
 var conditionFactory = map[string]func(Rego, any) Rego{
-	"anyOf": func(s Rego, input any) Rego {
-		return AnyOf(input.([]Rego))
-	},
-	"not": func(s Rego, input any) Rego {
-		return NotOperator{
-			Body: input.(Rego),
-		}
-	},
+	//"anyOf": func(s Rego, input any) Rego {
+	//	return AnyOf(input.([]Rego))
+	//},
+	//"not": func(s Rego, input any) Rego {
+	//	return NotOperator{
+	//		Body: input.(Rego),
+	//	}
+	//},
 	"equals": func(subject Rego, input any) Rego {
 		return EqualsOperation{
 			operation: operation{Subject: subject},
@@ -275,8 +275,13 @@ type ContainsOperation struct {
 	Value string
 }
 
-func (c ContainsOperation) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`contains` condition is not supported, yet")
+func (c ContainsOperation) Rego(ctx context.Context) (string, error) {
+	fieldName, err := c.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join([]string{regexExp, "(", "\"", ".*", fmt.Sprint(c.Value), ".*", "\"", ",", fieldName, ")"}, ""), nil
+
 }
 
 var _ Rego = NotContainsOperation{}
@@ -349,8 +354,12 @@ type LessOperation struct {
 	Value any
 }
 
-func (l LessOperation) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`less` condition is not supported, yet")
+func (l LessOperation) Rego(ctx context.Context) (string, error) {
+	fieldName, err := l.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join([]string{fieldName, "<", fmt.Sprint(l.Value)}, " "), nil
 }
 
 var _ Rego = LessOrEqualsOperation{}
@@ -360,8 +369,12 @@ type LessOrEqualsOperation struct {
 	Value any
 }
 
-func (l LessOrEqualsOperation) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`lessOrEquals` condition is not supported, yet")
+func (l LessOrEqualsOperation) Rego(ctx context.Context) (string, error) {
+	fieldName, err := l.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join([]string{fieldName, "<=", fmt.Sprint(l.Value)}, " "), nil
 }
 
 var _ Rego = GreaterOperation{}
@@ -371,8 +384,12 @@ type GreaterOperation struct {
 	Value any
 }
 
-func (g GreaterOperation) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`greater` condition is not supported, yet")
+func (g GreaterOperation) Rego(ctx context.Context) (string, error) {
+	fieldName, err := g.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join([]string{fieldName, ">", fmt.Sprint(g.Value)}, " "), nil
 }
 
 var _ Rego = GreaterOrEqualsOperation{}
@@ -382,8 +399,12 @@ type GreaterOrEqualsOperation struct {
 	Value any
 }
 
-func (g GreaterOrEqualsOperation) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`greaterOrEquals` condition is not supported, yet")
+func (g GreaterOrEqualsOperation) Rego(ctx context.Context) (string, error) {
+	fieldName, err := g.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join([]string{fieldName, ">=", fmt.Sprint(g.Value)}, " "), nil
 }
 
 var _ Rego = ExistsOperation{}
@@ -393,6 +414,14 @@ type ExistsOperation struct {
 	Value bool
 }
 
-func (e ExistsOperation) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`exists` condition is not supported, yet")
+func (e ExistsOperation) Rego(ctx context.Context) (string, error) {
+	fieldName, err := e.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	if e.Value {
+		return fieldName, nil
+	} else {
+		return strings.Join([]string{not, fieldName}, " "), nil
+	}
 }

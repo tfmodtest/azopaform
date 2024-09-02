@@ -121,6 +121,24 @@ func TestOperations(t *testing.T) {
 		expected  string
 	}{
 		{
+			name: "AllOfOperator",
+			operation: AllOf{
+				EqualsOperation{
+					operation: operation{
+						Subject: OperationField("type"),
+					},
+					Value: "Microsoft.HealthcareApis/services",
+				},
+				ExistsOperation{
+					operation: operation{
+						Subject: OperationField("Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri"),
+					},
+					Value: true,
+				},
+			},
+			expected: "type == Microsoft.HealthcareApis/services\nr.change.after.properties.Microsoft.HealthcareApis.services.cosmosDbConfiguration.keyVaultKeyUri",
+		},
+		{
 			name: "EqualsOperation",
 			operation: EqualsOperation{
 				operation: operation{
@@ -199,6 +217,27 @@ func TestNewPolicyRuleBody(t *testing.T) {
 		input    map[string]any
 		expected *PolicyRuleBody
 	}{
+		{
+			name: "NotOperation",
+			input: map[string]any{
+				"not": map[string]any{
+					"field":     "Microsoft.HealthcareApis/services/corsConfiguration.origins[*]",
+					"notEquals": "*",
+				},
+			},
+			expected: &PolicyRuleBody{
+				IfBody: NotOperator{
+					Body: NotEqualsOperation{
+						operation: operation{
+							Subject: FieldValue{
+								Name: "Microsoft.HealthcareApis/services/corsConfiguration.origins[*]",
+							},
+						},
+						Value: "*",
+					},
+				},
+			},
+		},
 		{
 			name: "AnyOfOperation",
 			input: map[string]any{

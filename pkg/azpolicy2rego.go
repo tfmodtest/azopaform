@@ -70,6 +70,17 @@ func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
 				IfBody: conditionSet,
 			}
 		}
+		if key == not {
+			operationFactory, ok := operatorFactories[key]
+			if !ok {
+				panic(fmt.Sprintf("unknown operation: %s", key))
+			}
+			conditionSet := operationFactory(conditionValue)
+			return &PolicyRuleBody{
+				Then:   nil,
+				IfBody: conditionSet,
+			}
+		}
 		if key == field {
 			subject = OperationField(conditionValue.(string))
 			continue
