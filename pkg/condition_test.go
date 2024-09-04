@@ -123,38 +123,58 @@ func TestOperations(t *testing.T) {
 		{
 			name: "AllOfOperator",
 			operation: AllOf{
-				EqualsOperation{
-					operation: operation{
-						Subject: OperationField("type"),
+				Conditions: []Rego{
+					EqualsOperation{
+						operation: operation{
+							Subject: OperationField("type"),
+						},
+						Value: "Microsoft.HealthcareApis/services",
 					},
-					Value: "Microsoft.HealthcareApis/services",
-				},
-				ExistsOperation{
-					operation: operation{
-						Subject: OperationField("Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri"),
+					ExistsOperation{
+						operation: operation{
+							Subject: OperationField("Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri"),
+						},
+						Value: true,
 					},
-					Value: true,
 				},
+				ConditionSetName: "aaaaa",
 			},
 			expected: "type == Microsoft.HealthcareApis/services\nr.change.after.properties.Microsoft.HealthcareApis.services.cosmosDbConfiguration.keyVaultKeyUri",
 		},
 		{
 			name: "AnyOfOperator",
 			operation: AnyOf{
-				EqualsOperation{
+				Conditions: []Rego{
+					EqualsOperation{
+						operation: operation{
+							Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+						},
+						Value: "Standard",
+					},
+					InOperation{
+						operation: operation{
+							Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+						},
+						Values: []string{"Basic", "Premium"},
+					},
+				},
+				ConditionSetName: "aaaaaaa",
+			},
+			expected: "r.change.after.sku[0].tier != Standard\nnot r.change.after.sku[0].tier in [\"Basic\",\"Premium\"]",
+		},
+		{
+			name: "NotOperator",
+			operation: NotOperator{
+				Body: EqualsOperation{
 					operation: operation{
-						Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+						Subject: FieldValue{
+							Name: "Microsoft.Web/serverFarms/sku.tier",
+						},
 					},
 					Value: "Standard",
 				},
-				InOperation{
-					operation: operation{
-						Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
-					},
-					Values: []string{"Basic", "Premium"},
-				},
 			},
-			expected: "r.change.after.sku[0].tier == Standard\nsome r.change.after.sku[0].tier in [\"Basic\",\"Premium\"]",
+			expected: "not r.change.after.sku[0].tier == Standard",
 		},
 		{
 			name: "EqualsOperation",
@@ -272,22 +292,25 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: &PolicyRuleBody{
 				IfBody: AnyOf{
-					ExistsOperation{
-						operation: operation{
-							Subject: FieldValue{
-								Name: "Microsoft.Sql/servers/minimalTlsVersion",
+					Conditions: []Rego{
+						ExistsOperation{
+							operation: operation{
+								Subject: FieldValue{
+									Name: "Microsoft.Sql/servers/minimalTlsVersion",
+								},
 							},
+							Value: false,
 						},
-						Value: false,
-					},
-					LessOperation{
-						operation: operation{
-							Subject: FieldValue{
-								Name: "Microsoft.Sql/servers/minimalTlsVersion",
+						LessOperation{
+							operation: operation{
+								Subject: FieldValue{
+									Name: "Microsoft.Sql/servers/minimalTlsVersion",
+								},
 							},
+							Value: "1.2",
 						},
-						Value: "1.2",
 					},
+					ConditionSetName: "aaaaaaa",
 				},
 			},
 		},
@@ -307,22 +330,25 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: &PolicyRuleBody{
 				IfBody: AllOf{
-					EqualsOperation{
-						operation: operation{
-							Subject: FieldValue{
-								Name: "type",
+					Conditions: []Rego{
+						EqualsOperation{
+							operation: operation{
+								Subject: FieldValue{
+									Name: "type",
+								},
 							},
+							Value: "Microsoft.HealthcareApis/services",
 						},
-						Value: "Microsoft.HealthcareApis/services",
-					},
-					ExistsOperation{
-						operation: operation{
-							Subject: FieldValue{
-								Name: "Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri",
+						ExistsOperation{
+							operation: operation{
+								Subject: FieldValue{
+									Name: "Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri",
+								},
 							},
+							Value: false,
 						},
-						Value: false,
 					},
+					ConditionSetName: "aaaaa",
 				},
 			},
 		},

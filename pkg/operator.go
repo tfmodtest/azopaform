@@ -45,7 +45,11 @@ func init() {
 				body = append(body, of(operatorValue))
 			}
 		}
-		return AllOf(body)
+		conditionSetName := conditionNameGenerator(andConditionLen, charNum)
+		return AllOf{
+			Conditions:       body,
+			ConditionSetName: conditionSetName,
+		}
 	}
 	operatorFactories[anyOf] = func(input any) Rego {
 		items := input.([]any)
@@ -84,7 +88,10 @@ func init() {
 				body = append(body, of(operatorValue))
 			}
 		}
-		return AnyOf(body)
+		return AnyOf{
+			Conditions:       body,
+			ConditionSetName: conditionNameGenerator(orConditionLen, charNum),
+		}
 	}
 	operatorFactories[not] = func(input any) Rego {
 		itemMap := input.(map[string]any)
@@ -118,16 +125,23 @@ type NotOperator struct {
 }
 
 func (n NotOperator) Rego(ctx context.Context) (string, error) {
-	panic("implement me")
+	condition, err := n.Body.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	return "not " + condition, nil
 }
 
 var _ Rego = &AllOf{}
 
-type AllOf []Rego
+type AllOf struct {
+	Conditions       []Rego
+	ConditionSetName string
+}
 
 func (a AllOf) Rego(ctx context.Context) (string, error) {
 	var res string
-	for _, item := range a {
+	for _, item := range a.Conditions {
 		condition, err := item.Rego(ctx)
 		if err != nil {
 			return "", err
@@ -142,22 +156,180 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 
 var _ Rego = &AnyOf{}
 
-type AnyOf []Rego
+type AnyOf struct {
+	Conditions       []Rego
+	ConditionSetName string
+}
 
 func (a AnyOf) Rego(ctx context.Context) (string, error) {
 	var res string
-	for _, item := range a {
-		if reflect.TypeOf(item) == reflect.TypeOf(EqualsOperation{}) {
-
+	for _, item := range a.Conditions {
+		switch reflect.TypeOf(item) {
+		case reflect.TypeOf(EqualsOperation{}):
+			oppoItem := NotEqualsOperation{
+				operation: item.(EqualsOperation).operation,
+				Value:     item.(EqualsOperation).Value,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
+		case reflect.TypeOf(NotEqualsOperation{}):
+			oppoItem := EqualsOperation{
+				operation: item.(NotEqualsOperation).operation,
+				Value:     item.(NotEqualsOperation).Value,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
+		case reflect.TypeOf(LikeOperation{}):
+			oppoItem := NotLikeOperation{
+				operation: item.(LikeOperation).operation,
+				Value:     item.(LikeOperation).Value,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
+		case reflect.TypeOf(NotLikeOperation{}):
+			oppoItem := LikeOperation{
+				operation: item.(NotLikeOperation).operation,
+				Value:     item.(NotLikeOperation).Value,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
+		case reflect.TypeOf(ContainsOperation{}):
+			oppoItem := NotContainsOperation{
+				operation: item.(ContainsOperation).operation,
+				Value:     item.(ContainsOperation).Value,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
+		case reflect.TypeOf(NotContainsOperation{}):
+			oppoItem := ContainsOperation{
+				operation: item.(NotContainsOperation).operation,
+				Value:     item.(NotContainsOperation).Value,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
+		case reflect.TypeOf(InOperation{}):
+			oppoItem := NotInOperation{
+				operation: item.(InOperation).operation,
+				Values:    item.(InOperation).Values,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
+		case reflect.TypeOf(NotInOperation{}):
+			oppoItem := InOperation{
+				operation: item.(NotInOperation).operation,
+				Values:    item.(NotInOperation).Values,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
+		case reflect.TypeOf(LessOrEqualsOperation{}):
+			oppoItem := GreaterOperation{
+				operation: item.(LessOrEqualsOperation).operation,
+				Value:     item.(LessOrEqualsOperation).Value,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
+		case reflect.TypeOf(GreaterOperation{}):
+			oppoItem := LessOrEqualsOperation{
+				operation: item.(GreaterOperation).operation,
+				Value:     item.(GreaterOperation).Value,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
+		case reflect.TypeOf(LessOperation{}):
+			oppoItem := GreaterOrEqualsOperation{
+				operation: item.(LessOperation).operation,
+				Value:     item.(LessOperation).Value,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
+		case reflect.TypeOf(GreaterOrEqualsOperation{}):
+			oppoItem := LessOperation{
+				operation: item.(GreaterOrEqualsOperation).operation,
+				Value:     item.(GreaterOrEqualsOperation).Value,
+			}
+			oppoCondition, err := oppoItem.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			if res != "" {
+				res = res + "\n"
+			}
+			res += oppoCondition
 		}
-		condition, err := item.Rego(ctx)
-		if err != nil {
-			return "", err
-		}
-		if res != "" {
-			res = res + "\n"
-		}
-		res += not + " " + condition
 	}
 	return res, nil
+}
+
+func conditionNameGenerator(strLen int, charSet string) string {
+	result := make([]byte, strLen)
+	for i := 0; i < strLen; i++ {
+		result[i] = charSet[RandIntRange(0, len(charSet))]
+	}
+	return string(result)
 }
