@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"reflect"
 )
 
 var operatorFactories = make(map[string]func(input any) Rego)
@@ -134,7 +135,7 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 		if res != "" {
 			res = res + "\n"
 		}
-		res = res + condition
+		res += condition
 	}
 	return res, nil
 }
@@ -146,11 +147,17 @@ type AnyOf []Rego
 func (a AnyOf) Rego(ctx context.Context) (string, error) {
 	var res string
 	for _, item := range a {
+		if reflect.TypeOf(item) == reflect.TypeOf(EqualsOperation{}) {
+
+		}
 		condition, err := item.Rego(ctx)
 		if err != nil {
 			return "", err
 		}
-		res += condition
+		if res != "" {
+			res = res + "\n"
+		}
+		res += not + " " + condition
 	}
 	return res, nil
 }

@@ -139,6 +139,24 @@ func TestOperations(t *testing.T) {
 			expected: "type == Microsoft.HealthcareApis/services\nr.change.after.properties.Microsoft.HealthcareApis.services.cosmosDbConfiguration.keyVaultKeyUri",
 		},
 		{
+			name: "AnyOfOperator",
+			operation: AnyOf{
+				EqualsOperation{
+					operation: operation{
+						Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+					},
+					Value: "Standard",
+				},
+				InOperation{
+					operation: operation{
+						Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+					},
+					Values: []string{"Basic", "Premium"},
+				},
+			},
+			expected: "r.change.after.sku[0].tier == Standard\nsome r.change.after.sku[0].tier in [\"Basic\",\"Premium\"]",
+		},
+		{
 			name: "EqualsOperation",
 			operation: EqualsOperation{
 				operation: operation{
