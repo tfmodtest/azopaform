@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"github.com/prashantv/gostub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -121,6 +122,92 @@ func TestOperations(t *testing.T) {
 		expected  string
 	}{
 		{
+			name: "NestedAllOfOperator",
+			operation: AllOf{
+				Conditions: []Rego{
+					AllOf{
+						Conditions: []Rego{
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("type"),
+								},
+								Value: "Microsoft.Web/serverFarms",
+							},
+							ExistsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Web/serverFarms/sku.name"),
+								},
+								Value: true,
+							},
+						},
+						ConditionSetName: "aaaaa",
+					},
+					AnyOf{
+						Conditions: []Rego{
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+								},
+								Value: "Standard",
+							},
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+								},
+								Value: "Basic",
+							},
+						},
+						ConditionSetName: "aaaaaaa",
+					},
+				},
+				ConditionSetName: "aaaaa",
+			},
+			expected: "aaaaa {\naaaaa\nnot aaaaaaa\n}\naaaaa {\ntype == Microsoft.Web/serverFarms\nr.change.after.sku_name\n}\naaaaaaa {\nr.change.after.sku[0].tier != Standard\nr.change.after.sku[0].tier != Basic\n}",
+		},
+		{
+			name: "NestedAnyOfOperator",
+			operation: AnyOf{
+				Conditions: []Rego{
+					AnyOf{
+						Conditions: []Rego{
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("type"),
+								},
+								Value: "Microsoft.Web/serverFarms",
+							},
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("type"),
+								},
+								Value: "Microsoft.Compute/virtualMachines",
+							},
+						},
+						ConditionSetName: "aaaaaaa",
+					},
+					AnyOf{
+						Conditions: []Rego{
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+								},
+								Value: "Standard",
+							},
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+								},
+								Value: "Basic",
+							},
+						},
+						ConditionSetName: "aaaaaaa",
+					},
+				},
+				ConditionSetName: "aaaaaaa",
+			},
+			expected: "aaaaaaa {\naaaaaaa\naaaaaaa\n}\naaaaaaa {\ntype != Microsoft.Web/serverFarms\ntype != Microsoft.Compute/virtualMachines\n}\naaaaaaa {\nr.change.after.sku[0].tier != Standard\nr.change.after.sku[0].tier != Basic\n}",
+		},
+		{
 			name: "AllOfOperator",
 			operation: AllOf{
 				Conditions: []Rego{
@@ -128,18 +215,18 @@ func TestOperations(t *testing.T) {
 						operation: operation{
 							Subject: OperationField("type"),
 						},
-						Value: "Microsoft.HealthcareApis/services",
+						Value: "Microsoft.Web/serverFarms",
 					},
 					ExistsOperation{
 						operation: operation{
-							Subject: OperationField("Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri"),
+							Subject: OperationField("Microsoft.Web/serverFarms/sku.name"),
 						},
 						Value: true,
 					},
 				},
 				ConditionSetName: "aaaaa",
 			},
-			expected: "type == Microsoft.HealthcareApis/services\nr.change.after.properties.Microsoft.HealthcareApis.services.cosmosDbConfiguration.keyVaultKeyUri",
+			expected: "aaaaa {\ntype == Microsoft.Web/serverFarms\nr.change.after.sku_name\n}",
 		},
 		{
 			name: "AnyOfOperator",
@@ -273,6 +360,86 @@ func TestNewPolicyRuleBody(t *testing.T) {
 						},
 						Value: "*",
 					},
+				},
+			},
+		},
+		{
+			name: "NestedAnyOfOperation",
+			input: map[string]any{
+				"anyof": []any{
+					map[string]any{
+						"anyof": []any{
+							map[string]any{
+								"field":  "Microsoft.Sql/servers/minimalTlsVersion",
+								"exists": false,
+							},
+							map[string]any{
+								"field": "Microsoft.Sql/servers/minimalTlsVersion",
+								"less":  "1.2",
+							},
+						},
+					},
+					map[string]any{
+						"allof": []any{
+							map[string]any{
+								"field":  "type",
+								"equals": "Microsoft.Sql/servers",
+							},
+							map[string]any{
+								"field":  "Microsoft.Sql/servers/minimalTlsVersion",
+								"exists": true,
+							},
+						},
+					},
+				},
+			},
+			expected: &PolicyRuleBody{
+				IfBody: AnyOf{
+					Conditions: []Rego{
+						AnyOf{
+							Conditions: []Rego{
+								ExistsOperation{
+									operation: operation{
+										Subject: FieldValue{
+											Name: "Microsoft.Sql/servers/minimalTlsVersion",
+										},
+									},
+									Value: false,
+								},
+								LessOperation{
+									operation: operation{
+										Subject: FieldValue{
+											Name: "Microsoft.Sql/servers/minimalTlsVersion",
+										},
+									},
+									Value: "1.2",
+								},
+							},
+							ConditionSetName: "aaaaaaa",
+						},
+						AllOf{
+							Conditions: []Rego{
+								EqualsOperation{
+									operation: operation{
+										Subject: FieldValue{
+											Name: "type",
+										},
+									},
+									Value: "Microsoft.Sql/servers",
+								},
+								ExistsOperation{
+									operation: operation{
+										Subject: FieldValue{
+											Name: "Microsoft.Sql/servers/minimalTlsVersion",
+										},
+									},
+									Value: true,
+								},
+							},
+							ConditionSetName: "aaaaa",
+						},
+					},
+					ConditionSetName: "aaaaaaa",
 				},
 			},
 		},
@@ -593,6 +760,10 @@ func TestNewPolicyRuleBody(t *testing.T) {
 					NewPolicyRuleBody(tt.input)
 				})
 			} else {
+				stub := gostub.Stub(&RandIntRange, func(min int, max int) int {
+					return 0
+				})
+				defer stub.Reset()
 				result := NewPolicyRuleBody(map[string]any{
 					"if": tt.input,
 				})

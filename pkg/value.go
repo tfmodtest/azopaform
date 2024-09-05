@@ -22,7 +22,8 @@ type FieldValue struct {
 }
 
 func (f FieldValue) Rego(ctx context.Context) (string, error) {
-	return f.Name, nil
+	processed, _, err := FieldNameProcessor(f.Name, ctx)
+	return processed, err
 }
 
 var _ Rego = &Value{}

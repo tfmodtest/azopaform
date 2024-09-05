@@ -113,7 +113,8 @@ func init() {
 		}
 		subject := subjectFactories[subjectKey](itemMap[subjectKey])
 		return NotOperator{
-			Body: cf(subject, itemMap[conditionKey]),
+			Body:             cf(subject, itemMap[conditionKey]),
+			ConditionSetName: conditionNameGenerator(singleConditionLen, charNum),
 		}
 	}
 }
@@ -121,7 +122,8 @@ func init() {
 var _ Rego = &NotOperator{}
 
 type NotOperator struct {
-	Body Rego
+	Body             Rego
+	ConditionSetName string
 }
 
 func (n NotOperator) Rego(ctx context.Context) (string, error) {
@@ -129,7 +131,7 @@ func (n NotOperator) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return "not " + condition, nil
+	return condition, nil
 }
 
 var _ Rego = &AllOf{}
@@ -141,16 +143,53 @@ type AllOf struct {
 
 func (a AllOf) Rego(ctx context.Context) (string, error) {
 	var res string
+	var subSets []string
 	for _, item := range a.Conditions {
+		if res != "" {
+			res = res + "\n"
+		}
+		if reflect.TypeOf(item) == reflect.TypeOf(AnyOf{}) {
+			res += not + " " + item.(AnyOf).ConditionSetName
+			subSet, err := item.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			subSets = append(subSets, subSet)
+			continue
+		}
+		if reflect.TypeOf(item) == reflect.TypeOf(NotOperator{}) {
+			res += not + " " + item.(NotOperator).ConditionSetName
+			subSet, err := item.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			subSets = append(subSets, subSet)
+			continue
+		}
+		if reflect.TypeOf(item) == reflect.TypeOf(AllOf{}) {
+			res += item.(AllOf).ConditionSetName
+			subSet, err := item.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			subSets = append(subSets, subSet)
+			continue
+		}
 		condition, err := item.Rego(ctx)
 		if err != nil {
 			return "", err
 		}
-		if res != "" {
-			res = res + "\n"
-		}
 		res += condition
 	}
+
+	res = a.ConditionSetName + " {\n" + res
+	res = res + "\n" + "}"
+
+	for _, subSet := range subSets {
+		res += "\n" + subSet
+	}
+
+	// add condition set body at the end
 	return res, nil
 }
 
@@ -163,8 +202,33 @@ type AnyOf struct {
 
 func (a AnyOf) Rego(ctx context.Context) (string, error) {
 	var res string
+	var subSets []string
 	for _, item := range a.Conditions {
+		if res != "" {
+			res = res + "\n"
+		}
 		switch reflect.TypeOf(item) {
+		case reflect.TypeOf(AllOf{}):
+			res += not + " " + item.(AllOf).ConditionSetName
+			subSet, err := item.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			subSets = append(subSets, subSet)
+		case reflect.TypeOf(AnyOf{}):
+			res += item.(AnyOf).ConditionSetName
+			subSet, err := item.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			subSets = append(subSets, subSet)
+		case reflect.TypeOf(NotOperator{}):
+			res += item.(NotOperator).ConditionSetName
+			subSet, err := item.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			subSets = append(subSets, subSet)
 		case reflect.TypeOf(EqualsOperation{}):
 			oppoItem := NotEqualsOperation{
 				operation: item.(EqualsOperation).operation,
@@ -173,9 +237,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			oppoCondition, err := oppoItem.Rego(ctx)
 			if err != nil {
 				return "", err
-			}
-			if res != "" {
-				res = res + "\n"
 			}
 			res += oppoCondition
 		case reflect.TypeOf(NotEqualsOperation{}):
@@ -187,9 +248,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if res != "" {
-				res = res + "\n"
-			}
 			res += oppoCondition
 		case reflect.TypeOf(LikeOperation{}):
 			oppoItem := NotLikeOperation{
@@ -199,9 +257,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			oppoCondition, err := oppoItem.Rego(ctx)
 			if err != nil {
 				return "", err
-			}
-			if res != "" {
-				res = res + "\n"
 			}
 			res += oppoCondition
 		case reflect.TypeOf(NotLikeOperation{}):
@@ -213,9 +268,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if res != "" {
-				res = res + "\n"
-			}
 			res += oppoCondition
 		case reflect.TypeOf(ContainsOperation{}):
 			oppoItem := NotContainsOperation{
@@ -225,9 +277,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			oppoCondition, err := oppoItem.Rego(ctx)
 			if err != nil {
 				return "", err
-			}
-			if res != "" {
-				res = res + "\n"
 			}
 			res += oppoCondition
 		case reflect.TypeOf(NotContainsOperation{}):
@@ -239,9 +288,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if res != "" {
-				res = res + "\n"
-			}
 			res += oppoCondition
 		case reflect.TypeOf(InOperation{}):
 			oppoItem := NotInOperation{
@@ -251,9 +297,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			oppoCondition, err := oppoItem.Rego(ctx)
 			if err != nil {
 				return "", err
-			}
-			if res != "" {
-				res = res + "\n"
 			}
 			res += oppoCondition
 		case reflect.TypeOf(NotInOperation{}):
@@ -265,9 +308,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if res != "" {
-				res = res + "\n"
-			}
 			res += oppoCondition
 		case reflect.TypeOf(LessOrEqualsOperation{}):
 			oppoItem := GreaterOperation{
@@ -277,9 +317,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			oppoCondition, err := oppoItem.Rego(ctx)
 			if err != nil {
 				return "", err
-			}
-			if res != "" {
-				res = res + "\n"
 			}
 			res += oppoCondition
 		case reflect.TypeOf(GreaterOperation{}):
@@ -291,9 +328,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if res != "" {
-				res = res + "\n"
-			}
 			res += oppoCondition
 		case reflect.TypeOf(LessOperation{}):
 			oppoItem := GreaterOrEqualsOperation{
@@ -303,9 +337,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			oppoCondition, err := oppoItem.Rego(ctx)
 			if err != nil {
 				return "", err
-			}
-			if res != "" {
-				res = res + "\n"
 			}
 			res += oppoCondition
 		case reflect.TypeOf(GreaterOrEqualsOperation{}):
@@ -317,11 +348,14 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if res != "" {
-				res = res + "\n"
-			}
 			res += oppoCondition
 		}
+	}
+	res = a.ConditionSetName + " {\n" + res
+	res = res + "\n" + "}"
+
+	for _, subSet := range subSets {
+		res += "\n" + subSet
 	}
 	return res, nil
 }
