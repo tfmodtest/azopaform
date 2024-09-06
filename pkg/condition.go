@@ -425,3 +425,30 @@ func (e ExistsOperation) Rego(ctx context.Context) (string, error) {
 		return strings.Join([]string{not, fieldName}, " "), nil
 	}
 }
+
+var _ Rego = CountOperation{}
+
+type CountOperation struct {
+	field          string
+	whereCondition Rego
+	operation
+}
+
+func (c CountOperation) Rego(ctx context.Context) (string, error) {
+	fieldName, err := c.operation.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	conditions, err := c.whereCondition.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	whereConditionName := c.whereCondition.(WhereOperator).ConditionSetName
+
+	res := fmt.Sprintf(count+"{"+fieldName+" | %s}", whereConditionName)
+	res += "\n" + conditions
+
+	return res, nil
+}

@@ -117,6 +117,47 @@ func init() {
 			ConditionSetName: conditionNameGenerator(singleConditionLen, charNum),
 		}
 	}
+	operatorFactories[where] = func(input any) Rego {
+		items := input.([]any)
+		var body []Rego
+		for _, item := range items {
+			itemMap := item.(map[string]any)
+			var cf func(Rego, any) Rego
+			var conditionKey string
+			var subjectKey string
+			var of func(any) Rego
+			var operatorValue any
+			for k, _ := range itemMap {
+				if f, ok := conditionFactory[k]; ok {
+					cf = f
+					conditionKey = k
+					continue
+				}
+			}
+			for k, v := range itemMap {
+				if f, ok := operatorFactories[k]; ok {
+					of = f
+					operatorValue = v
+					continue
+				}
+			}
+			if cf != nil {
+				for k, _ := range itemMap {
+					if k == conditionKey {
+						continue
+					}
+					subjectKey = k
+				}
+				subject := subjectFactories[subjectKey](itemMap[subjectKey])
+				body = append(body, cf(subject, itemMap[conditionKey]))
+			}
+			conditionSetName := conditionNameGenerator(whereConditionLen, charNum)
+			return WhereOperator{
+				Conditions:       body,
+				ConditionSetName: conditionSetName,
+			}
+		}
+	}
 }
 
 var _ Rego = &NotOperator{}
@@ -127,11 +168,73 @@ type NotOperator struct {
 }
 
 func (n NotOperator) Rego(ctx context.Context) (string, error) {
+	var res string
 	condition, err := n.Body.Rego(ctx)
 	if err != nil {
 		return "", err
 	}
-	return condition, nil
+	res = n.ConditionSetName + " {\n" + condition + "\n}"
+	return res, nil
+}
+
+var _ Rego = &WhereOperator{}
+
+type WhereOperator struct {
+	Conditions       []Rego
+	ConditionSetName string
+}
+
+func (w WhereOperator) Rego(ctx context.Context) (string, error) {
+	var res string
+	var subSets []string
+	for _, item := range w.Conditions {
+		if res != "" {
+			res = res + "\n"
+		}
+		if reflect.TypeOf(item) == reflect.TypeOf(AnyOf{}) {
+			// (x) should be added to subset names, potentially use ctx to pass it?
+			res += not + " " + item.(AnyOf).ConditionSetName + "(x)"
+			subSet, err := item.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			subSets = append(subSets, subSet)
+			continue
+		}
+		if reflect.TypeOf(item) == reflect.TypeOf(NotOperator{}) {
+			res += not + " " + item.(NotOperator).ConditionSetName + "(x)"
+			subSet, err := item.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			subSets = append(subSets, subSet)
+			continue
+		}
+		if reflect.TypeOf(item) == reflect.TypeOf(AllOf{}) {
+			res += item.(AllOf).ConditionSetName + "(x)"
+			subSet, err := item.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			subSets = append(subSets, subSet)
+			continue
+		}
+		condition, err := item.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		res += condition
+	}
+
+	res = w.ConditionSetName + " {\n" + res
+	res = res + "\n" + "}"
+
+	for _, subSet := range subSets {
+		res += "\n" + subSet
+	}
+
+	// add condition set body at the end
+	return res, nil
 }
 
 var _ Rego = &AllOf{}

@@ -247,7 +247,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaaaaaa",
 			},
-			expected: "r.change.after.sku[0].tier != Standard\nnot r.change.after.sku[0].tier in [\"Basic\",\"Premium\"]",
+			expected: "aaaaaaa {\nr.change.after.sku[0].tier != Standard\nnot r.change.after.sku[0].tier in [\"Basic\",\"Premium\"]\n}",
 		},
 		{
 			name: "NotOperator",
@@ -260,8 +260,9 @@ func TestOperations(t *testing.T) {
 					},
 					Value: "Standard",
 				},
+				ConditionSetName: "aaa",
 			},
-			expected: "not r.change.after.sku[0].tier == Standard",
+			expected: "aaa {\nr.change.after.sku[0].tier == Standard\n}",
 		},
 		{
 			name: "EqualsOperation",
@@ -360,6 +361,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 						},
 						Value: "*",
 					},
+					ConditionSetName: "aaa",
 				},
 			},
 		},
