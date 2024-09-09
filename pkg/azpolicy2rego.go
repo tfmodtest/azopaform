@@ -327,7 +327,10 @@ func AzurePolicyToRego(policyPath string, dir string, ctx context.Context) error
 }
 
 func NewContext() context.Context {
-	ctx := context.WithValue(context.Background(), "resourceType", arraystack.New())
+	contextMap := make(map[string]stacks.Stack)
+	contextMap["resourceType"] = arraystack.New()
+	contextMap["fieldNameReplacer"] = arraystack.New()
+	ctx := context.WithValue(context.Background(), "context", contextMap)
 	return ctx
 }
 
@@ -382,7 +385,7 @@ func azPolicy2Rego(path string, ctx context.Context) error {
 }
 
 func currentResourceType(ctx context.Context) (string, error) {
-	resourceTypeStack := ctx.Value("resourceType").(stacks.Stack)
+	resourceTypeStack := ctx.Value("context").(map[string]stacks.Stack)["resourceType"]
 	if resourceTypeStack == nil {
 		return "", fmt.Errorf("cannot find the resource type in the context")
 	}
@@ -398,14 +401,14 @@ func currentResourceType(ctx context.Context) (string, error) {
 }
 
 func pushResourceType(ctx context.Context, rt string) {
-	resourceTypeStack := ctx.Value("resourceType").(stacks.Stack)
-	resourceTypeStack.Push(rt)
+	contextMap := ctx.Value("context").(map[string]stacks.Stack)
+	contextMap["resourceType"].Push(rt)
 }
 
-func popResourceType(ctx context.Context) {
-	resourceTypeStack := ctx.Value("resourceType").(stacks.Stack)
-	resourceTypeStack.Pop()
-}
+//func popResourceType(ctx context.Context) {
+//	resourceTypeStack := ctx.Value("resourceType").(stacks.Stack)
+//	resourceTypeStack.Pop()
+//}
 
 func jsonFiles(dir string) ([]string, error) {
 	res, err := readJsonFilePaths(dir)

@@ -122,6 +122,53 @@ func TestOperations(t *testing.T) {
 		expected  string
 	}{
 		{
+			name: "NestedWhereOperator",
+			operation: WhereOperator{
+				Conditions: []Rego{
+					AllOf{
+						Conditions: []Rego{
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].direction"),
+								},
+								Value: "Inbound",
+							},
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].access"),
+								},
+								Value: "Allow",
+							},
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].destinationPortRange"),
+								},
+								Value: "3389",
+							},
+						},
+						ConditionSetName: "aaaaa",
+					},
+				},
+				ConditionSetName: "aaaaaaaaa",
+			},
+			expected: "aaaaaaaaa {\naaaaa(x)\n}\naaaaa(x) if {\nr.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x].direction == Inbound\nr.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x].access == Allow\nr.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x].destinationPortRange == 3389\n}",
+		},
+		{
+			name: "WhereOperator",
+			operation: WhereOperator{
+				Conditions: []Rego{
+					EqualsOperation{
+						operation: operation{
+							Subject: OperationField("type"),
+						},
+						Value: "Microsoft.Web/serverFarms",
+					},
+				},
+				ConditionSetName: "aaaaaaaaa",
+			},
+			expected: "aaaaaaaaa {\ntype == Microsoft.Web/serverFarms\n}",
+		},
+		{
 			name: "NestedAllOfOperator",
 			operation: AllOf{
 				Conditions: []Rego{
