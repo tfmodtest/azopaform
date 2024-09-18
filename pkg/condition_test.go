@@ -70,7 +70,7 @@ func TestLikeCondition(t *testing.T) {
 	pushResourceType(ctx, "Microsoft.Web/serverFarms")
 	actual, err := sut.Rego(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, "regex.match(^[^@]+@[^@]+\\.[^@]+$,r.change.after.sku[0].tier)", actual)
+	assert.Equal(t, "regex.match(`^[^@]+@[^@]+\\.[^@]+$`,r.change.after.sku[0].tier)", actual)
 }
 
 func TestNotLikeCondition(t *testing.T) {
@@ -84,7 +84,7 @@ func TestNotLikeCondition(t *testing.T) {
 	pushResourceType(ctx, "Microsoft.Web/serverFarms")
 	actual, err := sut.Rego(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, "not regex.match(^[^@]+@[^@]+\\.[^@]+$,r.change.after.sku[0].tier)", actual)
+	assert.Equal(t, "not regex.match(`^[^@]+@[^@]+\\.[^@]+$`,r.change.after.sku[0].tier)", actual)
 }
 
 func TestEqualsCondition(t *testing.T) {
@@ -98,7 +98,7 @@ func TestEqualsCondition(t *testing.T) {
 	pushResourceType(ctx, "Microsoft.Web/serverFarms")
 	actual, err := sut.Rego(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, "r.change.after.sku[0].tier == Standard", actual)
+	assert.Equal(t, "r.change.after.sku[0].tier == \"Standard\"", actual)
 }
 
 func TestNotEqualsCondition(t *testing.T) {
@@ -112,7 +112,7 @@ func TestNotEqualsCondition(t *testing.T) {
 	pushResourceType(ctx, "Microsoft.Web/serverFarms")
 	actual, err := sut.Rego(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, "r.change.after.sku[0].tier != Standard", actual)
+	assert.Equal(t, "r.change.after.sku[0].tier != \"Standard\"", actual)
 }
 
 func TestOperations(t *testing.T) {
@@ -122,6 +122,29 @@ func TestOperations(t *testing.T) {
 		expected  string
 	}{
 		{
+			name: "CountOperator",
+			operation: CountOperator{
+				Where: WhereOperator{
+					Conditions: []Rego{
+						EqualsOperation{
+							operation: operation{
+								Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].direction"),
+							},
+							Value: "Inbound",
+						},
+					},
+					ConditionSetName: "aaaaaaaaa",
+				},
+				Operation: GreaterOperation{
+					operation: operation{
+						Subject: FieldValue{"count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; whereOperatorName})"},
+					},
+					Value: "0",
+				},
+			},
+			expected: "count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; aaaaaaaaa(x)}) > 0\naaaaaaaaa(x) if {\nr.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x].direction == Inbound\n}",
+		},
+		{
 			name: "NestedWhereOperator",
 			operation: WhereOperator{
 				Conditions: []Rego{
@@ -129,21 +152,21 @@ func TestOperations(t *testing.T) {
 						Conditions: []Rego{
 							EqualsOperation{
 								operation: operation{
-									Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].direction"),
+									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 								},
-								Value: "Inbound",
+								Value: "Standard",
+							},
+							ExistsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Web/serverFarms/sku.name"),
+								},
+								Value: true,
 							},
 							EqualsOperation{
 								operation: operation{
-									Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].access"),
+									Subject: OperationField("Microsoft.Web/serverFarms/sku.size"),
 								},
-								Value: "Allow",
-							},
-							EqualsOperation{
-								operation: operation{
-									Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].destinationPortRange"),
-								},
-								Value: "3389",
+								Value: "P1v3",
 							},
 						},
 						ConditionSetName: "aaaaa",
@@ -151,7 +174,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaaaaaaaa",
 			},
-			expected: "aaaaaaaaa {\naaaaa(x)\n}\naaaaa(x) if {\nr.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x].direction == Inbound\nr.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x].access == Allow\nr.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x].destinationPortRange == 3389\n}",
+			expected: "aaaaaaaaa(x) if {\naaaaa(x)\n}\naaaaa(x) if {\nr.change.after.sku[0].tier == \"Standard\"\nr.change.after.sku_name\nr.change.after.sku[0].size == \"P1v3\"\n}",
 		},
 		{
 			name: "WhereOperator",
@@ -161,12 +184,12 @@ func TestOperations(t *testing.T) {
 						operation: operation{
 							Subject: OperationField("type"),
 						},
-						Value: "Microsoft.Web/serverFarms",
+						Value: "azurerm_app_service_plan",
 					},
 				},
 				ConditionSetName: "aaaaaaaaa",
 			},
-			expected: "aaaaaaaaa {\ntype == Microsoft.Web/serverFarms\n}",
+			expected: "aaaaaaaaa(x) if {\ntype == \"azurerm_app_service_plan\"\n}",
 		},
 		{
 			name: "NestedAllOfOperator",
@@ -178,7 +201,7 @@ func TestOperations(t *testing.T) {
 								operation: operation{
 									Subject: OperationField("type"),
 								},
-								Value: "Microsoft.Web/serverFarms",
+								Value: "azurerm_app_service_plan",
 							},
 							ExistsOperation{
 								operation: operation{
@@ -209,7 +232,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaaaa",
 			},
-			expected: "aaaaa {\naaaaa\nnot aaaaaaa\n}\naaaaa {\ntype == Microsoft.Web/serverFarms\nr.change.after.sku_name\n}\naaaaaaa {\nr.change.after.sku[0].tier != Standard\nr.change.after.sku[0].tier != Basic\n}",
+			expected: "aaaaa if {\naaaaa\nnot aaaaaaa\n}\naaaaa if {\ntype == \"azurerm_app_service_plan\"\nr.change.after.sku_name\n}\naaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nr.change.after.sku[0].tier != \"Basic\"\n}",
 		},
 		{
 			name: "NestedAnyOfOperator",
@@ -221,13 +244,13 @@ func TestOperations(t *testing.T) {
 								operation: operation{
 									Subject: OperationField("type"),
 								},
-								Value: "Microsoft.Web/serverFarms",
+								Value: "azurerm_app_service_plan",
 							},
 							EqualsOperation{
 								operation: operation{
 									Subject: OperationField("type"),
 								},
-								Value: "Microsoft.Compute/virtualMachines",
+								Value: "azurerm_app_service_environment",
 							},
 						},
 						ConditionSetName: "aaaaaaa",
@@ -252,7 +275,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaaaaaa",
 			},
-			expected: "aaaaaaa {\naaaaaaa\naaaaaaa\n}\naaaaaaa {\ntype != Microsoft.Web/serverFarms\ntype != Microsoft.Compute/virtualMachines\n}\naaaaaaa {\nr.change.after.sku[0].tier != Standard\nr.change.after.sku[0].tier != Basic\n}",
+			expected: "aaaaaaa if {\naaaaaaa\naaaaaaa\n}\naaaaaaa if {\ntype != \"azurerm_app_service_plan\"\ntype != \"azurerm_app_service_environment\"\n}\naaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nr.change.after.sku[0].tier != \"Basic\"\n}",
 		},
 		{
 			name: "AllOfOperator",
@@ -262,7 +285,7 @@ func TestOperations(t *testing.T) {
 						operation: operation{
 							Subject: OperationField("type"),
 						},
-						Value: "Microsoft.Web/serverFarms",
+						Value: "azurerm_app_service_plan",
 					},
 					ExistsOperation{
 						operation: operation{
@@ -273,7 +296,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaaaa",
 			},
-			expected: "aaaaa {\ntype == Microsoft.Web/serverFarms\nr.change.after.sku_name\n}",
+			expected: "aaaaa if {\ntype == \"azurerm_app_service_plan\"\nr.change.after.sku_name\n}",
 		},
 		{
 			name: "AnyOfOperator",
@@ -294,7 +317,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaaaaaa",
 			},
-			expected: "aaaaaaa {\nr.change.after.sku[0].tier != Standard\nnot r.change.after.sku[0].tier in [\"Basic\",\"Premium\"]\n}",
+			expected: "aaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nnot r.change.after.sku[0].tier in [\"Basic\",\"Premium\"]\n}",
 		},
 		{
 			name: "NotOperator",
@@ -309,7 +332,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaa",
 			},
-			expected: "aaa {\nr.change.after.sku[0].tier == Standard\n}",
+			expected: "aaa {\nr.change.after.sku[0].tier == \"Standard\"\n}",
 		},
 		{
 			name: "EqualsOperation",
@@ -319,7 +342,7 @@ func TestOperations(t *testing.T) {
 				},
 				Value: "Standard",
 			},
-			expected: "r.change.after.sku[0].tier == Standard",
+			expected: "r.change.after.sku[0].tier == \"Standard\"",
 		},
 		{
 			name: "NotEqualsOperation",
@@ -329,7 +352,7 @@ func TestOperations(t *testing.T) {
 				},
 				Value: "Standard",
 			},
-			expected: "r.change.after.sku[0].tier != Standard",
+			expected: "r.change.after.sku[0].tier != \"Standard\"",
 		},
 		{
 			name: "LikeOperation",
@@ -339,7 +362,7 @@ func TestOperations(t *testing.T) {
 				},
 				Value: `^[^@]+@[^@]+\.[^@]+$`,
 			},
-			expected: "regex.match(^[^@]+@[^@]+\\.[^@]+$,r.change.after.sku[0].tier)",
+			expected: "regex.match(`^[^@]+@[^@]+\\.[^@]+$`,r.change.after.sku[0].tier)",
 		},
 		{
 			name: "NotLikeOperation",
@@ -349,7 +372,7 @@ func TestOperations(t *testing.T) {
 				},
 				Value: `^[^@]+@[^@]+\.[^@]+$`,
 			},
-			expected: "not regex.match(^[^@]+@[^@]+\\.[^@]+$,r.change.after.sku[0].tier)",
+			expected: "not regex.match(`^[^@]+@[^@]+\\.[^@]+$`,r.change.after.sku[0].tier)",
 		},
 		{
 			name: "InOperation",

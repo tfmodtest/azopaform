@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/emirpasic/gods/stacks"
 	"reflect"
+	"strings"
 )
 
 var operatorFactories = make(map[string]func(input any) Rego)
@@ -180,6 +181,29 @@ func (n NotOperator) Rego(ctx context.Context) (string, error) {
 	return res, nil
 }
 
+var _ Rego = &CountOperator{}
+
+type CountOperator struct {
+	Where     Rego
+	Operation Rego
+}
+
+func (c CountOperator) Rego(ctx context.Context) (string, error) {
+	var res string
+	whereSubset, err := c.Where.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	whereSubsetName := c.Where.(WhereOperator).ConditionSetName
+	countField, err := c.Operation.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	countField = strings.Replace(countField, "whereOperatorName", whereSubsetName+"(x)", -1)
+	res = countField + "\n" + whereSubset
+	return res, nil
+}
+
 var _ Rego = &WhereOperator{}
 
 type WhereOperator struct {
@@ -235,7 +259,7 @@ func (w WhereOperator) Rego(ctx context.Context) (string, error) {
 		res += condition
 	}
 
-	res = w.ConditionSetName + " {\n" + res
+	res = w.ConditionSetName + "(x)" + " " + ifCondition + " {\n" + res
 	res = res + "\n" + "}"
 
 	for _, subSet := range subSets {
@@ -261,7 +285,7 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 			res = res + "\n"
 		}
 		if reflect.TypeOf(item) == reflect.TypeOf(AnyOf{}) {
-			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 				res += not + " " + item.(AnyOf).ConditionSetName + "(x)"
 			} else {
 				res += not + " " + item.(AnyOf).ConditionSetName
@@ -274,10 +298,10 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 			continue
 		}
 		if reflect.TypeOf(item) == reflect.TypeOf(NotOperator{}) {
-			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
-				res += not + " " + item.(AnyOf).ConditionSetName + "(x)"
+			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+				res += not + " " + item.(NotOperator).ConditionSetName + "(x)"
 			} else {
-				res += not + " " + item.(AnyOf).ConditionSetName
+				res += not + " " + item.(NotOperator).ConditionSetName
 			}
 			subSet, err := item.Rego(ctx)
 			if err != nil {
@@ -287,10 +311,10 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 			continue
 		}
 		if reflect.TypeOf(item) == reflect.TypeOf(AllOf{}) {
-			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
-				res += not + " " + item.(AnyOf).ConditionSetName + "(x)"
+			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+				res += item.(AllOf).ConditionSetName + "(x)"
 			} else {
-				res += not + " " + item.(AnyOf).ConditionSetName
+				res += item.(AllOf).ConditionSetName
 			}
 			subSet, err := item.Rego(ctx)
 			if err != nil {
@@ -306,10 +330,10 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 		res += condition
 	}
 
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 		res = a.ConditionSetName + "(x)" + " " + ifCondition + " {\n" + res
 	} else {
-		res = a.ConditionSetName + " {\n" + res
+		res = a.ConditionSetName + " " + ifCondition + " {\n" + res
 	}
 	res = res + "\n" + "}"
 
@@ -337,21 +361,33 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 		}
 		switch reflect.TypeOf(item) {
 		case reflect.TypeOf(AllOf{}):
-			res += not + " " + item.(AllOf).ConditionSetName
+			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+				res += not + " " + item.(AllOf).ConditionSetName + "(x)"
+			} else {
+				res += not + " " + item.(AllOf).ConditionSetName
+			}
 			subSet, err := item.Rego(ctx)
 			if err != nil {
 				return "", err
 			}
 			subSets = append(subSets, subSet)
 		case reflect.TypeOf(AnyOf{}):
-			res += item.(AnyOf).ConditionSetName
+			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+				res += item.(AnyOf).ConditionSetName + "(x)"
+			} else {
+				res += item.(AnyOf).ConditionSetName
+			}
 			subSet, err := item.Rego(ctx)
 			if err != nil {
 				return "", err
 			}
 			subSets = append(subSets, subSet)
 		case reflect.TypeOf(NotOperator{}):
-			res += item.(NotOperator).ConditionSetName
+			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+				res += item.(NotOperator).ConditionSetName + "(x)"
+			} else {
+				res += item.(NotOperator).ConditionSetName
+			}
 			subSet, err := item.Rego(ctx)
 			if err != nil {
 				return "", err
@@ -479,7 +515,11 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			res += oppoCondition
 		}
 	}
-	res = a.ConditionSetName + " {\n" + res
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		res = a.ConditionSetName + "(x)" + " " + ifCondition + " {\n" + res
+	} else {
+		res = a.ConditionSetName + " " + ifCondition + " {\n" + res
+	}
 	res = res + "\n" + "}"
 
 	for _, subSet := range subSets {

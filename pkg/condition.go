@@ -176,7 +176,8 @@ func (e EqualsOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{fieldName, "==", fmt.Sprint(e.Value)}, " "), nil
+	v := strings.Join([]string{"\"", fmt.Sprint(e.Value), "\""}, "")
+	return strings.Join([]string{fieldName, "==", v}, " "), nil
 }
 
 var _ Rego = NotEqualsOperation{}
@@ -191,7 +192,8 @@ func (n NotEqualsOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{fieldName, "!=", fmt.Sprint(n.Value)}, " "), nil
+	v := strings.Join([]string{"\"", fmt.Sprint(n.Value), "\""}, "")
+	return strings.Join([]string{fieldName, "!=", v}, " "), nil
 }
 
 var _ Rego = LikeOperation{}
@@ -206,7 +208,8 @@ func (l LikeOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{regexExp, "(", fmt.Sprint(l.Value), ",", fieldName, ")"}, ""), nil
+	v := strings.Join([]string{"`", fmt.Sprint(l.Value), "`"}, "")
+	return strings.Join([]string{regexExp, "(", v, ",", fieldName, ")"}, ""), nil
 }
 
 var _ Rego = NotLikeOperation{}
@@ -221,7 +224,8 @@ func (n NotLikeOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{not, " ", regexExp, "(", fmt.Sprint(n.Value), ",", fieldName, ")"}, ""), nil
+	v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")
+	return strings.Join([]string{not, " ", regexExp, "(", v, ",", fieldName, ")"}, ""), nil
 }
 
 var _ Rego = MatchOperation{}

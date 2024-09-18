@@ -753,6 +753,9 @@ func FieldNameProcessor(fieldName interface{}, ctx context.Context) (string, str
 		if fn == typeOfResource {
 			return fn, "", nil
 		}
+		if strings.Contains(fn, "count") {
+			return fn, "", nil
+		}
 		rt, err := currentResourceType(ctx)
 		if err != nil {
 			return "", "", err
@@ -862,12 +865,15 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 	if fieldNameRaw == typeOfResource {
 		return fieldNameRaw, nil
 	}
+	//if strings.Contains(fieldNameRaw, "count") {
+	//	return fieldNameRaw, nil
+	//}
 	prop, _ := strings.CutPrefix(fieldNameRaw, resourceType)
 	prop = strings.Replace(prop, ".", "/", -1)
 	prop = strings.TrimPrefix(prop, "/")
 	originalProp := prop
 	prop = "properties/" + prop
-	//fmt.Printf("the prop is %s\n", prop)
+	fmt.Printf("the prop is %s\n", prop)
 	upperRt := strings.ToUpper(resourceType)
 	if results, ok := lookupTable.QueryProperty(upperRt, version, prop); ok {
 		return results[0].PropertyAddr, nil

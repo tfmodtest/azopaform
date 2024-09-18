@@ -48,6 +48,17 @@ func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
 	var creator func(subject Rego, input any) Rego
 	var cv any
 	for key, conditionValue := range conditionMap {
+		if key == count {
+			operationFactory, ok := operatorFactories[key]
+			if !ok {
+				panic(fmt.Sprintf("unknown operation: %s", key))
+			}
+			conditionSet := operationFactory(conditionValue)
+			return &PolicyRuleBody{
+				Then:   nil,
+				IfBody: conditionSet,
+			}
+		}
 		if key == allOf {
 			operationFactory, ok := operatorFactories[key]
 			if !ok {
