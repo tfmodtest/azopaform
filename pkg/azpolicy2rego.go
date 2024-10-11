@@ -19,15 +19,15 @@ type Rule struct {
 	Name       string
 }
 
-func NewRule(input map[string]any) *Rule {
+func NewRule(input map[string]any, ctx context.Context) *Rule {
 	return &Rule{
 		Id:         input["id"].(string),
 		Name:       input["name"].(string),
-		Properties: NewPolicyRuleModel(input["properties"].(map[string]any)),
+		Properties: NewPolicyRuleModel(input["properties"].(map[string]any), ctx),
 	}
 }
 
-func NewPolicyRuleModel(input map[string]any) *PolicyRuleModel {
+func NewPolicyRuleModel(input map[string]any, ctx context.Context) *PolicyRuleModel {
 	return &PolicyRuleModel{
 		DisplayName: input["displayName"].(string),
 		PolicyType:  input["policyType"].(string),
@@ -35,36 +35,36 @@ func NewPolicyRuleModel(input map[string]any) *PolicyRuleModel {
 		Description: input["description"].(string),
 		Version:     input["version"].(string),
 		Metadata:    NewPolicyRuleMetaData(input["metadata"].(map[string]any)),
-		PolicyRule:  NewPolicyRuleBody(input["policyRule"].(map[string]any)),
+		PolicyRule:  NewPolicyRuleBody(input["policyRule"].(map[string]any), ctx),
 		Parameters:  NewPolicyRuleParameters(input["parameters"].(map[string]any)),
 	}
 }
 
-func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
-	ifBody := input["if"]
+func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBody {
+	//ifBody := input["if"]
 
-	conditionMap := ifBody.(map[string]any)
+	conditionMap := input
 	var subject Rego
 	var creator func(subject Rego, input any) Rego
 	var cv any
 	for key, conditionValue := range conditionMap {
+		key = strings.ToLower(key)
 		if key == count {
 			operationFactory, ok := operatorFactories[key]
 			if !ok {
 				panic(fmt.Sprintf("unknown operation: %s", key))
 			}
-			conditionSet := operationFactory(conditionValue)
-			return &PolicyRuleBody{
-				Then:   nil,
-				IfBody: conditionSet,
-			}
+			//fmt.Printf("the condition value is %v\n", conditionValue)
+			conditionSet := operationFactory(conditionValue, ctx)
+			subject = conditionSet
+			continue
 		}
 		if key == allOf {
 			operationFactory, ok := operatorFactories[key]
 			if !ok {
 				panic(fmt.Sprintf("unknown operation: %s", key))
 			}
-			conditionSet := operationFactory(conditionValue)
+			conditionSet := operationFactory(conditionValue, ctx)
 			return &PolicyRuleBody{
 				Then:   nil,
 				IfBody: conditionSet,
@@ -75,7 +75,7 @@ func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
 			if !ok {
 				panic(fmt.Sprintf("unknown operation: %s", key))
 			}
-			conditionSet := operationFactory(conditionValue)
+			conditionSet := operationFactory(conditionValue, ctx)
 			return &PolicyRuleBody{
 				Then:   nil,
 				IfBody: conditionSet,
@@ -86,13 +86,16 @@ func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
 			if !ok {
 				panic(fmt.Sprintf("unknown operation: %s", key))
 			}
-			conditionSet := operationFactory(conditionValue)
+			conditionSet := operationFactory(conditionValue, ctx)
 			return &PolicyRuleBody{
 				Then:   nil,
 				IfBody: conditionSet,
 			}
 		}
 		if key == field {
+			if conditionValue == typeOfResource {
+				pushResourceType(context.Background(), conditionValue.(string))
+			}
 			subject = OperationField(conditionValue.(string))
 			continue
 		}
@@ -329,7 +332,7 @@ func AzurePolicyToRego(policyPath string, dir string, ctx context.Context) error
 		paths = []string{policyPath}
 	}
 	for _, path := range paths {
-		err = azPolicy2Rego(path, ctx)
+		err = NeoAzPolicy2Rego(path, ctx)
 		if err != nil {
 			return err
 		}
@@ -343,6 +346,48 @@ func NewContext() context.Context {
 	contextMap["fieldNameReplacer"] = arraystack.New()
 	ctx := context.WithValue(context.Background(), "context", contextMap)
 	return ctx
+}
+
+func NeoAzPolicy2Rego(path string, ctx context.Context) error {
+	var action string
+	fmt.Printf("the path is %+v\n", path)
+
+	rule, err := ruleIterator(path)
+	if err != nil {
+		fmt.Printf("cannot find rules %+v\n", err)
+		return err
+	}
+
+	then := rule.Properties.PolicyRule.GetThen()
+	action, err = then.MapEffectToAction(rule.Properties.Parameters.GetEffect().GetDefaultValue())
+	if err != nil {
+		return err
+	}
+	fmt.Printf("the effect is %+v\n", action)
+	condition := rule.Properties.PolicyRule.GetIf()
+	fmt.Printf("the condition is %+v\n", condition)
+	//_, err = currentResourceType(ctx)
+	//if err != nil {
+	//	return err
+	//}
+	ruleBody := NewPolicyRuleBody(condition, ctx)
+	fmt.Printf("the rule body is %+v\n", ruleBody)
+	result, err := ruleBody.IfBody.Rego(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("the result is %+v\n", result)
+	//fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
+	//if action == disabled {
+	//	result = "default allow := true\n\n" + result
+	//} else if action == deny {
+	//	top := "deny if {\n" + " " + conditionNames[0] + "\n}\n"
+	//	result = top + result
+	//} else if action == warn {
+	//	top := "warn if {\n" + " " + conditionNames[0] + "\n}\n"
+	//	result = top + result
+	//}
+	return nil
 }
 
 func azPolicy2Rego(path string, ctx context.Context) error {

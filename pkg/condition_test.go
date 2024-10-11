@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"context"
 	"github.com/prashantv/gostub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -125,52 +126,48 @@ func TestOperations(t *testing.T) {
 			name: "CountOperator",
 			operation: CountOperator{
 				Where: WhereOperator{
-					Conditions: []Rego{
-						EqualsOperation{
-							operation: operation{
-								Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].direction"),
-							},
-							Value: "Inbound",
+					Condition: EqualsOperation{
+						operation: operation{
+							Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].direction"),
 						},
+						Value: "Inbound",
 					},
 					ConditionSetName: "aaaaaaaaa",
 				},
-				Operation: GreaterOperation{
-					operation: operation{
-						Subject: FieldValue{"count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; whereOperatorName})"},
-					},
-					Value: "0",
-				},
+				//Operation: GreaterOperation{
+				//	operation: operation{
+				//		Subject: FieldValue{"count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; whereOperatorName})"},
+				//	},
+				//	Value: "0",
+				//},
 			},
-			expected: "count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; aaaaaaaaa(x)}) > 0\naaaaaaaaa(x) if {\nr.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x].direction == Inbound\n}",
+			expected: "count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; aaaaaaaaa(x)}) > 0\naaaaaaaaa(x) if {\nr.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x].direction == \"Inbound\"\n}",
 		},
 		{
 			name: "NestedWhereOperator",
 			operation: WhereOperator{
-				Conditions: []Rego{
-					AllOf{
-						Conditions: []Rego{
-							EqualsOperation{
-								operation: operation{
-									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
-								},
-								Value: "Standard",
+				Condition: AllOf{
+					Conditions: []Rego{
+						EqualsOperation{
+							operation: operation{
+								Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 							},
-							ExistsOperation{
-								operation: operation{
-									Subject: OperationField("Microsoft.Web/serverFarms/sku.name"),
-								},
-								Value: true,
-							},
-							EqualsOperation{
-								operation: operation{
-									Subject: OperationField("Microsoft.Web/serverFarms/sku.size"),
-								},
-								Value: "P1v3",
-							},
+							Value: "Standard",
 						},
-						ConditionSetName: "aaaaa",
+						ExistsOperation{
+							operation: operation{
+								Subject: OperationField("Microsoft.Web/serverFarms/sku.name"),
+							},
+							Value: true,
+						},
+						EqualsOperation{
+							operation: operation{
+								Subject: OperationField("Microsoft.Web/serverFarms/sku.size"),
+							},
+							Value: "P1v3",
+						},
 					},
+					ConditionSetName: "aaaaa",
 				},
 				ConditionSetName: "aaaaaaaaa",
 			},
@@ -179,13 +176,11 @@ func TestOperations(t *testing.T) {
 		{
 			name: "WhereOperator",
 			operation: WhereOperator{
-				Conditions: []Rego{
-					EqualsOperation{
-						operation: operation{
-							Subject: OperationField("type"),
-						},
-						Value: "azurerm_app_service_plan",
+				Condition: EqualsOperation{
+					operation: operation{
+						Subject: OperationField("type"),
 					},
+					Value: "azurerm_app_service_plan",
 				},
 				ConditionSetName: "aaaaaaaaa",
 			},
@@ -413,6 +408,40 @@ func TestNewPolicyRuleBody(t *testing.T) {
 		input    map[string]any
 		expected *PolicyRuleBody
 	}{
+		{
+			name: "CountOperation",
+			input: map[string]any{
+				"count": map[string]any{
+					"field": "Microsoft.Network/networkSecurityGroups/securityRules[*]",
+					"where": map[string]any{
+						"field":  "Microsoft.Network/networkSecurityGroups/securityRules[*].direction",
+						"equals": "Inbound",
+					},
+				},
+				"greater": 0,
+			},
+			expected: &PolicyRuleBody{
+				IfBody: GreaterOperation{
+					operation: operation{
+						Subject: CountOperator{
+							Where: WhereOperator{
+								Condition: EqualsOperation{
+									operation: operation{
+										Subject: FieldValue{
+											Name: "Microsoft.Network/networkSecurityGroups/securityRules[x].direction",
+										},
+									},
+									Value: "Inbound",
+								},
+								ConditionSetName: "aaaaaaaaa",
+							},
+							CountExp: "count({x|Microsoft.Network/networkSecurityGroups/securityRules[x];aaaaaaaaa(x)})",
+						},
+					},
+					Value: 0,
+				},
+			},
+		},
 		{
 			name: "NotOperation",
 			input: map[string]any{
@@ -829,7 +858,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.expected == nil {
 				assert.Panics(t, func() {
-					NewPolicyRuleBody(tt.input)
+					NewPolicyRuleBody(tt.input, context.Context(nil))
 				})
 			} else {
 				stub := gostub.Stub(&RandIntRange, func(min int, max int) int {
@@ -838,7 +867,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 				defer stub.Reset()
 				result := NewPolicyRuleBody(map[string]any{
 					"if": tt.input,
-				})
+				}, context.Context(nil))
 				assert.Equal(t, tt.expected, result)
 			}
 		})

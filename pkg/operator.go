@@ -2,15 +2,30 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	"github.com/emirpasic/gods/stacks"
 	"reflect"
 	"strings"
 )
 
-var operatorFactories = make(map[string]func(input any) Rego)
+var operatorFactories = make(map[string]func(input any, ctx context.Context) Rego)
 
 func init() {
-	operatorFactories[allOf] = func(input any) Rego {
+	operatorFactories[count] = func(input any, ctx context.Context) Rego {
+		items := input.(map[string]any)
+		var whereBody Rego
+		whereMap := items[where].(map[string]any)
+		of := operatorFactories[where]
+		whereBody = of(whereMap, ctx)
+		countField := items[field].(string)
+		countBody := count + "(" + "{" + "x" + "|" + countField + ";" + whereBody.(WhereOperator).ConditionSetName + "(x)" + "}" + ")"
+		countBody = strings.Replace(countBody, "*", "x", -1)
+		return CountOperator{
+			Where:    whereBody,
+			CountExp: countBody,
+		}
+	}
+	operatorFactories[allOf] = func(input any, ctx context.Context) Rego {
 		items := input.([]any)
 		var body []Rego
 		for _, item := range items {
@@ -18,9 +33,13 @@ func init() {
 			var cf func(Rego, any) Rego
 			var conditionKey string
 			var subjectKey string
-			var of func(any) Rego
+			var of func(any, context.Context) Rego
 			var operatorValue any
-			for k, _ := range itemMap {
+			var containsTypeOfResource bool
+			for k, v := range itemMap {
+				if k == field && v == typeOfResource {
+					containsTypeOfResource = true
+				}
 				if f, ok := conditionFactory[k]; ok {
 					cf = f
 					conditionKey = k
@@ -34,17 +53,31 @@ func init() {
 					continue
 				}
 			}
+			if containsTypeOfResource {
+				for k, v := range itemMap {
+					if k == field && v == typeOfResource {
+						continue
+					}
+					pushResourceType(ctx, v.(string))
+				}
+			}
 			if cf != nil {
 				for k, _ := range itemMap {
 					if k == conditionKey {
 						continue
 					}
 					subjectKey = k
+					fmt.Printf("subject key is %v\n", subjectKey)
 				}
-				subject := subjectFactories[subjectKey](itemMap[subjectKey])
-				body = append(body, cf(subject, itemMap[conditionKey]))
+				subject := subjectFactories[subjectKey](itemMap[subjectKey], ctx)
+				if reflect.TypeOf(subject) == reflect.TypeOf(Count{}) {
+					body = append(body, cf(subject, itemMap[conditionKey]))
+					body = append(body, subject.(Count).ConditionSet)
+				} else {
+					body = append(body, cf(subject, itemMap[conditionKey]))
+				}
 			} else if of != nil {
-				body = append(body, of(operatorValue))
+				body = append(body, of(operatorValue, ctx))
 			}
 		}
 		conditionSetName := conditionNameGenerator(andConditionLen, charNum)
@@ -53,7 +86,7 @@ func init() {
 			ConditionSetName: conditionSetName,
 		}
 	}
-	operatorFactories[anyOf] = func(input any) Rego {
+	operatorFactories[anyOf] = func(input any, ctx context.Context) Rego {
 		items := input.([]any)
 		var body []Rego
 		for _, item := range items {
@@ -61,7 +94,7 @@ func init() {
 			var cf func(Rego, any) Rego
 			var conditionKey string
 			var subjectKey string
-			var of func(any) Rego
+			var of func(any, context.Context) Rego
 			var operatorValue any
 			for k, _ := range itemMap {
 				if f, ok := conditionFactory[k]; ok {
@@ -84,10 +117,10 @@ func init() {
 					}
 					subjectKey = k
 				}
-				subject := subjectFactories[subjectKey](itemMap[subjectKey])
+				subject := subjectFactories[subjectKey](itemMap[subjectKey], ctx)
 				body = append(body, cf(subject, itemMap[conditionKey]))
 			} else if of != nil {
-				body = append(body, of(operatorValue))
+				body = append(body, of(operatorValue, ctx))
 			}
 		}
 		return AnyOf{
@@ -95,7 +128,7 @@ func init() {
 			ConditionSetName: conditionNameGenerator(orConditionLen, charNum),
 		}
 	}
-	operatorFactories[not] = func(input any) Rego {
+	operatorFactories[not] = func(input any, ctx context.Context) Rego {
 		itemMap := input.(map[string]any)
 		var cf func(Rego, any) Rego
 		var conditionKey string
@@ -113,52 +146,50 @@ func init() {
 			}
 			subjectKey = k
 		}
-		subject := subjectFactories[subjectKey](itemMap[subjectKey])
+		subject := subjectFactories[subjectKey](itemMap[subjectKey], ctx)
 		return NotOperator{
 			Body:             cf(subject, itemMap[conditionKey]),
 			ConditionSetName: conditionNameGenerator(singleConditionLen, charNum),
 		}
 	}
-	operatorFactories[where] = func(input any) Rego {
-		items := input.([]any)
-		var body []Rego
-		for _, item := range items {
-			itemMap := item.(map[string]any)
-			var cf func(Rego, any) Rego
-			var conditionKey string
-			var subjectKey string
-			var of func(any) Rego
-			var operatorValue any
+	operatorFactories[where] = func(input any, ctx context.Context) Rego {
+		itemMap := input.(map[string]any)
+		var body Rego
+		var cf func(Rego, any) Rego
+		var conditionKey string
+		var subjectKey string
+		var of func(any, context.Context) Rego
+		var operatorValue any
+		for k, _ := range itemMap {
+			if f, ok := conditionFactory[k]; ok {
+				cf = f
+				conditionKey = k
+				continue
+			}
+		}
+		for k, v := range itemMap {
+			k = strings.ToLower(k)
+			if f, ok := operatorFactories[k]; ok {
+				of = f
+				operatorValue = v
+				continue
+			}
+		}
+		if cf != nil {
 			for k, _ := range itemMap {
-				if f, ok := conditionFactory[k]; ok {
-					cf = f
-					conditionKey = k
+				if k == conditionKey {
 					continue
 				}
+				subjectKey = k
 			}
-			for k, v := range itemMap {
-				if f, ok := operatorFactories[k]; ok {
-					of = f
-					operatorValue = v
-					continue
-				}
-			}
-			if cf != nil {
-				for k, _ := range itemMap {
-					if k == conditionKey {
-						continue
-					}
-					subjectKey = k
-				}
-				subject := subjectFactories[subjectKey](itemMap[subjectKey])
-				body = append(body, cf(subject, itemMap[conditionKey]))
-			} else if of != nil {
-				body = append(body, of(operatorValue))
-			}
+			subject := subjectFactories[subjectKey](itemMap[subjectKey], ctx)
+			body = cf(subject, itemMap[conditionKey])
+		} else if of != nil {
+			body = of(operatorValue, ctx)
 		}
 		conditionSetName := conditionNameGenerator(whereConditionLen, charNum)
 		return WhereOperator{
-			Conditions:       body,
+			Condition:        body,
 			ConditionSetName: conditionSetName,
 		}
 	}
@@ -184,8 +215,8 @@ func (n NotOperator) Rego(ctx context.Context) (string, error) {
 var _ Rego = &CountOperator{}
 
 type CountOperator struct {
-	Where     Rego
-	Operation Rego
+	Where    Rego
+	CountExp string
 }
 
 func (c CountOperator) Rego(ctx context.Context) (string, error) {
@@ -194,64 +225,54 @@ func (c CountOperator) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	whereSubsetName := c.Where.(WhereOperator).ConditionSetName
-	countField, err := c.Operation.Rego(ctx)
 	if err != nil {
 		return "", err
 	}
-	countField = strings.Replace(countField, "whereOperatorName", whereSubsetName+"(x)", -1)
-	res = countField + "\n" + whereSubset
+	res = c.CountExp + "\n" + whereSubset
 	return res, nil
 }
 
 var _ Rego = &WhereOperator{}
 
 type WhereOperator struct {
-	Conditions       []Rego
+	Condition        Rego
 	ConditionSetName string
 }
 
 func (w WhereOperator) Rego(ctx context.Context) (string, error) {
 	var res string
 	var subSets []string
-	for _, item := range w.Conditions {
-		if res != "" {
-			res = res + "\n"
+	item := w.Condition
+
+	if reflect.TypeOf(item) == reflect.TypeOf(AnyOf{}) {
+		// (x) should be added to subset names, potentially use ctx to pass it?
+		res += not + " " + item.(AnyOf).ConditionSetName + "(x)"
+		fieldNameReplacerStack := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"]
+		fieldNameReplacerStack.Push("x")
+		subSet, err := item.Rego(ctx)
+		if err != nil {
+			return "", err
 		}
-		if reflect.TypeOf(item) == reflect.TypeOf(AnyOf{}) {
-			// (x) should be added to subset names, potentially use ctx to pass it?
-			res += not + " " + item.(AnyOf).ConditionSetName + "(x)"
-			fieldNameReplacerStack := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"]
-			fieldNameReplacerStack.Push("x")
-			subSet, err := item.Rego(ctx)
-			if err != nil {
-				return "", err
-			}
-			subSets = append(subSets, subSet)
-			continue
+		subSets = append(subSets, subSet)
+	} else if reflect.TypeOf(item) == reflect.TypeOf(NotOperator{}) {
+		res += not + " " + item.(NotOperator).ConditionSetName + "(x)"
+		fieldNameReplacerStack := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"]
+		fieldNameReplacerStack.Push("x")
+		subSet, err := item.Rego(ctx)
+		if err != nil {
+			return "", err
 		}
-		if reflect.TypeOf(item) == reflect.TypeOf(NotOperator{}) {
-			res += not + " " + item.(NotOperator).ConditionSetName + "(x)"
-			fieldNameReplacerStack := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"]
-			fieldNameReplacerStack.Push("x")
-			subSet, err := item.Rego(ctx)
-			if err != nil {
-				return "", err
-			}
-			subSets = append(subSets, subSet)
-			continue
+		subSets = append(subSets, subSet)
+	} else if reflect.TypeOf(item) == reflect.TypeOf(AllOf{}) {
+		res += item.(AllOf).ConditionSetName + "(x)"
+		fieldNameReplacerStack := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"]
+		fieldNameReplacerStack.Push("x")
+		subSet, err := item.Rego(ctx)
+		if err != nil {
+			return "", err
 		}
-		if reflect.TypeOf(item) == reflect.TypeOf(AllOf{}) {
-			res += item.(AllOf).ConditionSetName + "(x)"
-			fieldNameReplacerStack := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"]
-			fieldNameReplacerStack.Push("x")
-			subSet, err := item.Rego(ctx)
-			if err != nil {
-				return "", err
-			}
-			subSets = append(subSets, subSet)
-			continue
-		}
+		subSets = append(subSets, subSet)
+	} else {
 		condition, err := item.Rego(ctx)
 		if err != nil {
 			return "", err
@@ -280,10 +301,14 @@ type AllOf struct {
 func (a AllOf) Rego(ctx context.Context) (string, error) {
 	var res string
 	var subSets []string
+
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		res = a.ConditionSetName + "(x)" + " " + ifCondition + " {"
+	} else {
+		res = a.ConditionSetName + " " + ifCondition + " {"
+	}
+
 	for _, item := range a.Conditions {
-		if res != "" {
-			res = res + "\n"
-		}
 		if reflect.TypeOf(item) == reflect.TypeOf(AnyOf{}) {
 			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 				res += not + " " + item.(AnyOf).ConditionSetName + "(x)"
@@ -323,23 +348,27 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 			subSets = append(subSets, subSet)
 			continue
 		}
+		if reflect.TypeOf(item) == reflect.TypeOf(WhereOperator{}) {
+			subSet, err := item.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			subSets = append(subSets, subSet)
+			continue
+		}
 		condition, err := item.Rego(ctx)
 		if err != nil {
 			return "", err
 		}
-		res += condition
+		res += "\n" + condition
 	}
 
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		res = a.ConditionSetName + "(x)" + " " + ifCondition + " {\n" + res
-	} else {
-		res = a.ConditionSetName + " " + ifCondition + " {\n" + res
-	}
-	res = res + "\n" + "}"
+	res = res + "\n}"
 
 	for _, subSet := range subSets {
 		res += "\n" + subSet
 	}
+	fmt.Printf("current res: %v\n", res)
 
 	// add condition set body at the end
 	return res, nil
