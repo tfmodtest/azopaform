@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -764,7 +765,9 @@ func FieldNameProcessor(fieldName interface{}, ctx context.Context) (string, str
 		if err != nil {
 			return "", "", err
 		}
+		//fmt.Printf("before mapping %s\n", res)
 		result = TFNameMapping(res)
+		//fmt.Printf("after mapping %s\n", result)
 	case SingleRule:
 		//fmt.Printf("the field name is %+v\n", fieldName)
 		res, singleRule, err := fieldName.(SingleRule).SingleRuleReader(ctx)
@@ -868,8 +871,13 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 	//if strings.Contains(fieldNameRaw, "count") {
 	//	return fieldNameRaw, nil
 	//}
-	prop, _ := strings.CutPrefix(fieldNameRaw, resourceType)
+	if strings.HasPrefix(strings.ToLower(fieldNameRaw), strings.ToLower(resourceType)) {
+		rtLen := len(resourceType)
+		fieldNameRaw = fieldNameRaw[rtLen:]
+	}
+	prop := fieldNameRaw
 	prop = strings.Replace(prop, ".", "/", -1)
+	prop = strings.Replace(prop, "[x]", "/*", -1)
 	prop = strings.TrimPrefix(prop, "/")
 	originalProp := prop
 	prop = "properties/" + prop
@@ -883,7 +891,18 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 	}
 
 	fmt.Printf("cannot find the property %s in the lookup table\n", prop)
+	prop = strings.Replace(prop, "properties/", "", -1)
+	prop = ToSnakeCase(prop)
 	return prop, nil
+}
+
+func ToSnakeCase(str string) string {
+	var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
+	var matchAllCap = regexp.MustCompile("([a-z0-9])([A-Z])")
+
+	snake := matchFirstCap.ReplaceAllString(str, "${1}_${2}")
+	snake = matchAllCap.ReplaceAllString(snake, "${1}_${2}")
+	return strings.ToLower(snake)
 }
 
 func ResourceTypeParser(resourceType string) (string, error) {
@@ -913,9 +932,9 @@ func TFNameMapping(fieldName string) string {
 		if v == "" {
 			continue
 		}
-		next := result + "[" + v + "]"
-		if _, err := strconv.Atoi(v); err != nil {
-			next = result + "." + v
+		next := result + "." + v
+		if _, err := strconv.Atoi(v); err == nil {
+			next = result + "[" + "x" + "]"
 		}
 		result = next
 	}

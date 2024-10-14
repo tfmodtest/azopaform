@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/emirpasic/gods/stacks/arraystack"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/emirpasic/gods/stacks"
@@ -350,6 +351,7 @@ func NewContext() context.Context {
 
 func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 	var action string
+	var conditionName string
 	fmt.Printf("the path is %+v\n", path)
 
 	rule, err := ruleIterator(path)
@@ -376,17 +378,34 @@ func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("the result is %+v\n", result)
-	//fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
-	//if action == disabled {
-	//	result = "default allow := true\n\n" + result
-	//} else if action == deny {
-	//	top := "deny if {\n" + " " + conditionNames[0] + "\n}\n"
-	//	result = top + result
-	//} else if action == warn {
-	//	top := "warn if {\n" + " " + conditionNames[0] + "\n}\n"
-	//	result = top + result
-	//}
+	fmt.Printf("the result is %s", result)
+	fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
+	switch reflect.TypeOf(ruleBody.IfBody) {
+	case reflect.TypeOf(AllOf{}):
+		conditionName = ruleBody.IfBody.(AllOf).ConditionSetName
+	case reflect.TypeOf(AnyOf{}):
+		conditionName = ruleBody.IfBody.(AnyOf).ConditionSetName
+	case reflect.TypeOf(NotOperator{}):
+		conditionName = ruleBody.IfBody.(NotOperator).ConditionSetName
+	default:
+		conditionName = result
+	}
+	if action == disabled {
+		result = "default allow := true\n\n" + result
+	} else if action == deny {
+		top := "deny if {\n" + " " + conditionName + "\n}\n"
+		result = top + result
+	} else if action == warn {
+		top := "warn if {\n" + " " + conditionName + "\n}\n"
+		result = top + result
+	}
+	result = "package main\n\n" + "import rego.v1\n\n" + "r := tfplan.resource_changes[_]\n\n" + result
+
+	err = afero.WriteFile(Fs, fileName, []byte(result), 0644)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 	return nil
 }
 

@@ -217,16 +217,16 @@ warn if {
  aaaaa
 }
 aaaaa if {
- type == azurerm_app_service_environment_v3
- regex.match("ASE*",kind)
- count({x|r.change.after.properties.Microsoft.Web.HostingEnvironments.clusterSettings[x];aaaaaaaaa(x)}) < 1
+type == "azurerm_app_service_environment_v3"
+regex.match("ASE*",kind)
+count({x|r.change.after.cluster_settings[x];aaaaaaaaa(x)}) < 1
 }
 aaaaaaaaa(x) if {
- aaaaa(x)
+aaaaa(x)
 }
 aaaaa(x) if {
- r.change.after.properties.Microsoft.Web.HostingEnvironments.clusterSettings[x].name == DisableTls1.0
- r.change.after.properties.Microsoft.Web.HostingEnvironments.clusterSettings[x].value == 1
+r.change.after.cluster_setting[x].name == "DisableTls1.0"
+r.change.after.cluster_setting[x].value == "1"
 }
 `
 

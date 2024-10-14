@@ -17,7 +17,10 @@ func init() {
 		whereMap := items[where].(map[string]any)
 		of := operatorFactories[where]
 		whereBody = of(whereMap, ctx)
-		countField := items[field].(string)
+		countField, _, err := FieldNameProcessor(items[field].(string), ctx)
+		if err != nil {
+			return nil
+		}
 		countBody := count + "(" + "{" + "x" + "|" + countField + ";" + whereBody.(WhereOperator).ConditionSetName + "(x)" + "}" + ")"
 		countBody = strings.Replace(countBody, "*", "x", -1)
 		return CountOperator{
@@ -69,7 +72,17 @@ func init() {
 					subjectKey = k
 					fmt.Printf("subject key is %v\n", subjectKey)
 				}
-				subject := subjectFactories[subjectKey](itemMap[subjectKey], ctx)
+				subjectItem := itemMap[subjectKey]
+				if subjectKey == field && subjectItem == typeOfResource {
+					rawType := itemMap[conditionKey]
+					translatedType, err := ResourceTypeParser(rawType.(string))
+					if err != nil {
+						return nil
+					}
+					body = append(body, cf(subjectFactories[subjectKey](subjectItem, ctx), translatedType))
+					continue
+				}
+				subject := subjectFactories[subjectKey](subjectItem, ctx)
 				if reflect.TypeOf(subject) == reflect.TypeOf(Count{}) {
 					body = append(body, cf(subject, itemMap[conditionKey]))
 					body = append(body, subject.(Count).ConditionSet)
@@ -118,6 +131,12 @@ func init() {
 					subjectKey = k
 				}
 				subject := subjectFactories[subjectKey](itemMap[subjectKey], ctx)
+				if reflect.TypeOf(subject) == reflect.TypeOf(Count{}) {
+					body = append(body, cf(subject, itemMap[conditionKey]))
+					body = append(body, subject.(Count).ConditionSet)
+				} else {
+					body = append(body, cf(subject, itemMap[conditionKey]))
+				}
 				body = append(body, cf(subject, itemMap[conditionKey]))
 			} else if of != nil {
 				body = append(body, of(operatorValue, ctx))
@@ -368,7 +387,6 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 	for _, subSet := range subSets {
 		res += "\n" + subSet
 	}
-	fmt.Printf("current res: %v\n", res)
 
 	// add condition set body at the end
 	return res, nil
