@@ -21,7 +21,8 @@ func init() {
 		if err != nil {
 			return nil
 		}
-		countBody := count + "(" + "{" + "x" + "|" + countField + ";" + whereBody.(WhereOperator).ConditionSetName + "(x)" + "}" + ")"
+		countFieldConverted := replaceIndex(countField)
+		countBody := count + "(" + "{" + "x" + "|" + countFieldConverted + ";" + whereBody.(WhereOperator).ConditionSetName + "(x)" + "}" + ")"
 		countBody = strings.Replace(countBody, "*", "x", -1)
 		return CountOperator{
 			Where:    whereBody,
@@ -50,7 +51,9 @@ func init() {
 				}
 			}
 			for k, v := range itemMap {
+				k = strings.ToLower(k)
 				if f, ok := operatorFactories[k]; ok {
+					fmt.Printf("operator is %v\n", k)
 					of = f
 					operatorValue = v
 					continue
@@ -109,7 +112,11 @@ func init() {
 			var subjectKey string
 			var of func(any, context.Context) Rego
 			var operatorValue any
-			for k, _ := range itemMap {
+			var containsTypeOfResource bool
+			for k, v := range itemMap {
+				if k == field && v == typeOfResource {
+					containsTypeOfResource = true
+				}
 				if f, ok := conditionFactory[k]; ok {
 					cf = f
 					conditionKey = k
@@ -117,10 +124,19 @@ func init() {
 				}
 			}
 			for k, v := range itemMap {
+				k = strings.ToLower(k)
 				if f, ok := operatorFactories[k]; ok {
 					of = f
 					operatorValue = v
 					continue
+				}
+			}
+			if containsTypeOfResource {
+				for k, v := range itemMap {
+					if k == field && v == typeOfResource {
+						continue
+					}
+					pushResourceType(ctx, v.(string))
 				}
 			}
 			if cf != nil {
@@ -130,14 +146,23 @@ func init() {
 					}
 					subjectKey = k
 				}
-				subject := subjectFactories[subjectKey](itemMap[subjectKey], ctx)
+				subjectItem := itemMap[subjectKey]
+				if subjectKey == field && subjectItem == typeOfResource {
+					rawType := itemMap[conditionKey]
+					translatedType, err := ResourceTypeParser(rawType.(string))
+					if err != nil {
+						return nil
+					}
+					body = append(body, cf(subjectFactories[subjectKey](subjectItem, ctx), translatedType))
+					continue
+				}
+				subject := subjectFactories[subjectKey](subjectItem, ctx)
 				if reflect.TypeOf(subject) == reflect.TypeOf(Count{}) {
 					body = append(body, cf(subject, itemMap[conditionKey]))
 					body = append(body, subject.(Count).ConditionSet)
 				} else {
 					body = append(body, cf(subject, itemMap[conditionKey]))
 				}
-				body = append(body, cf(subject, itemMap[conditionKey]))
 			} else if of != nil {
 				body = append(body, of(operatorValue, ctx))
 			}
@@ -205,6 +230,7 @@ func init() {
 			body = cf(subject, itemMap[conditionKey])
 		} else if of != nil {
 			body = of(operatorValue, ctx)
+			fmt.Printf("where body is %v\n", body)
 		}
 		conditionSetName := conditionNameGenerator(whereConditionLen, charNum)
 		return WhereOperator{
@@ -328,11 +354,12 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 	}
 
 	for _, item := range a.Conditions {
+		fmt.Printf("the item has type %v\n", reflect.TypeOf(item))
 		if reflect.TypeOf(item) == reflect.TypeOf(AnyOf{}) {
 			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-				res += not + " " + item.(AnyOf).ConditionSetName + "(x)"
+				res += "\n" + not + " " + item.(AnyOf).ConditionSetName + "(x)"
 			} else {
-				res += not + " " + item.(AnyOf).ConditionSetName
+				res += "\n" + not + " " + item.(AnyOf).ConditionSetName
 			}
 			subSet, err := item.Rego(ctx)
 			if err != nil {
@@ -343,9 +370,9 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 		}
 		if reflect.TypeOf(item) == reflect.TypeOf(NotOperator{}) {
 			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-				res += not + " " + item.(NotOperator).ConditionSetName + "(x)"
+				res += "\n" + not + " " + item.(NotOperator).ConditionSetName + "(x)"
 			} else {
-				res += not + " " + item.(NotOperator).ConditionSetName
+				res += "\n" + not + " " + item.(NotOperator).ConditionSetName
 			}
 			subSet, err := item.Rego(ctx)
 			if err != nil {
@@ -356,9 +383,9 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 		}
 		if reflect.TypeOf(item) == reflect.TypeOf(AllOf{}) {
 			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-				res += item.(AllOf).ConditionSetName + "(x)"
+				res += "\n" + item.(AllOf).ConditionSetName + "(x)"
 			} else {
-				res += item.(AllOf).ConditionSetName
+				res += "\n" + item.(AllOf).ConditionSetName
 			}
 			subSet, err := item.Rego(ctx)
 			if err != nil {
@@ -407,6 +434,12 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			res = res + "\n"
 		}
 		switch reflect.TypeOf(item) {
+		case reflect.TypeOf(WhereOperator{}):
+			subSet, err := item.Rego(ctx)
+			if err != nil {
+				return "", err
+			}
+			subSets = append(subSets, subSet)
 		case reflect.TypeOf(AllOf{}):
 			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 				res += not + " " + item.(AllOf).ConditionSetName + "(x)"

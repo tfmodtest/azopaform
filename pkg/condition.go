@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"github.com/emirpasic/gods/stacks"
 	"strings"
 )
 
@@ -171,10 +172,14 @@ type EqualsOperation struct {
 	Value string
 }
 
+// Rego For conditions under 'where' operator, "[[0-9]+]" should be replaced with "[x]"
 func (e EqualsOperation) Rego(ctx context.Context) (string, error) {
 	fieldName, err := e.Subject.Rego(ctx)
 	if err != nil {
 		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+		fieldName = replaceIndex(fieldName)
 	}
 	v := strings.Join([]string{"\"", fmt.Sprint(e.Value), "\""}, "")
 	return strings.Join([]string{fieldName, "==", v}, " "), nil
@@ -192,6 +197,9 @@ func (n NotEqualsOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+		fieldName = replaceIndex(fieldName)
+	}
 	v := strings.Join([]string{"\"", fmt.Sprint(n.Value), "\""}, "")
 	return strings.Join([]string{fieldName, "!=", v}, " "), nil
 }
@@ -208,7 +216,10 @@ func (l LikeOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	v := strings.Join([]string{"`", fmt.Sprint(l.Value), "`"}, "")
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+		fieldName = replaceIndex(fieldName)
+	}
+	v := strings.Join([]string{"\"", fmt.Sprint(l.Value), "\""}, "")
 	return strings.Join([]string{regexExp, "(", v, ",", fieldName, ")"}, ""), nil
 }
 
@@ -223,6 +234,9 @@ func (n NotLikeOperation) Rego(ctx context.Context) (string, error) {
 	fieldName, err := n.Subject.Rego(ctx)
 	if err != nil {
 		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+		fieldName = replaceIndex(fieldName)
 	}
 	v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")
 	return strings.Join([]string{not, " ", regexExp, "(", v, ",", fieldName, ")"}, ""), nil
@@ -363,6 +377,9 @@ func (l LessOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+		fieldName = replaceIndex(fieldName)
+	}
 	return strings.Join([]string{fieldName, "<", fmt.Sprint(l.Value)}, " "), nil
 }
 
@@ -377,6 +394,9 @@ func (l LessOrEqualsOperation) Rego(ctx context.Context) (string, error) {
 	fieldName, err := l.Subject.Rego(ctx)
 	if err != nil {
 		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+		fieldName = replaceIndex(fieldName)
 	}
 	return strings.Join([]string{fieldName, "<=", fmt.Sprint(l.Value)}, " "), nil
 }
@@ -393,6 +413,9 @@ func (g GreaterOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+		fieldName = replaceIndex(fieldName)
+	}
 	return strings.Join([]string{fieldName, ">", fmt.Sprint(g.Value)}, " "), nil
 }
 
@@ -408,6 +431,9 @@ func (g GreaterOrEqualsOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+		fieldName = replaceIndex(fieldName)
+	}
 	return strings.Join([]string{fieldName, ">=", fmt.Sprint(g.Value)}, " "), nil
 }
 
@@ -422,6 +448,9 @@ func (e ExistsOperation) Rego(ctx context.Context) (string, error) {
 	fieldName, err := e.Subject.Rego(ctx)
 	if err != nil {
 		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+		fieldName = replaceIndex(fieldName)
 	}
 	if e.Value {
 		return fieldName, nil

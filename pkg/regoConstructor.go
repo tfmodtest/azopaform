@@ -751,7 +751,7 @@ func FieldNameProcessor(fieldName interface{}, ctx context.Context) (string, str
 	var rules string
 	switch fn := fieldName.(type) {
 	case string:
-		if fn == typeOfResource {
+		if fn == typeOfResource || fn == kindOfResource {
 			return fn, "", nil
 		}
 		if strings.Contains(fn, "count") {
@@ -840,6 +840,31 @@ func (t LookupTable) QueryProperty(resourceType, apiVersion, propertyAddress str
 	return r, ok
 }
 
+func (t LookupTable) QueryParentProperty(resourceType, apiVersion, propertyAddress string) string {
+	var result string
+	m, ok := t.QueryResource(resourceType, apiVersion)
+	if !ok {
+		return ""
+	}
+	_, ok = m[propertyAddress]
+	if !ok {
+		for k, v := range m {
+			if strings.HasPrefix(k, propertyAddress) {
+				childAddr := v[0].PropertyAddr
+				addrArray := strings.Split(childAddr, "/")
+				for i := len(addrArray) - 1; i >= 0; i-- {
+					if _, err := strconv.Atoi(addrArray[i]); err == nil {
+						continue
+					}
+					result = strings.Join(addrArray[:i], "/")
+					break
+				}
+			}
+		}
+	}
+	return result
+}
+
 func (t LookupTable) QueryResource(resourceType, apiVersion string) (map[string][]aztfq.TFResult, bool) {
 	l2, ok := t[resourceType]
 	if !ok {
@@ -875,19 +900,29 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 		rtLen := len(resourceType)
 		fieldNameRaw = fieldNameRaw[rtLen:]
 	}
+	//some attributes has "properties/" in the middle of the path after the list name, need to address this case
 	prop := fieldNameRaw
 	prop = strings.Replace(prop, ".", "/", -1)
 	prop = strings.Replace(prop, "[x]", "/*", -1)
+	prop = strings.Replace(prop, "[*]", "/*", -1)
 	prop = strings.TrimPrefix(prop, "/")
-	originalProp := prop
-	prop = "properties/" + prop
-	fmt.Printf("the prop is %s\n", prop)
+	//fmt.Printf("the prop is %s\n", prop)
 	upperRt := strings.ToUpper(resourceType)
 	if results, ok := lookupTable.QueryProperty(upperRt, version, prop); ok {
 		return results[0].PropertyAddr, nil
 	}
-	if results, ok := lookupTable.QueryProperty(upperRt, version, originalProp); ok {
+	prop = "properties/" + prop
+	if results, ok := lookupTable.QueryProperty(upperRt, version, prop); ok {
 		return results[0].PropertyAddr, nil
+	}
+	prop = strings.Replace(prop, "*/", "*/properties/", -1)
+	if results, ok := lookupTable.QueryProperty(upperRt, version, prop); ok {
+		return results[0].PropertyAddr, nil
+	}
+
+	parentPropAddr := lookupTable.QueryParentProperty(upperRt, version, prop)
+	if parentPropAddr != "" {
+		return parentPropAddr, nil
 	}
 
 	fmt.Printf("cannot find the property %s in the lookup table\n", prop)
@@ -934,7 +969,7 @@ func TFNameMapping(fieldName string) string {
 		}
 		next := result + "." + v
 		if _, err := strconv.Atoi(v); err == nil {
-			next = result + "[" + "x" + "]"
+			next = result + "[" + v + "]"
 		}
 		result = next
 	}
