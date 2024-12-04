@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"context"
-	"fmt"
 	"strings"
 )
 
@@ -24,7 +23,7 @@ var subjectFactories = map[string]func(input any, ctx context.Context) Rego{
 	"count": func(input any, ctx context.Context) Rego {
 		f := operatorFactories[count]
 		countConditionSet := f(input, ctx)
-		fmt.Printf("countConditionSet: %v\n", countConditionSet)
+		//fmt.Printf("countConditionSet: %v\n", countConditionSet)
 		return Count{
 			Count:        countConditionSet.(CountOperator).CountExp,
 			ConditionSet: countConditionSet.(CountOperator).Where,

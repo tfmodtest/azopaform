@@ -13,6 +13,10 @@ import (
 	"github.com/magodo/aztfq/aztfq"
 )
 
+var CannotFindType int
+var CannotFindProp int
+var TotalPropCount int
+
 // RuleSetReader takes a RuleSet and returns a string that can be used in a Rego file
 func (ruleSet RuleSet) RuleSetReader(fieldNameReplacer string, ctx context.Context) ([]string, string, error) {
 	var result string
@@ -747,12 +751,13 @@ func (singleRule SingleRule) SingleRuleReader(ctx context.Context) (string, stri
 }
 
 func FieldNameProcessor(fieldName interface{}, ctx context.Context) (string, string, error) {
+	TotalPropCount++
 	var result string
 	var rules string
 	switch fn := fieldName.(type) {
 	case string:
 		if fn == typeOfResource || fn == kindOfResource {
-			return fn, "", nil
+			return strings.Join([]string{"r.", fn}, ""), "", nil
 		}
 		if strings.Contains(fn, "count") {
 			return fn, "", nil
@@ -778,6 +783,8 @@ func FieldNameProcessor(fieldName interface{}, ctx context.Context) (string, str
 		rules = singleRule
 	}
 
+	fmt.Printf("The total prop count is %d\n", TotalPropCount)
+	fmt.Printf("Cannot find prop number is %v\n", CannotFindProp)
 	return result, rules, nil
 }
 
@@ -925,7 +932,7 @@ func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error)
 		return parentPropAddr, nil
 	}
 
-	fmt.Printf("cannot find the property %s in the lookup table\n", prop)
+	CannotFindProp++
 	prop = strings.Replace(prop, "properties/", "", -1)
 	prop = ToSnakeCase(prop)
 	return prop, nil
@@ -944,7 +951,13 @@ func ResourceTypeParser(resourceType string) (string, error) {
 	upperRt := strings.ToUpper(resourceType)
 	ttt, ok := lookupTable.QueryResource(upperRt, "")
 	if !ok || len(ttt) == 0 {
-		return "", fmt.Errorf("cannot find the resource type %s in the lookup table", resourceType)
+		/*
+			return "", fmt.Errorf("cannot find the resource type %s in the lookup table", resourceType)
+		*/
+		CannotFindType++
+		fmt.Printf("cannot find the resource type %s in the lookup table\n", resourceType)
+		fmt.Printf("cannot find type total number is %d\n", CannotFindType)
+		return "", nil
 	}
 	var result string
 	for _, v := range ttt {
@@ -968,7 +981,7 @@ func TFNameMapping(fieldName string) string {
 			continue
 		}
 		next := result + "." + v
-		if _, err := strconv.Atoi(v); err == nil {
+		if _, err := strconv.Atoi(v); err == nil || v == "*" {
 			next = result + "[" + v + "]"
 		}
 		result = next

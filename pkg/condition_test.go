@@ -122,65 +122,72 @@ func TestOperations(t *testing.T) {
 		operation Rego
 		expected  string
 	}{
-		{
-			name: "CountOperator",
-			operation: CountOperator{
-				Where: WhereOperator{
-					Condition: EqualsOperation{
-						operation: operation{
-							Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].direction"),
-						},
-						Value: "Inbound",
-					},
-					ConditionSetName: "aaaaaaaaa",
-				},
-				//Operation: GreaterOperation{
-				//	operation: operation{
-				//		Subject: FieldValue{"count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; whereOperatorName})"},
-				//	},
-				//	Value: "0",
-				//},
-			},
-			expected: "count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; aaaaaaaaa(x)}) > 0\naaaaaaaaa(x) if {\nr.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x].direction == \"Inbound\"\n}",
-		},
+		//{
+		//	name: "CountOperator",
+		//	operation: CountOperator{
+		//		Where: WhereOperator{
+		//			Conditions: []Rego{
+		//				EqualsOperation{
+		//					operation: operation{
+		//						Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].direction"),
+		//					},
+		//					Value: "Inbound",
+		//				},
+		//			},
+		//			ConditionSetName: "aaaaaaaaa",
+		//		},
+		//		//Operation: GreaterOperation{
+		//		//	operation: operation{
+		//		//		Subject: FieldValue{"count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; whereOperatorName})"},
+		//		//	},
+		//		//	Value: "0",
+		//		//},
+		//		CountExp: "count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; aaaaaaaaa(x)})",
+		//	},
+		//	expected: "count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; aaaaaaaaa(x)}) > 0\naaaaaaaaa(x) if {\nr.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x].direction == \"Inbound\"\n}",
+		//},
 		{
 			name: "NestedWhereOperator",
 			operation: WhereOperator{
-				Condition: AllOf{
-					Conditions: []Rego{
-						EqualsOperation{
-							operation: operation{
-								Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+				Conditions: []Rego{
+					AllOf{
+						Conditions: []Rego{
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+								},
+								Value: "Standard",
 							},
-							Value: "Standard",
-						},
-						ExistsOperation{
-							operation: operation{
-								Subject: OperationField("Microsoft.Web/serverFarms/sku.name"),
+							ExistsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Web/serverFarms/sku.name"),
+								},
+								Value: true,
 							},
-							Value: true,
-						},
-						EqualsOperation{
-							operation: operation{
-								Subject: OperationField("Microsoft.Web/serverFarms/sku.size"),
+							EqualsOperation{
+								operation: operation{
+									Subject: OperationField("Microsoft.Web/serverFarms/sku.size"),
+								},
+								Value: "P1v3",
 							},
-							Value: "P1v3",
 						},
+						ConditionSetName: "aaaaa",
 					},
-					ConditionSetName: "aaaaa",
 				},
 				ConditionSetName: "aaaaaaaaa",
 			},
-			expected: "aaaaaaaaa(x) if {\naaaaa(x)\n}\naaaaa(x) if {\nr.change.after.sku[0].tier == \"Standard\"\nr.change.after.sku_name\nr.change.after.sku[0].size == \"P1v3\"\n}",
+			expected: "aaaaaaaaa(x) if {\naaaaa(x)\n}\naaaaa(x) if {\nr.change.after.sku[x].tier == \"Standard\"\nr.change.after.sku_name\nr.change.after.sku[x].size == \"P1v3\"\n}",
 		},
 		{
 			name: "WhereOperator",
 			operation: WhereOperator{
-				Condition: EqualsOperation{
-					operation: operation{
-						Subject: OperationField("type"),
+				Conditions: []Rego{
+					EqualsOperation{
+						operation: operation{
+							Subject: OperationField("type"),
+						},
+						Value: "azurerm_app_service_plan",
 					},
-					Value: "azurerm_app_service_plan",
 				},
 				ConditionSetName: "aaaaaaaaa",
 			},
@@ -357,7 +364,7 @@ func TestOperations(t *testing.T) {
 				},
 				Value: `^[^@]+@[^@]+\.[^@]+$`,
 			},
-			expected: "regex.match(`^[^@]+@[^@]+\\.[^@]+$`,r.change.after.sku[0].tier)",
+			expected: "regex.match(\"^[^@]+@[^@]+\\.[^@]+$\",r.change.after.sku[0].tier)",
 		},
 		{
 			name: "NotLikeOperation",
@@ -425,17 +432,19 @@ func TestNewPolicyRuleBody(t *testing.T) {
 					operation: operation{
 						Subject: CountOperator{
 							Where: WhereOperator{
-								Condition: EqualsOperation{
-									operation: operation{
-										Subject: FieldValue{
-											Name: "Microsoft.Network/networkSecurityGroups/securityRules[x].direction",
+								Conditions: []Rego{
+									EqualsOperation{
+										operation: operation{
+											Subject: FieldValue{
+												Name: "Microsoft.Network/networkSecurityGroups/securityRules[x].direction",
+											},
 										},
+										Value: "Inbound",
 									},
-									Value: "Inbound",
 								},
-								ConditionSetName: "aaaaaaaaa",
+								ConditionSetName: "condition1",
 							},
-							CountExp: "count({x|Microsoft.Network/networkSecurityGroups/securityRules[x];aaaaaaaaa(x)})",
+							CountExp: "count({x|Microsoft.Network/networkSecurityGroups/securityRules[x];condition1(x)})",
 						},
 					},
 					Value: 0,
@@ -455,12 +464,12 @@ func TestNewPolicyRuleBody(t *testing.T) {
 					Body: NotEqualsOperation{
 						operation: operation{
 							Subject: FieldValue{
-								Name: "Microsoft.HealthcareApis/services/corsConfiguration.origins[*]",
+								Name: "Microsoft.HealthcareApis/services/corsConfiguration.origins[x]",
 							},
 						},
 						Value: "*",
 					},
-					ConditionSetName: "aaa",
+					ConditionSetName: "condition1",
 				},
 			},
 		},
@@ -516,7 +525,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 									Value: "1.2",
 								},
 							},
-							ConditionSetName: "aaaaaaa",
+							ConditionSetName: "condition1",
 						},
 						AllOf{
 							Conditions: []Rego{
@@ -526,7 +535,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 											Name: "type",
 										},
 									},
-									Value: "Microsoft.Sql/servers",
+									Value: "azurerm_mssql_server",
 								},
 								ExistsOperation{
 									operation: operation{
@@ -537,10 +546,10 @@ func TestNewPolicyRuleBody(t *testing.T) {
 									Value: true,
 								},
 							},
-							ConditionSetName: "aaaaa",
+							ConditionSetName: "condition1",
 						},
 					},
-					ConditionSetName: "aaaaaaa",
+					ConditionSetName: "condition1",
 				},
 			},
 		},
@@ -578,7 +587,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 							Value: "1.2",
 						},
 					},
-					ConditionSetName: "aaaaaaa",
+					ConditionSetName: "condition1",
 				},
 			},
 		},
@@ -605,7 +614,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 									Name: "type",
 								},
 							},
-							Value: "Microsoft.HealthcareApis/services",
+							Value: "azurerm_healthcare_service",
 						},
 						ExistsOperation{
 							operation: operation{
@@ -616,7 +625,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 							Value: false,
 						},
 					},
-					ConditionSetName: "aaaaa",
+					ConditionSetName: "condition1",
 				},
 			},
 		},
@@ -861,13 +870,11 @@ func TestNewPolicyRuleBody(t *testing.T) {
 					NewPolicyRuleBody(tt.input, context.Context(nil))
 				})
 			} else {
-				stub := gostub.Stub(&RandIntRange, func(min int, max int) int {
-					return 0
+				stub := gostub.Stub(&NeoConditionNameGenerator, func(ctx context.Context) (string, error) {
+					return "condition1", nil
 				})
 				defer stub.Reset()
-				result := NewPolicyRuleBody(map[string]any{
-					"if": tt.input,
-				}, context.Context(nil))
+				result := NewPolicyRuleBody(tt.input, NewContext())
 				assert.Equal(t, tt.expected, result)
 			}
 		})

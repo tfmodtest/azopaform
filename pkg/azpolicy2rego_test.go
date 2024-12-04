@@ -1,15 +1,67 @@
 package pkg
 
 import (
+	"context"
 	"fmt"
+	"github.com/prashantv/gostub"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 
-	"github.com/prashantv/gostub"
 	"github.com/stretchr/testify/require"
 )
+
+const list_field_json = `{
+  "properties": {
+    "displayName": "CORS should not allow every domain to access your API for FHIR",
+    "policyType": "BuiltIn",
+    "mode": "Indexed",
+    "description": "Cross-Origin Resource Sharing (CORS) should not allow all domains to access your API for FHIR. To protect your API for FHIR, remove access for all domains and explicitly define the domains allowed to connect.",
+    "metadata": {
+      "version": "1.1.0",
+      "category": "API for FHIR"
+    },
+    "version": "1.1.0",
+    "parameters": {
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "audit",
+          "Audit",
+          "disabled",
+          "Disabled"
+        ],
+        "defaultValue": "Audit"
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.HealthcareApis/services"
+          },
+          {
+            "not": {
+              "field": "Microsoft.HealthcareApis/services/corsConfiguration.origins[*]",
+              "notEquals": "*"
+            }
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]"
+      }
+    }
+  },
+  "id": "/providers/Microsoft.Authorization/policyDefinitions/0fea8f8a-4169-495d-8307-30ec335f387d",
+  "name": "0fea8f8a-4169-495d-8307-30ec335f387d"
+}`
 
 const count_json = `{
   "properties": {
@@ -183,118 +235,65 @@ const deny_json = `{
 }`
 
 const nested_json = `{
-    "properties": {
-        "displayName": "[AzCliTools][SFI-2.5.1] Disable all high risk inbound ports for Network Security Group",
-        "description": "This policy disables all high risk inbound ports on the network security group.",
-        "mode": "All",
-        "metadata": {
-            "version": "1.0.0",
-            "category": "SFI"
-        },
-        "policyRule": {
-            "if": {
-                "allOf": [
-                    {
-                        "anyOf": [
-                            {
-                                "field": "type",
-                                "equals": "Microsoft.Network/networkSecurityGroups"
-                            },
-                            {
-                                "field": "type",
-                                "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
-                            }
-                        ]
-                    },
-                    {
-                        "anyOf": [
-                            {
-                                "allOf": [
-                                    {
-                                        "field": "type",
-                                        "equals": "Microsoft.Network/networkSecurityGroups/securityRules"
-                                    },
-                                    {
-                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/access",
-                                        "equals": "Allow"
-                                    },
-                                    {
-                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/direction",
-                                        "equals": "Inbound"
-                                    },
-                                    {
-                                        "field": "Microsoft.Network/networkSecurityGroups/securityRules/sourceAddressPrefix",
-                                        "in": [
-                                            "*",
-                                            "Internet"
-                                        ]
-                                    },
-                                    {
-                                        "anyOf": [
-                                            {
-                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRange",
-                                                "in": [
-                                                    "*",
-                                                    "22",
-                                                    "3389"
-                                                ]
-                                            },
-                                            {
-                                                "not": {
-                                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules/destinationPortRanges[*]",
-                                                    "notIn": [
-                                                        "*",
-                                                        "22",
-                                                        "3389"
-                                                    ]
-                                                }
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "count": {
-                                    "field": "Microsoft.Network/networkSecurityGroups/securityRules[*]",
-                                    "where": {
-                                        "allOf": [
-                                            {
-                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules[*].access",
-                                                "equals": "Allow"
-                                            },
-                                            {
-                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules[*].direction",
-                                                "equals": "Inbound"
-                                            },
-                                            {
-                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules[*].sourceAddressPrefix",
-                                                "in": [
-                                                    "*",
-                                                    "Internet"
-                                                ]
-                                            },
-                                            {
-                                                "field": "Microsoft.Network/networkSecurityGroups/securityRules[*].destinationPortRange",
-                                                "in": [
-                                                    "*",
-                                                    "22",
-                                                    "3389"
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                },
-                                "greater": 0
-                            }
-                        ]
-                    }
+  "properties": {
+    "displayName": "API Management APIs should use only encrypted protocols",
+    "policyType": "BuiltIn",
+    "mode": "All",
+    "description": "To ensure security of data in transit, APIs should be available only through encrypted protocols, like HTTPS or WSS. Avoid using unsecured protocols, such as HTTP or WS.",
+    "metadata": {
+      "version": "2.0.2",
+      "category": "API Management"
+    },
+    "version": "2.0.2",
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.ApiManagement/service/apis"
+          },
+          {
+            "count": {
+              "field": "Microsoft.ApiManagement/service/apis/protocols[*]",
+              "where": {
+                "anyOf": [
+                  {
+                    "field": "Microsoft.ApiManagement/service/apis/protocols[*]",
+                    "equals": "http"
+                  },
+                  {
+                    "field": "Microsoft.ApiManagement/service/apis/protocols[*]",
+                    "equals": "ws"
+                  }
                 ]
+              }
             },
-            "then": {
-                "effect": "deny"
-            }
-        }
+            "greaterOrEquals": 1
+          }
+        ]
+      },
+      "then": {
+        "effect": "[parameters('effect')]"
+      }
+    },
+    "parameters": {
+      "effect": {
+        "type": "string",
+        "metadata": {
+          "displayName": "Effect",
+          "description": "Enable or disable the execution of the policy"
+        },
+        "allowedValues": [
+          "Audit",
+          "Disabled",
+          "Deny"
+        ],
+        "defaultValue": "Audit"
+      }
     }
+  },
+  "id": "/providers/Microsoft.Authorization/policyDefinitions/ee7495e7-3ba7-40b6-bfee-c29e22cc75d4",
+  "name": "ee7495e7-3ba7-40b6-bfee-c29e22cc75d4"
 }`
 
 const nested_json2 = `{
@@ -877,13 +876,13 @@ import rego.v1
 r := tfplan.resource_changes[_]
 
 warn if {
- aaaaa
+ condition1
 }
-aaaaa if {
+condition1 if {
 type == "azurerm_service_plan"
-aaaaa
+condition1
 }
-aaaaa if {
+condition1 if {
 not r.change.after.sku[0].tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]
 not r.change.after.sku_name in ["B1","B2","B3","S1","S2","S3","EP1","EP2","EP3","P1","P2","P3","P1V2","P2V2","P3V2","P0V3","P1V3","P2V3","P3V3","P1MV3","P2MV3","P3MV3","P4MV3","P5MV3","I1","I2","I3","I1V2","I2V2","I3V2","I4V2","I5V2","I6V2","WS1","WS2","WS3"]
 }`
@@ -895,19 +894,36 @@ import rego.v1
 r := tfplan.resource_changes[_]
 
 warn if {
- aaaaa
+ condition1
 }
 aaaaa if {
 type == "azurerm_app_service_environment_v3"
 regex.match("ASE*",kind)
-count({x|r.change.after.cluster_setting[x];aaaaaaaaa(x)}) < 1
+count({x|r.change.after.cluster_setting[x];condition1(x)}) < 1
 }
-aaaaaaaaa(x) if {
-aaaaa(x)
+condition1(x) if {
+condition1(x)
 }
-aaaaa(x) if {
+condition1(x) if {
 r.change.after.cluster_setting[x].name == "DisableTls1.0"
 r.change.after.cluster_setting[x].value == "1"
+}`
+
+	expectedListRego := `package main
+
+import rego.v1
+
+r := tfplan.resource_changes[_]
+
+warn if {
+ condition1
+}
+condition1 if {
+type == "azurerm_healthcare_service"
+not condition1
+}
+condition1 {
+r.change.after.cors_configuration[0].allowed_origins[0] != "*"
 }`
 
 	expectedNestedRego := `package main
@@ -916,43 +932,19 @@ import rego.v1
 
 r := tfplan.resource_changes[_]
 
-deny if {
- aaaaa
+warn if {
+ condition1
 }
 condition1 if {
- not aaaaaaa
- not aaaaaaa
+type == "azurerm_api_management_api"
+count({x|r.change.after.protocols[x];condition1(x)}) >= 1
 }
-aaaaaaa if {
- type != azurerm_network_security_group
- type != azurerm_network_security_rule
+condition1(x) if {
+not condition1(x)
 }
-aaaaaaa if {
- count({x|r.change.after.security_rule[x];aaaaaaaaa(x)}) <= 0
- not aaaaaaa
-}
-condition4(x) if {
- condition6(x)
-}
-condition6(x) if {
- r.change.after.security_rule[x].access == Allow
- r.change.after.security_rule[x].direction == Inbound
- some r.change.after.security_rule[x].sourceAddressPrefix in ["*","Internet"]
- some r.change.after.security_rule[x].destinationPortRange in ["*","22","3389"]
-}
-condition5 if {
- type == azurerm_network_security_rule
- r.change.after.access == Allow
- r.change.after.direction == Inbound
- some r.change.after.source_address_prefix in ["*","Internet"]
- not condition7
-}
-condition7 if {
- not r.change.after.destination_port_range in ["*","22","3389"]
- condition8
-}
-condition8 if {
- not r.change.after.destination_port_ranges[0] in ["*","22","3389"]
+condition1(x) if {
+r.change.after.protocols[x] != "http"
+r.change.after.protocols[x] != "ws"
 }
 `
 	expectedNestedRego2 := ``
@@ -1037,6 +1029,16 @@ condition8 if {
 				"nested2.rego": expectedNestedRego2,
 			},
 		},
+		{
+			desc:         "policy contains lists with multiple indexes",
+			inputDirPath: "",
+			mockFs: map[string]string{
+				"list.json": list_field_json,
+			},
+			expected: map[string]string{
+				"list.rego": expectedListRego,
+			},
+		},
 	}
 
 	//for i := 0; i < 10; i++ {
@@ -1050,8 +1052,8 @@ condition8 if {
 				files[n] = f
 			}
 			mockFs := fakeFs(files)
-			stub := gostub.Stub(&RandIntRange, func(min int, max int) int {
-				return 0
+			stub := gostub.Stub(&NeoConditionNameGenerator, func(ctx context.Context) (string, error) {
+				return "condition1", nil
 			}).Stub(&Fs, mockFs)
 			defer stub.Reset()
 			policyPath := ""

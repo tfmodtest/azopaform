@@ -14,6 +14,9 @@ import (
 	"github.com/spf13/afero"
 )
 
+var NoResourceTypeFound int
+var total int
+
 type Rule struct {
 	Properties *PolicyRuleModel
 	Id         string
@@ -45,11 +48,13 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 	//ifBody := input["if"]
 
 	conditionMap := input
+	fmt.Printf("the condition map is %+v\n", conditionMap)
 	var subject Rego
 	var creator func(subject Rego, input any) Rego
 	var cv any
 	for key, conditionValue := range conditionMap {
 		key = strings.ToLower(key)
+		fmt.Printf("the key is %s\n", key)
 		if key == count {
 			operationFactory, ok := operatorFactories[key]
 			if !ok {
@@ -95,7 +100,7 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 		}
 		if key == field {
 			if conditionValue == typeOfResource {
-				pushResourceType(context.Background(), conditionValue.(string))
+				pushResourceType(ctx, conditionValue.(string))
 			}
 			subject = OperationField(conditionValue.(string))
 			continue
@@ -333,11 +338,20 @@ func AzurePolicyToRego(policyPath string, dir string, ctx context.Context) error
 		paths = []string{policyPath}
 	}
 	for _, path := range paths {
+		total++
+		fmt.Printf("start to convert azure policy %s to rego\n", path)
+		conditionNameCounter := arraystack.New()
+		for i := 100; i > 0; i-- {
+			conditionNameCounter.Push(i)
+		}
+		ctx.Value("context").(map[string]stacks.Stack)["conditionNameCounter"] = conditionNameCounter
+
 		err = NeoAzPolicy2Rego(path, ctx)
 		if err != nil {
-			return err
+			//fmt.Printf("cannot convert azure policy %s to rego %+v\n", path, err)
 		}
 	}
+	fmt.Printf("total number of policies is %d\n", total)
 	return nil
 }
 
@@ -345,6 +359,7 @@ func NewContext() context.Context {
 	contextMap := make(map[string]stacks.Stack)
 	contextMap["resourceType"] = arraystack.New()
 	contextMap["fieldNameReplacer"] = arraystack.New()
+	contextMap["conditionNameCounter"] = arraystack.New()
 	ctx := context.WithValue(context.Background(), "context", contextMap)
 	return ctx
 }
@@ -360,9 +375,14 @@ func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 		return err
 	}
 
+	fmt.Printf("the rule is %+v\n", rule)
+	fmt.Printf("the prop is %+v\n", rule.Properties)
+	fmt.Printf("the policy rule is %+v\n", rule.Properties.PolicyRule)
 	then := rule.Properties.PolicyRule.GetThen()
+	fmt.Printf("the then is %+v\n", then)
 	action, err = then.MapEffectToAction(rule.Properties.Parameters.GetEffect().GetDefaultValue())
 	if err != nil {
+		fmt.Printf("cannot map effect to action %+v\n", err)
 		return err
 	}
 	fmt.Printf("the effect is %+v\n", action)
@@ -373,12 +393,12 @@ func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 	//	return err
 	//}
 	ruleBody := NewPolicyRuleBody(condition, ctx)
-	fmt.Printf("the rule body is %+v\n", ruleBody)
+	//fmt.Printf("the rule body is %+v\n", ruleBody)
 	result, err := ruleBody.IfBody.Rego(ctx)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("the result is %s", result)
+	//fmt.Printf("the result is %s", result)
 	fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
 	switch reflect.TypeOf(ruleBody.IfBody) {
 	case reflect.TypeOf(AllOf{}):
@@ -409,63 +429,64 @@ func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 	return nil
 }
 
-func azPolicy2Rego(path string, ctx context.Context) error {
-	var action string
-	fmt.Printf("the path is %+v\n", path)
-
-	rule, err := ruleIterator(path)
-	if err != nil {
-		fmt.Printf("cannot find rules %+v\n", err)
-		return err
-	}
-
-	then := rule.Properties.PolicyRule.GetThen()
-	action, err = then.MapEffectToAction(rule.Properties.Parameters.GetEffect().GetDefaultValue())
-	if err != nil {
-		return err
-	}
-	fmt.Printf("the effect is %+v\n", action)
-	condition, err := rule.Properties.PolicyRule.GetIf().condition(ctx)
-	if err != nil {
-		fmt.Printf("cannot find conditions %+v\n", err)
-		return err
-	}
-	rt, err := currentResourceType(ctx)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("the resource type is %+v\n", rt)
-	fmt.Printf("the whole condition is %+v\n", *condition)
-	fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
-	conditionNames, result, err := condition.RuleSetReader("", ctx)
-	fmt.Printf("the condition names are %+v\n", conditionNames)
-	if action == disabled {
-		result = "default allow := true\n\n" + result
-	} else if action == deny {
-		top := "deny if {\n" + " " + conditionNames[0] + "\n}\n"
-		result = top + result
-	} else if action == warn {
-		top := "warn if {\n" + " " + conditionNames[0] + "\n}\n"
-		result = top + result
-	}
-
-	result = "package main\n\n" + "import rego.v1\n\n" + "r := tfplan.resource_changes[_]\n\n" + result
-
-	err = afero.WriteFile(Fs, fileName, []byte(result), 0644)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	return nil
-}
+//func azPolicy2Rego(path string, ctx context.Context) error {
+//	var action string
+//	fmt.Printf("the path is %+v\n", path)
+//
+//	rule, err := ruleIterator(path)
+//	if err != nil {
+//		fmt.Printf("cannot find rules %+v\n", err)
+//		return err
+//	}
+//
+//	then := rule.Properties.PolicyRule.GetThen()
+//	action, err = then.MapEffectToAction(rule.Properties.Parameters.GetEffect().GetDefaultValue())
+//	if err != nil {
+//		return err
+//	}
+//	fmt.Printf("the effect is %+v\n", action)
+//	condition, err := rule.Properties.PolicyRule.GetIf().condition(ctx)
+//	if err != nil {
+//		fmt.Printf("cannot find conditions %+v\n", err)
+//		return err
+//	}
+//	if err != nil {
+//		return err
+//	}
+//	fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
+//	conditionNames, result, err := condition.RuleSetReader("", ctx)
+//	fmt.Printf("the condition names are %+v\n", conditionNames)
+//	if action == disabled {
+//		result = "default allow := true\n\n" + result
+//	} else if action == deny {
+//		top := "deny if {\n" + " " + conditionNames[0] + "\n}\n"
+//		result = top + result
+//	} else if action == warn {
+//		top := "warn if {\n" + " " + conditionNames[0] + "\n}\n"
+//		result = top + result
+//	}
+//
+//	result = "package main\n\n" + "import rego.v1\n\n" + "r := tfplan.resource_changes[_]\n\n" + result
+//
+//	err = afero.WriteFile(Fs, fileName, []byte(result), 0644)
+//	if err != nil {
+//		fmt.Println(err)
+//		return err
+//	}
+//	return nil
+//}
 
 func currentResourceType(ctx context.Context) (string, error) {
 	resourceTypeStack := ctx.Value("context").(map[string]stacks.Stack)["resourceType"]
 	if resourceTypeStack == nil {
+		NoResourceTypeFound++
+		fmt.Printf("no resource type found number is %d\n", NoResourceTypeFound)
 		return "", fmt.Errorf("cannot find the resource type in the context")
 	}
 	resourceType, ok := resourceTypeStack.Peek()
 	if !ok {
+		NoResourceTypeFound++
+		fmt.Printf("no resource type found number is %d\n", NoResourceTypeFound)
 		return "", fmt.Errorf("cannot find the resource type in the context")
 	}
 	rt, ok := resourceType.(string)

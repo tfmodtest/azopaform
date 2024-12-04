@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
+	"reflect"
 	"strings"
 )
 
@@ -24,6 +25,10 @@ type Rego interface {
 	Rego(ctx context.Context) (string, error)
 }
 
+type Condition interface {
+	GetReverseRego(ctx context.Context) (string, error)
+}
+
 type operation struct {
 	Subject Rego
 }
@@ -40,13 +45,13 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 	"equals": func(subject Rego, input any) Rego {
 		return EqualsOperation{
 			operation: operation{Subject: subject},
-			Value:     input.(string),
+			Value:     input,
 		}
 	},
-	"notEquals": func(s Rego, input any) Rego {
+	"notequals": func(s Rego, input any) Rego {
 		return NotEqualsOperation{
 			operation: operation{Subject: s},
-			Value:     input.(string),
+			Value:     input,
 		}
 	},
 	"like": func(s Rego, input any) Rego {
@@ -55,7 +60,7 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 			Value:     input.(string),
 		}
 	},
-	"notLike": func(s Rego, input any) Rego {
+	"notlike": func(s Rego, input any) Rego {
 		return NotLikeOperation{
 			operation: operation{Subject: s},
 			Value:     input.(string),
@@ -67,19 +72,19 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 			Value:     input.(string),
 		}
 	},
-	"matchInsensitively": func(s Rego, input any) Rego {
+	"matchinsensitively": func(s Rego, input any) Rego {
 		return MatchInsensitivelyOperation{
 			operation: operation{Subject: s},
 			Value:     input.(string),
 		}
 	},
-	"notMatch": func(s Rego, input any) Rego {
+	"notmatch": func(s Rego, input any) Rego {
 		return NotMatchOperation{
 			operation: operation{Subject: s},
 			Value:     input.(string),
 		}
 	},
-	"notMatchInsensitively": func(s Rego, input any) Rego {
+	"notmatchinsensitively": func(s Rego, input any) Rego {
 		return NotMatchInsensitivelyOperation{
 			operation: operation{Subject: s},
 			Value:     input.(string),
@@ -91,7 +96,7 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 			Value:     input.(string),
 		}
 	},
-	"notContains": func(s Rego, input any) Rego {
+	"notcontains": func(s Rego, input any) Rego {
 		return NotContainsOperation{
 			operation: operation{Subject: s},
 			Value:     input.(string),
@@ -102,6 +107,9 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 			operation: operation{Subject: s},
 			Values: func() []string {
 				var v []string
+				if reflect.TypeOf(input).Kind() != reflect.Slice {
+					return nil
+				}
 				for _, i := range input.([]any) {
 					v = append(v, i.(string))
 				}
@@ -109,7 +117,7 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 			}(),
 		}
 	},
-	"notIn": func(s Rego, input any) Rego {
+	"notin": func(s Rego, input any) Rego {
 		return NotInOperation{
 			operation: operation{Subject: s},
 			Values: func() []string {
@@ -121,13 +129,13 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 			}(),
 		}
 	},
-	"containsKey": func(s Rego, input any) Rego {
+	"containskey": func(s Rego, input any) Rego {
 		return ContainsKeyOperation{
 			operation: operation{Subject: s},
 			KeyName:   input.(string),
 		}
 	},
-	"notContainsKey": func(s Rego, input any) Rego {
+	"notcontainskey": func(s Rego, input any) Rego {
 		return NotContainsKeyOperation{
 			operation: operation{Subject: s},
 			KeyName:   input.(string),
@@ -139,7 +147,7 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 			Value:     input,
 		}
 	},
-	"lessOrEquals": func(s Rego, input any) Rego {
+	"lessorequals": func(s Rego, input any) Rego {
 		return LessOrEqualsOperation{
 			operation: operation{Subject: s},
 			Value:     input,
@@ -151,7 +159,7 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 			Value:     input,
 		}
 	},
-	"greaterOrEquals": func(s Rego, input any) Rego {
+	"greaterorequals": func(s Rego, input any) Rego {
 		return GreaterOrEqualsOperation{
 			operation: operation{Subject: s},
 			Value:     input,
@@ -160,16 +168,17 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 	"exists": func(s Rego, input any) Rego {
 		return ExistsOperation{
 			operation: operation{Subject: s},
-			Value:     input.(bool),
+			Value:     input,
 		}
 	},
 }
 
 var _ Rego = EqualsOperation{}
+var _ Condition = EqualsOperation{}
 
 type EqualsOperation struct {
 	operation
-	Value string
+	Value any
 }
 
 // Rego For conditions under 'where' operator, "[[0-9]+]" should be replaced with "[x]"
@@ -178,18 +187,45 @@ func (e EqualsOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 		fieldName = replaceIndex(fieldName)
 	}
-	v := strings.Join([]string{"\"", fmt.Sprint(e.Value), "\""}, "")
+	var v string
+	if reflect.TypeOf(e.Value).Kind() == reflect.String {
+		v = strings.Join([]string{"\"", fmt.Sprint(e.Value), "\""}, "")
+	} else if reflect.TypeOf(e.Value).Kind() == reflect.Bool {
+		v = fmt.Sprint(e.Value)
+	} else {
+		v = fmt.Sprint(e.Value)
+	}
 	return strings.Join([]string{fieldName, "==", v}, " "), nil
 }
 
+func (e EqualsOperation) GetReverseRego(ctx context.Context) (string, error) {
+	fieldName, err := e.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		fieldName = replaceIndex(fieldName)
+	}
+	var v string
+	if reflect.TypeOf(e.Value).Kind() == reflect.String {
+		v = strings.Join([]string{"\"", fmt.Sprint(e.Value), "\""}, "")
+	} else if reflect.TypeOf(e.Value).Kind() == reflect.Bool {
+		v = fmt.Sprint(e.Value)
+	} else {
+		v = fmt.Sprint(e.Value)
+	}
+	return strings.Join([]string{fieldName, "!=", v}, " "), nil
+}
+
 var _ Rego = NotEqualsOperation{}
+var _ Condition = NotEqualsOperation{}
 
 type NotEqualsOperation struct {
 	operation
-	Value string
+	Value any
 }
 
 func (n NotEqualsOperation) Rego(ctx context.Context) (string, error) {
@@ -197,14 +233,41 @@ func (n NotEqualsOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 		fieldName = replaceIndex(fieldName)
 	}
-	v := strings.Join([]string{"\"", fmt.Sprint(n.Value), "\""}, "")
+	var v string
+	if reflect.TypeOf(n.Value).Kind() == reflect.String {
+		v = strings.Join([]string{"\"", fmt.Sprint(n.Value), "\""}, "")
+	} else if reflect.TypeOf(n.Value).Kind() == reflect.Bool {
+		v = fmt.Sprint(n.Value)
+	} else {
+		v = fmt.Sprint(n.Value)
+	}
 	return strings.Join([]string{fieldName, "!=", v}, " "), nil
 }
 
+func (n NotEqualsOperation) GetReverseRego(ctx context.Context) (string, error) {
+	fieldName, err := n.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		fieldName = replaceIndex(fieldName)
+	}
+	var v string
+	if reflect.TypeOf(n.Value).Kind() == reflect.String {
+		v = strings.Join([]string{"\"", fmt.Sprint(n.Value), "\""}, "")
+	} else if reflect.TypeOf(n.Value).Kind() == reflect.Bool {
+		v = fmt.Sprint(n.Value)
+	} else {
+		v = fmt.Sprint(n.Value)
+	}
+	return strings.Join([]string{fieldName, "==", v}, " "), nil
+}
+
 var _ Rego = LikeOperation{}
+var _ Condition = LikeOperation{}
 
 type LikeOperation struct {
 	operation
@@ -216,14 +279,27 @@ func (l LikeOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 		fieldName = replaceIndex(fieldName)
 	}
 	v := strings.Join([]string{"\"", fmt.Sprint(l.Value), "\""}, "")
 	return strings.Join([]string{regexExp, "(", v, ",", fieldName, ")"}, ""), nil
 }
 
+func (l LikeOperation) GetReverseRego(ctx context.Context) (string, error) {
+	fieldName, err := l.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		fieldName = replaceIndex(fieldName)
+	}
+	v := strings.Join([]string{"\"", fmt.Sprint(l.Value), "\""}, "")
+	return strings.Join([]string{not, " ", regexExp, "(", v, ",", fieldName, ")"}, ""), nil
+}
+
 var _ Rego = NotLikeOperation{}
+var _ Condition = NotLikeOperation{}
 
 type NotLikeOperation struct {
 	operation
@@ -235,11 +311,23 @@ func (n NotLikeOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 		fieldName = replaceIndex(fieldName)
 	}
 	v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")
 	return strings.Join([]string{not, " ", regexExp, "(", v, ",", fieldName, ")"}, ""), nil
+}
+
+func (n NotLikeOperation) GetReverseRego(ctx context.Context) (string, error) {
+	fieldName, err := n.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		fieldName = replaceIndex(fieldName)
+	}
+	v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")
+	return strings.Join([]string{regexExp, "(", v, ",", fieldName, ")"}, ""), nil
 }
 
 var _ Rego = MatchOperation{}
@@ -314,6 +402,7 @@ func (n NotContainsOperation) Rego(context.Context) (string, error) {
 }
 
 var _ Rego = InOperation{}
+var _ Condition = InOperation{}
 
 type InOperation struct {
 	operation
@@ -328,7 +417,16 @@ func (i InOperation) Rego(ctx context.Context) (string, error) {
 	return strings.Join([]string{"some", fieldName, "in", SliceConstructor(i.Values)}, " "), nil
 }
 
+func (i InOperation) GetReverseRego(ctx context.Context) (string, error) {
+	fieldName, err := i.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join([]string{not, fieldName, "in", SliceConstructor(i.Values)}, " "), nil
+}
+
 var _ Rego = NotInOperation{}
+var _ Condition = NotInOperation{}
 
 type NotInOperation struct {
 	operation
@@ -340,7 +438,15 @@ func (n NotInOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{"not", fieldName, "in", SliceConstructor(n.Values)}, " "), nil
+	return strings.Join([]string{not, fieldName, "in", SliceConstructor(n.Values)}, " "), nil
+}
+
+func (n NotInOperation) GetReverseRego(ctx context.Context) (string, error) {
+	fieldName, err := n.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	return strings.Join([]string{"some", fieldName, "in", SliceConstructor(n.Values)}, " "), nil
 }
 
 var _ Rego = ContainsKeyOperation{}
@@ -366,6 +472,7 @@ func (n NotContainsKeyOperation) Rego(context.Context) (string, error) {
 }
 
 var _ Rego = LessOperation{}
+var _ Condition = LessOperation{}
 
 type LessOperation struct {
 	operation
@@ -377,13 +484,25 @@ func (l LessOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 		fieldName = replaceIndex(fieldName)
 	}
 	return strings.Join([]string{fieldName, "<", fmt.Sprint(l.Value)}, " "), nil
 }
 
+func (l LessOperation) GetReverseRego(ctx context.Context) (string, error) {
+	fieldName, err := l.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		fieldName = replaceIndex(fieldName)
+	}
+	return strings.Join([]string{fieldName, ">=", fmt.Sprint(l.Value)}, " "), nil
+}
+
 var _ Rego = LessOrEqualsOperation{}
+var _ Condition = LessOrEqualsOperation{}
 
 type LessOrEqualsOperation struct {
 	operation
@@ -395,13 +514,25 @@ func (l LessOrEqualsOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 		fieldName = replaceIndex(fieldName)
 	}
 	return strings.Join([]string{fieldName, "<=", fmt.Sprint(l.Value)}, " "), nil
 }
 
+func (l LessOrEqualsOperation) GetReverseRego(ctx context.Context) (string, error) {
+	fieldName, err := l.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		fieldName = replaceIndex(fieldName)
+	}
+	return strings.Join([]string{fieldName, ">", fmt.Sprint(l.Value)}, " "), nil
+}
+
 var _ Rego = GreaterOperation{}
+var _ Condition = GreaterOperation{}
 
 type GreaterOperation struct {
 	operation
@@ -413,13 +544,25 @@ func (g GreaterOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 		fieldName = replaceIndex(fieldName)
 	}
 	return strings.Join([]string{fieldName, ">", fmt.Sprint(g.Value)}, " "), nil
 }
 
+func (g GreaterOperation) GetReverseRego(ctx context.Context) (string, error) {
+	fieldName, err := g.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		fieldName = replaceIndex(fieldName)
+	}
+	return strings.Join([]string{fieldName, "<=", fmt.Sprint(g.Value)}, " "), nil
+}
+
 var _ Rego = GreaterOrEqualsOperation{}
+var _ Condition = GreaterOrEqualsOperation{}
 
 type GreaterOrEqualsOperation struct {
 	operation
@@ -431,17 +574,29 @@ func (g GreaterOrEqualsOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 		fieldName = replaceIndex(fieldName)
 	}
 	return strings.Join([]string{fieldName, ">=", fmt.Sprint(g.Value)}, " "), nil
 }
 
+func (g GreaterOrEqualsOperation) GetReverseRego(ctx context.Context) (string, error) {
+	fieldName, err := g.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		fieldName = replaceIndex(fieldName)
+	}
+	return strings.Join([]string{fieldName, "<", fmt.Sprint(g.Value)}, " "), nil
+}
+
 var _ Rego = ExistsOperation{}
+var _ Condition = ExistsOperation{}
 
 type ExistsOperation struct {
 	operation
-	Value bool
+	Value any
 }
 
 func (e ExistsOperation) Rego(ctx context.Context) (string, error) {
@@ -449,39 +604,27 @@ func (e ExistsOperation) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil {
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 		fieldName = replaceIndex(fieldName)
 	}
-	if e.Value {
+	if (reflect.TypeOf(e.Value).Kind() == reflect.Bool && e.Value.(bool)) || (reflect.TypeOf(e.Value).Kind() == reflect.String && e.Value.(string) == "true") {
 		return fieldName, nil
 	} else {
 		return strings.Join([]string{not, fieldName}, " "), nil
 	}
 }
 
-//var _ Rego = CountOperation{}
-//
-//type CountOperation struct {
-//	field          string
-//	whereCondition Rego
-//	operation
-//}
-//
-//func (c CountOperation) Rego(ctx context.Context) (string, error) {
-//	fieldName, err := c.operation.Subject.Rego(ctx)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	conditions, err := c.whereCondition.Rego(ctx)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	whereConditionName := c.whereCondition.(WhereOperator).ConditionSetName
-//
-//	res := fmt.Sprintf(count+"{"+fieldName+" | %s}", whereConditionName)
-//	res += "\n" + conditions
-//
-//	return res, nil
-//}
+func (e ExistsOperation) GetReverseRego(ctx context.Context) (string, error) {
+	fieldName, err := e.Subject.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		fieldName = replaceIndex(fieldName)
+	}
+	if (reflect.TypeOf(e.Value).Kind() == reflect.Bool && e.Value.(bool)) || (reflect.TypeOf(e.Value).Kind() == reflect.String && e.Value.(string) == "true") {
+		return strings.Join([]string{not, fieldName}, " "), nil
+	} else {
+		return fieldName, nil
+	}
+}
