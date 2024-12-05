@@ -397,7 +397,6 @@ func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 		return err
 	}
 	//fmt.Printf("the result is %s", result)
-	fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
 	var conditionName string
 	switch reflect.TypeOf(ruleBody.IfBody) {
 	case reflect.TypeOf(AllOf{}):
@@ -420,6 +419,7 @@ func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 	}
 	result = "package main\n\n" + "import rego.v1\n\n" + "r := tfplan.resource_changes[_]\n\n" + result
 
+	fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
 	err = afero.WriteFile(Fs, fileName, []byte(result), 0644)
 	if err != nil {
 		fmt.Println(err)
