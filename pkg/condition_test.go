@@ -71,7 +71,7 @@ func TestLikeCondition(t *testing.T) {
 	pushResourceType(ctx, "Microsoft.Web/serverFarms")
 	actual, err := sut.Rego(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, "regex.match(`^[^@]+@[^@]+\\.[^@]+$`,r.change.after.sku[0].tier)", actual)
+	assert.Equal(t, "regex.match(\"^[^@]+@[^@]+\\.[^@]+$\",r.change.after.sku[0].tier)", actual)
 }
 
 func TestNotLikeCondition(t *testing.T) {
@@ -191,7 +191,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaaaaaaaa",
 			},
-			expected: "aaaaaaaaa(x) if {\ntype == \"azurerm_app_service_plan\"\n}",
+			expected: "aaaaaaaaa(x) if {\nr.type == \"azurerm_app_service_plan\"\n}",
 		},
 		{
 			name: "NestedAllOfOperator",
@@ -234,7 +234,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaaaa",
 			},
-			expected: "aaaaa if {\naaaaa\nnot aaaaaaa\n}\naaaaa if {\ntype == \"azurerm_app_service_plan\"\nr.change.after.sku_name\n}\naaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nr.change.after.sku[0].tier != \"Basic\"\n}",
+			expected: "aaaaa if {\naaaaa\nnot aaaaaaa\n}\naaaaa if {\nr.type == \"azurerm_app_service_plan\"\nr.change.after.sku_name\n}\naaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nr.change.after.sku[0].tier != \"Basic\"\n}",
 		},
 		{
 			name: "NestedAnyOfOperator",
@@ -277,7 +277,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaaaaaa",
 			},
-			expected: "aaaaaaa if {\naaaaaaa\naaaaaaa\n}\naaaaaaa if {\ntype != \"azurerm_app_service_plan\"\ntype != \"azurerm_app_service_environment\"\n}\naaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nr.change.after.sku[0].tier != \"Basic\"\n}",
+			expected: "aaaaaaa if {\naaaaaaa\naaaaaaa\n}\naaaaaaa if {\nr.type != \"azurerm_app_service_plan\"\nr.type != \"azurerm_app_service_environment\"\n}\naaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nr.change.after.sku[0].tier != \"Basic\"\n}",
 		},
 		{
 			name: "AllOfOperator",
@@ -298,7 +298,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaaaa",
 			},
-			expected: "aaaaa if {\ntype == \"azurerm_app_service_plan\"\nr.change.after.sku_name\n}",
+			expected: "aaaaa if {\nr.type == \"azurerm_app_service_plan\"\nr.change.after.sku_name\n}",
 		},
 		{
 			name: "AnyOfOperator",
@@ -334,7 +334,7 @@ func TestOperations(t *testing.T) {
 				},
 				ConditionSetName: "aaa",
 			},
-			expected: "aaa {\nr.change.after.sku[0].tier == \"Standard\"\n}",
+			expected: "aaa if {\nr.change.after.sku[0].tier == \"Standard\"\n}",
 		},
 		{
 			name: "EqualsOperation",

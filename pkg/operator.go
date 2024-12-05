@@ -351,7 +351,7 @@ func (n NotOperator) Rego(ctx context.Context) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		res += "\n" + condition
+		res += condition
 	}
 
 	res += "\n}"
