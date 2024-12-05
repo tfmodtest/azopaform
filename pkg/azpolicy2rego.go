@@ -366,10 +366,8 @@ func NewContext() context.Context {
 
 func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 	var action string
-	var conditionName string
 	fmt.Printf("the path is %+v\n", path)
-
-	rule, err := ruleIterator(path)
+	rule, err := readRuleFromFile(path)
 	if err != nil {
 		fmt.Printf("cannot find rules %+v\n", err)
 		return err
@@ -400,6 +398,7 @@ func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 	}
 	//fmt.Printf("the result is %s", result)
 	fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
+	var conditionName string
 	switch reflect.TypeOf(ruleBody.IfBody) {
 	case reflect.TypeOf(AllOf{}):
 		conditionName = ruleBody.IfBody.(AllOf).ConditionSetName
@@ -433,7 +432,7 @@ func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 //	var action string
 //	fmt.Printf("the path is %+v\n", path)
 //
-//	rule, err := ruleIterator(path)
+//	rule, err := readRuleFromFile(path)
 //	if err != nil {
 //		fmt.Printf("cannot find rules %+v\n", err)
 //		return err
@@ -542,7 +541,7 @@ func readJsonFilePaths(path string) ([]string, error) {
 	return filePaths, nil
 }
 
-func ruleIterator(path string) (*Rule, error) {
+func readRuleFromFile(path string) (*Rule, error) {
 
 	data, err := afero.ReadFile(Fs, path)
 	if err != nil {

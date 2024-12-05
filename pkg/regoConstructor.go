@@ -969,6 +969,8 @@ func ResourceTypeParser(resourceType string) (string, error) {
 		result = "azurerm_service_plan"
 	} else if result == "azurerm_app_service_environment" {
 		result = "azurerm_app_service_environment_v3"
+	} else if result == "azurerm_sql_server" {
+		result = "azurerm_mssql_server"
 	}
 	return result, nil
 }
