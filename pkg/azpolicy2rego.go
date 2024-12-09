@@ -21,6 +21,13 @@ type Rule struct {
 	Properties *PolicyRuleModel
 	Id         string
 	Name       string
+	path       string
+	result     string
+}
+
+func (r *Rule) SaveToDisk() error {
+	fileName := strings.TrimSuffix(filepath.Base(r.path), filepath.Ext(r.path)) + ".rego"
+	return afero.WriteFile(Fs, fileName, []byte(r.result), 0644)
 }
 
 func NewRule(input map[string]any, ctx context.Context) *Rule {
@@ -171,6 +178,21 @@ func (p *PolicyRuleBody) GetIf() IfBody {
 	return p.If
 }
 
+func (ifBody *PolicyRuleBody) ConditionName(result string) string {
+	var conditionName string
+	switch reflect.TypeOf(ifBody.IfBody) {
+	case reflect.TypeOf(AllOf{}):
+		conditionName = ifBody.IfBody.(AllOf).ConditionSetName
+	case reflect.TypeOf(AnyOf{}):
+		conditionName = ifBody.IfBody.(AnyOf).ConditionSetName
+	case reflect.TypeOf(NotOperator{}):
+		conditionName = ifBody.IfBody.(NotOperator).ConditionSetName
+	default:
+		conditionName = result
+	}
+	return conditionName
+}
+
 type ThenBody struct {
 	Effect string `json:"effect,omitempty"`
 }
@@ -202,6 +224,24 @@ func (t *ThenBody) MapEffectToAction(defaultEffect string) (string, error) {
 		return defaultEffect, nil
 	}
 	return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
+}
+
+func (t *ThenBody) Action(result, conditionName string, rule *Rule) (string, error) {
+	action, err := t.MapEffectToAction(rule.Properties.Parameters.GetEffect().GetDefaultValue())
+	if err != nil {
+		fmt.Printf("cannot map effect to action %+v\n", err)
+		return "", err
+	}
+	if action == disabled {
+		result = "default allow := true\n\n" + result
+	} else if action == deny {
+		top := "deny if {\n" + " " + conditionName + "\n}\n"
+		result = top + result
+	} else if action == warn {
+		top := "warn if {\n" + " " + conditionName + "\n}\n"
+		result = top + result
+	}
+	return result, nil
 }
 
 type PolicyRuleParameterType string
@@ -365,7 +405,6 @@ func NewContext() context.Context {
 }
 
 func NeoAzPolicy2Rego(path string, ctx context.Context) error {
-	var action string
 	fmt.Printf("the path is %+v\n", path)
 	rule, err := readRuleFromFile(path)
 	if err != nil {
@@ -376,55 +415,27 @@ func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 	fmt.Printf("the rule is %+v\n", rule)
 	fmt.Printf("the prop is %+v\n", rule.Properties)
 	fmt.Printf("the policy rule is %+v\n", rule.Properties.PolicyRule)
-	then := rule.Properties.PolicyRule.GetThen()
-	fmt.Printf("the then is %+v\n", then)
-	action, err = then.MapEffectToAction(rule.Properties.Parameters.GetEffect().GetDefaultValue())
-	if err != nil {
-		fmt.Printf("cannot map effect to action %+v\n", err)
-		return err
-	}
-	fmt.Printf("the effect is %+v\n", action)
 	condition := rule.Properties.PolicyRule.GetIf()
 	fmt.Printf("the condition is %+v\n", condition)
-	//_, err = currentResourceType(ctx)
-	//if err != nil {
-	//	return err
-	//}
-	ruleBody := NewPolicyRuleBody(condition, ctx)
-	//fmt.Printf("the rule body is %+v\n", ruleBody)
-	result, err := ruleBody.IfBody.Rego(ctx)
+	ifBody := NewPolicyRuleBody(condition, ctx)
+	fmt.Printf("the if body is %+v\n", ifBody)
+	rule.result, err = ifBody.IfBody.Rego(ctx)
 	if err != nil {
 		return err
 	}
-	//fmt.Printf("the result is %s", result)
-	var conditionName string
-	switch reflect.TypeOf(ruleBody.IfBody) {
-	case reflect.TypeOf(AllOf{}):
-		conditionName = ruleBody.IfBody.(AllOf).ConditionSetName
-	case reflect.TypeOf(AnyOf{}):
-		conditionName = ruleBody.IfBody.(AnyOf).ConditionSetName
-	case reflect.TypeOf(NotOperator{}):
-		conditionName = ruleBody.IfBody.(NotOperator).ConditionSetName
-	default:
-		conditionName = result
+	then := rule.Properties.PolicyRule.GetThen()
+	fmt.Printf("the then is %+v\n", then)
+	rule.result, err = then.Action(rule.result, ifBody.ConditionName(rule.result), rule)
+	if err != nil {
+		return err
 	}
-	if action == disabled {
-		result = "default allow := true\n\n" + result
-	} else if action == deny {
-		top := "deny if {\n" + " " + conditionName + "\n}\n"
-		result = top + result
-	} else if action == warn {
-		top := "warn if {\n" + " " + conditionName + "\n}\n"
-		result = top + result
-	}
-	result = "package main\n\n" + "import rego.v1\n\n" + "r := tfplan.resource_changes[_]\n\n" + result
+	rule.result = "package main\n\n" + "import rego.v1\n\n" + "r := tfplan.resource_changes[_]\n\n" + rule.result
 
-	fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
-	err = afero.WriteFile(Fs, fileName, []byte(result), 0644)
+	err = rule.SaveToDisk()
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
+
 	return nil
 }
 
@@ -542,7 +553,6 @@ func readJsonFilePaths(path string) ([]string, error) {
 }
 
 func readRuleFromFile(path string) (*Rule, error) {
-
 	data, err := afero.ReadFile(Fs, path)
 	if err != nil {
 		fmt.Printf("unable to read file content %+v\n\n", err)
@@ -558,6 +568,7 @@ func readRuleFromFile(path string) (*Rule, error) {
 	}
 	m := make(map[string]any)
 	json.Unmarshal(data, &m)
+	rule.path = path
 
 	return &rule, nil
 }
