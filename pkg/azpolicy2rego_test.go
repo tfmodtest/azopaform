@@ -589,7 +589,7 @@ func TestRule_SaveToDisk(t *testing.T) {
 
 func TestNeoAzPolicy2Rego(t *testing.T) {
 	path := "deny.json"
-	t.Run("NeoAzPolicy2Rego", func(t *testing.T) {
+	t.Run("AzPolicy2Rego", func(t *testing.T) {
 		fs := prepareMemFs(t)
 		stub := gostub.Stub(&Fs, fs)
 		defer stub.Reset()
@@ -600,7 +600,7 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 			conditionNameCounter.Push(i)
 		}
 		ctx.Value("context").(map[string]stacks.Stack)["conditionNameCounter"] = conditionNameCounter
-		err := NeoAzPolicy2Rego(path, ctx)
+		err := AzPolicy2Rego(path, ctx)
 		require.NoError(t, err)
 		file, err := afero.ReadFile(fs, "deny.rego")
 		require.NoError(t, err)

@@ -30,38 +30,34 @@ func (r *Rule) SaveToDisk() error {
 	return afero.WriteFile(Fs, fileName, []byte(r.result), 0644)
 }
 
-func NewRule(input map[string]any, ctx context.Context) *Rule {
-	return &Rule{
-		Id:         input["id"].(string),
-		Name:       input["name"].(string),
-		Properties: NewPolicyRuleModel(input["properties"].(map[string]any), ctx),
-	}
-}
+//func NewRule(input map[string]any, ctx context.Context) *Rule {
+//	return &Rule{
+//		Id:         input["id"].(string),
+//		Name:       input["name"].(string),
+//		Properties: NewPolicyRuleModel(input["properties"].(map[string]any), ctx),
+//	}
+//}
 
-func NewPolicyRuleModel(input map[string]any, ctx context.Context) *PolicyRuleModel {
-	return &PolicyRuleModel{
-		DisplayName: input["displayName"].(string),
-		PolicyType:  input["policyType"].(string),
-		Mode:        input["mode"].(string),
-		Description: input["description"].(string),
-		Version:     input["version"].(string),
-		Metadata:    NewPolicyRuleMetaData(input["metadata"].(map[string]any)),
-		PolicyRule:  NewPolicyRuleBody(input["policyRule"].(map[string]any), ctx),
-		Parameters:  NewPolicyRuleParameters(input["parameters"].(map[string]any)),
-	}
-}
+//func NewPolicyRuleModel(input map[string]any, ctx context.Context) *PolicyRuleModel {
+//	return &PolicyRuleModel{
+//		DisplayName: input["displayName"].(string),
+//		PolicyType:  input["policyType"].(string),
+//		Mode:        input["mode"].(string),
+//		Description: input["description"].(string),
+//		Version:     input["version"].(string),
+//		Metadata:    NewPolicyRuleMetaData(input["metadata"].(map[string]any)),
+//		PolicyRule:  NewPolicyRuleBody(input["policyRule"].(map[string]any), ctx),
+//		Parameters:  NewPolicyRuleParameters(input["parameters"].(map[string]any)),
+//	}
+//}
 
 func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBody {
-	//ifBody := input["if"]
-
 	conditionMap := input
-	fmt.Printf("the condition map is %+v\n", conditionMap)
 	var subject Rego
 	var creator func(subject Rego, input any) Rego
 	var cv any
 	for key, conditionValue := range conditionMap {
 		key = strings.ToLower(key)
-		fmt.Printf("the key is %s\n", key)
 		if key == count {
 			operationFactory, ok := operatorFactories[key]
 			if !ok {
@@ -154,8 +150,12 @@ type PolicyRuleModel struct {
 
 type PolicyRuleBody struct {
 	Then   *ThenBody
-	If     map[string]any `json:"if,omitempty"`
+	If     IfBody `json:"if,omitempty"`
 	IfBody Rego
+}
+
+func (p *PolicyRuleBody) IfRego(ctx context.Context) (string, error) {
+	return p.IfBody.Rego(ctx)
 }
 
 type IfBody map[string]any
@@ -171,11 +171,11 @@ func (p *PolicyRuleBody) GetThen() *ThenBody {
 	return p.Then
 }
 
-func (p *PolicyRuleBody) GetIf() IfBody {
+func (p *PolicyRuleBody) BuildIfBody(ctx context.Context) *PolicyRuleBody {
 	if p == nil {
 		return nil
 	}
-	return p.If
+	return NewPolicyRuleBody(p.If, ctx)
 }
 
 func (ifBody *PolicyRuleBody) ConditionName(result string) string {
@@ -386,7 +386,7 @@ func AzurePolicyToRego(policyPath string, dir string, ctx context.Context) error
 		}
 		ctx.Value("context").(map[string]stacks.Stack)["conditionNameCounter"] = conditionNameCounter
 
-		err = NeoAzPolicy2Rego(path, ctx)
+		err = AzPolicy2Rego(path, ctx)
 		if err != nil {
 			//fmt.Printf("cannot convert azure policy %s to rego %+v\n", path, err)
 		}
@@ -404,27 +404,17 @@ func NewContext() context.Context {
 	return ctx
 }
 
-func NeoAzPolicy2Rego(path string, ctx context.Context) error {
-	fmt.Printf("the path is %+v\n", path)
+func AzPolicy2Rego(path string, ctx context.Context) error {
 	rule, err := readRuleFromFile(path)
 	if err != nil {
-		fmt.Printf("cannot find rules %+v\n", err)
-		return err
+		return fmt.Errorf("cannot find rules %+v", err)
 	}
-
-	fmt.Printf("the rule is %+v\n", rule)
-	fmt.Printf("the prop is %+v\n", rule.Properties)
-	fmt.Printf("the policy rule is %+v\n", rule.Properties.PolicyRule)
-	condition := rule.Properties.PolicyRule.GetIf()
-	fmt.Printf("the condition is %+v\n", condition)
-	ifBody := NewPolicyRuleBody(condition, ctx)
-	fmt.Printf("the if body is %+v\n", ifBody)
-	rule.result, err = ifBody.IfBody.Rego(ctx)
+	ifBody := rule.Properties.PolicyRule.BuildIfBody(ctx)
+	rule.result, err = ifBody.IfRego(ctx)
 	if err != nil {
 		return err
 	}
 	then := rule.Properties.PolicyRule.GetThen()
-	fmt.Printf("the then is %+v\n", then)
 	rule.result, err = then.Action(rule.result, ifBody.ConditionName(rule.result), rule)
 	if err != nil {
 		return err
@@ -455,7 +445,7 @@ func NeoAzPolicy2Rego(path string, ctx context.Context) error {
 //		return err
 //	}
 //	fmt.Printf("the effect is %+v\n", action)
-//	condition, err := rule.Properties.PolicyRule.GetIf().condition(ctx)
+//	condition, err := rule.Properties.PolicyRule.BuildIfBody().condition(ctx)
 //	if err != nil {
 //		fmt.Printf("cannot find conditions %+v\n", err)
 //		return err
