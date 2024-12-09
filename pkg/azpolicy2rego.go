@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/emirpasic/gods/stacks/arraystack"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	"github.com/emirpasic/gods/stacks"
@@ -154,11 +153,75 @@ type PolicyRuleBody struct {
 	IfBody Rego
 }
 
+type IfBody map[string]any
+
 func (p *PolicyRuleBody) IfRego(ctx context.Context) (string, error) {
+	if p.IfBody == nil {
+		p.IfBody = func() Rego {
+			conditionMap := p.If
+			var subject Rego
+			var creator func(subject Rego, input any) Rego
+			var cv any
+			for key, conditionValue := range conditionMap {
+				key = strings.ToLower(key)
+				if key == count {
+					operationFactory, ok := operatorFactories[key]
+					if !ok {
+						panic(fmt.Sprintf("unknown operation: %s", key))
+					}
+					//fmt.Printf("the condition value is %v\n", conditionValue)
+					conditionSet := operationFactory(conditionValue, ctx)
+					subject = conditionSet
+					continue
+				}
+				if key == allOf {
+					operationFactory, ok := operatorFactories[key]
+					if !ok {
+						panic(fmt.Sprintf("unknown operation: %s", key))
+					}
+					conditionSet := operationFactory(conditionValue, ctx)
+					return conditionSet
+				}
+				if key == anyOf {
+					operationFactory, ok := operatorFactories[key]
+					if !ok {
+						panic(fmt.Sprintf("unknown operation: %s", key))
+					}
+					conditionSet := operationFactory(conditionValue, ctx)
+					return conditionSet
+				}
+				if key == not {
+					operationFactory, ok := operatorFactories[key]
+					if !ok {
+						panic(fmt.Sprintf("unknown operation: %s", key))
+					}
+					conditionSet := operationFactory(conditionValue, ctx)
+					return conditionSet
+				}
+				if key == field {
+					if conditionValue == typeOfResource {
+						pushResourceType(ctx, conditionValue.(string))
+					}
+					subject = OperationField(conditionValue.(string))
+					continue
+				}
+				if key == value {
+					subject = OperationValue(conditionValue.(string))
+					continue
+				}
+				factory, ok := conditionFactory[key]
+				if !ok {
+					panic(fmt.Sprintf("unknown condition: %s", key))
+				}
+				creator = factory
+				cv = conditionValue
+			}
+			return creator(subject, cv)
+		}()
+
+	}
 	return p.IfBody.Rego(ctx)
 }
-
-type IfBody map[string]any
 
 func (i IfBody) condition(ctx context.Context) (*RuleSet, error) {
 	return conditionFinder(i, ctx)
@@ -176,21 +239,6 @@ func (p *PolicyRuleBody) BuildIfBody(ctx context.Context) *PolicyRuleBody {
 		return nil
 	}
 	return NewPolicyRuleBody(p.If, ctx)
-}
-
-func (ifBody *PolicyRuleBody) ConditionName(result string) string {
-	var conditionName string
-	switch reflect.TypeOf(ifBody.IfBody) {
-	case reflect.TypeOf(AllOf{}):
-		conditionName = ifBody.IfBody.(AllOf).ConditionSetName
-	case reflect.TypeOf(AnyOf{}):
-		conditionName = ifBody.IfBody.(AnyOf).ConditionSetName
-	case reflect.TypeOf(NotOperator{}):
-		conditionName = ifBody.IfBody.(NotOperator).ConditionSetName
-	default:
-		conditionName = result
-	}
-	return conditionName
 }
 
 type ThenBody struct {
@@ -409,13 +457,16 @@ func AzPolicy2Rego(path string, ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot find rules %+v", err)
 	}
-	ifBody := rule.Properties.PolicyRule.BuildIfBody(ctx)
-	rule.result, err = ifBody.IfRego(ctx)
+	rule.result, err = rule.Properties.PolicyRule.IfRego(ctx)
 	if err != nil {
 		return err
 	}
 	then := rule.Properties.PolicyRule.GetThen()
-	rule.result, err = then.Action(rule.result, ifBody.ConditionName(rule.result), rule)
+	conditionName := rule.result
+	if operator, ok := rule.Properties.PolicyRule.IfBody.(Operator); ok {
+		conditionName = operator.GetConditionSetName()
+	}
+	rule.result, err = then.Action(rule.result, conditionName, rule)
 	if err != nil {
 		return err
 	}
