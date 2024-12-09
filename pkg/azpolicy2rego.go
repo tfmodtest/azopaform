@@ -147,100 +147,6 @@ type PolicyRuleModel struct {
 	Metadata    *PolicyRuleMetaData
 }
 
-type PolicyRuleBody struct {
-	Then   *ThenBody
-	If     IfBody `json:"if,omitempty"`
-	IfBody Rego
-}
-
-type IfBody map[string]any
-
-func (p *PolicyRuleBody) IfRego(ctx context.Context) (string, error) {
-	if p.IfBody == nil {
-		p.IfBody = func() Rego {
-			conditionMap := p.If
-			var subject Rego
-			var creator func(subject Rego, input any) Rego
-			var cv any
-			for key, conditionValue := range conditionMap {
-				key = strings.ToLower(key)
-				if key == count {
-					operationFactory, ok := operatorFactories[key]
-					if !ok {
-						panic(fmt.Sprintf("unknown operation: %s", key))
-					}
-					//fmt.Printf("the condition value is %v\n", conditionValue)
-					conditionSet := operationFactory(conditionValue, ctx)
-					subject = conditionSet
-					continue
-				}
-				if key == allOf {
-					operationFactory, ok := operatorFactories[key]
-					if !ok {
-						panic(fmt.Sprintf("unknown operation: %s", key))
-					}
-					conditionSet := operationFactory(conditionValue, ctx)
-					return conditionSet
-				}
-				if key == anyOf {
-					operationFactory, ok := operatorFactories[key]
-					if !ok {
-						panic(fmt.Sprintf("unknown operation: %s", key))
-					}
-					conditionSet := operationFactory(conditionValue, ctx)
-					return conditionSet
-				}
-				if key == not {
-					operationFactory, ok := operatorFactories[key]
-					if !ok {
-						panic(fmt.Sprintf("unknown operation: %s", key))
-					}
-					conditionSet := operationFactory(conditionValue, ctx)
-					return conditionSet
-				}
-				if key == field {
-					if conditionValue == typeOfResource {
-						pushResourceType(ctx, conditionValue.(string))
-					}
-					subject = OperationField(conditionValue.(string))
-					continue
-				}
-				if key == value {
-					subject = OperationValue(conditionValue.(string))
-					continue
-				}
-				factory, ok := conditionFactory[key]
-				if !ok {
-					panic(fmt.Sprintf("unknown condition: %s", key))
-				}
-				creator = factory
-				cv = conditionValue
-			}
-			return creator(subject, cv)
-		}()
-
-	}
-	return p.IfBody.Rego(ctx)
-}
-
-func (i IfBody) condition(ctx context.Context) (*RuleSet, error) {
-	return conditionFinder(i, ctx)
-}
-
-func (p *PolicyRuleBody) GetThen() *ThenBody {
-	if p == nil {
-		return nil
-	}
-	return p.Then
-}
-
-func (p *PolicyRuleBody) BuildIfBody(ctx context.Context) *PolicyRuleBody {
-	if p == nil {
-		return nil
-	}
-	return NewPolicyRuleBody(p.If, ctx)
-}
-
 type ThenBody struct {
 	Effect string `json:"effect,omitempty"`
 }
@@ -457,15 +363,13 @@ func AzPolicy2Rego(path string, ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("cannot find rules %+v", err)
 	}
-	rule.result, err = rule.Properties.PolicyRule.IfRego(ctx)
+	ifBody := rule.Properties.PolicyRule.GetIf()
+	rule.result, err = ifBody.Rego(ctx)
 	if err != nil {
 		return err
 	}
 	then := rule.Properties.PolicyRule.GetThen()
-	conditionName := rule.result
-	if operator, ok := rule.Properties.PolicyRule.IfBody.(Operator); ok {
-		conditionName = operator.GetConditionSetName()
-	}
+	conditionName := ifBody.ConditionName(rule.result)
 	rule.result, err = then.Action(rule.result, conditionName, rule)
 	if err != nil {
 		return err
