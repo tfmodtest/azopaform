@@ -16,12 +16,38 @@ import (
 var NoResourceTypeFound int
 var total int
 
+var _ Rego = &Rule{}
+
 type Rule struct {
 	Properties *PolicyRuleModel
 	Id         string
 	Name       string
 	path       string
 	result     string
+}
+
+func (r *Rule) Rego(ctx context.Context) (string, error) {
+	ifBody := r.Properties.PolicyRule.GetIf()
+	ifRego, err := ifBody.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	then := r.Properties.PolicyRule.GetThen()
+	conditionName := ifBody.ConditionName(ifRego)
+	rego, err := then.Action(ifRego, conditionName, r)
+	if err != nil {
+		return "", err
+	}
+	return "package main\n\n" + "import rego.v1\n\n" + "r := tfplan.resource_changes[_]\n\n" + rego, nil
+}
+
+func (r *Rule) Parse(ctx context.Context) error {
+	ruleRego, err := r.Rego(ctx)
+	if err != nil {
+		return err
+	}
+	r.result = ruleRego
+	return nil
 }
 
 func (r *Rule) SaveToDisk() error {
@@ -359,22 +385,15 @@ func NewContext() context.Context {
 }
 
 func AzPolicy2Rego(path string, ctx context.Context) error {
-	rule, err := readRuleFromFile(path)
+	rule, err := ReadRuleFromFile(path)
 	if err != nil {
 		return fmt.Errorf("cannot find rules %+v", err)
 	}
-	ifBody := rule.Properties.PolicyRule.GetIf()
-	rule.result, err = ifBody.Rego(ctx)
+
+	err = rule.Parse(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot Parse rule %+v", err)
 	}
-	then := rule.Properties.PolicyRule.GetThen()
-	conditionName := ifBody.ConditionName(rule.result)
-	rule.result, err = then.Action(rule.result, conditionName, rule)
-	if err != nil {
-		return err
-	}
-	rule.result = "package main\n\n" + "import rego.v1\n\n" + "r := tfplan.resource_changes[_]\n\n" + rule.result
 
 	err = rule.SaveToDisk()
 	if err != nil {
@@ -388,7 +407,7 @@ func AzPolicy2Rego(path string, ctx context.Context) error {
 //	var action string
 //	fmt.Printf("the path is %+v\n", path)
 //
-//	rule, err := readRuleFromFile(path)
+//	rule, err := ReadRuleFromFile(path)
 //	if err != nil {
 //		fmt.Printf("cannot find rules %+v\n", err)
 //		return err
@@ -497,7 +516,7 @@ func readJsonFilePaths(path string) ([]string, error) {
 	return filePaths, nil
 }
 
-func readRuleFromFile(path string) (*Rule, error) {
+func ReadRuleFromFile(path string) (*Rule, error) {
 	data, err := afero.ReadFile(Fs, path)
 	if err != nil {
 		fmt.Printf("unable to read file content %+v\n\n", err)
