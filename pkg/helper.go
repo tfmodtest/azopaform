@@ -58,60 +58,8 @@ const parameters = "parameters"
 
 const resourcePrefix = "r."
 
-func RandStringFromCharSet(strlen int, charSet string) string {
-	result := make([]byte, strlen)
-	for i := 0; i < strlen; i++ {
-		result[i] = charSet[RandIntRange(0, len(charSet))]
-	}
-	return string(result)
-}
-
 var RandIntRange = func(min int, max int) int {
 	return rand.Intn(max-min) + min
-}
-
-type Parser func() interface{}
-
-func ParseArrayFunctionsForARMTemplate(keyword, value string, policyModel PolicyRuleModel) Parser {
-	switch keyword {
-	case parameters:
-		return func() interface{} {
-			return policyModel.Parameters.Parameters[value].DefaultValue
-		}
-	case concat:
-		return func() interface{} {
-			vars := strings.Split(value, ",")
-			var result []string
-			var params Parser
-			var paramArray []interface{}
-			for _, v := range vars {
-				v = strings.TrimPrefix(v, "'")
-				v = strings.TrimSuffix(v, "'")
-				if strings.HasPrefix(v, parameters) {
-					value = strings.TrimPrefix(v, parameters)
-					value = strings.TrimPrefix(value, "('")
-					value = strings.TrimSuffix(value, "')")
-					params = ParseArrayFunctionsForARMTemplate(parameters, value, policyModel)
-					paramArray = params().([]interface{})
-					for _, p := range paramArray {
-						result = append(result, p.(string))
-					}
-				} else {
-					result = append(result, v)
-				}
-			}
-			return result
-		}
-	case array:
-	case empty:
-	default:
-		return func() interface{} {
-			return nil
-		}
-	}
-	return func() interface{} {
-		return nil
-	}
 }
 
 func replaceIndex(str string) string {

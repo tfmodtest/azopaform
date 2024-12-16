@@ -3,7 +3,6 @@ package pkg
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/emirpasic/gods/stacks/arraystack"
 	"path/filepath"
@@ -14,7 +13,6 @@ import (
 )
 
 var NoResourceTypeFound int
-var total int
 
 var _ Rego = &Rule{}
 
@@ -54,27 +52,6 @@ func (r *Rule) SaveToDisk() error {
 	fileName := strings.TrimSuffix(filepath.Base(r.path), filepath.Ext(r.path)) + ".rego"
 	return afero.WriteFile(Fs, fileName, []byte(r.result), 0644)
 }
-
-//func NewRule(input map[string]any, ctx context.Context) *Rule {
-//	return &Rule{
-//		Id:         input["id"].(string),
-//		Name:       input["name"].(string),
-//		Properties: NewPolicyRuleModel(input["properties"].(map[string]any), ctx),
-//	}
-//}
-
-//func NewPolicyRuleModel(input map[string]any, ctx context.Context) *PolicyRuleModel {
-//	return &PolicyRuleModel{
-//		DisplayName: input["displayName"].(string),
-//		PolicyType:  input["policyType"].(string),
-//		Mode:        input["mode"].(string),
-//		Description: input["description"].(string),
-//		Version:     input["version"].(string),
-//		Metadata:    NewPolicyRuleMetaData(input["metadata"].(map[string]any)),
-//		PolicyRule:  NewPolicyRuleBody(input["policyRule"].(map[string]any), ctx),
-//		Parameters:  NewPolicyRuleParameters(input["parameters"].(map[string]any)),
-//	}
-//}
 
 func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBody {
 	conditionMap := input
@@ -147,13 +124,6 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 	return &PolicyRuleBody{
 		Then:   nil,
 		IfBody: creator(subject, cv),
-	}
-}
-
-func NewPolicyRuleMetaData(input map[string]any) *PolicyRuleMetaData {
-	return &PolicyRuleMetaData{
-		Version:  input["version"].(string),
-		Category: input["category"].(string),
 	}
 }
 
@@ -259,41 +229,9 @@ type PolicyRuleParameter struct {
 	MetaData     *PolicyRuleParameterMetaData
 }
 
-func NewPolicyRuleParameter(input map[string]any) *PolicyRuleParameter {
-	if input == nil {
-		return nil
-	}
-	r := &PolicyRuleParameter{
-		Name:         input["name"].(string),
-		Type:         input["type"].(PolicyRuleParameterType),
-		DefaultValue: input["defaultValue"],
-	}
-	if metaData, ok := input["metadata"].(map[string]any); ok {
-		r.MetaData = NewPolicyRuleParameterMetaData(metaData)
-	}
-	return r
-}
-
 type PolicyRuleParameters struct {
 	Effect     *EffectBody
 	Parameters map[string]*PolicyRuleParameter
-}
-
-func NewPolicyRuleParameters(input map[string]any) *PolicyRuleParameters {
-	if input == nil {
-		return nil
-	}
-	parameters := make(map[string]*PolicyRuleParameter)
-	for k, v := range input {
-		i, ok := v.(map[string]any)
-		if !ok {
-			continue
-		}
-		parameters[k] = NewPolicyRuleParameter(i)
-	}
-	return &PolicyRuleParameters{
-		Parameters: parameters,
-	}
 }
 
 func (p *PolicyRuleParameters) GetEffect() *EffectBody {
@@ -314,27 +252,9 @@ func (e *EffectBody) GetDefaultValue() string {
 	return e.DefaultValue
 }
 
-type RuleSet struct {
-	Flag        string
-	SingleRules []SingleRule
-	RuleSets    []RuleSet
-}
-
-type SingleRule struct {
-	Field          any
-	FieldOperation string
-	Operator       OperatorModel
-}
-
 type OperatorModel struct {
 	Name  string
 	Value any
-}
-
-type CountOperatorModel[T any] struct {
-	FieldName string
-	Condition []RuleSet
-	Operator  OperatorModel
 }
 
 var Fs = afero.NewOsFs()
@@ -358,7 +278,6 @@ func AzurePolicyToRego(policyPath string, dir string, ctx context.Context) error
 		paths = []string{policyPath}
 	}
 	for _, path := range paths {
-		total++
 		fmt.Printf("start to convert azure policy %s to rego\n", path)
 		conditionNameCounter := arraystack.New()
 		for i := 100; i > 0; i-- {
@@ -366,12 +285,16 @@ func AzurePolicyToRego(policyPath string, dir string, ctx context.Context) error
 		}
 		ctx.Value("context").(map[string]stacks.Stack)["conditionNameCounter"] = conditionNameCounter
 
-		err = AzPolicy2Rego(path, ctx)
+		rule, err := LoadRule(path, ctx)
 		if err != nil {
-			//fmt.Printf("cannot convert azure policy %s to rego %+v\n", path, err)
+			return fmt.Errorf("error when loading rule from path %s, error is %+v", path, err)
 		}
+		err = rule.SaveToDisk()
+		if err != nil {
+			return fmt.Errorf("error when saving parsed rule to disk, error is %+v", err)
+		}
+
 	}
-	fmt.Printf("total number of policies is %d\n", total)
 	return nil
 }
 
@@ -384,71 +307,15 @@ func NewContext() context.Context {
 	return ctx
 }
 
-func AzPolicy2Rego(path string, ctx context.Context) error {
+func LoadRule(path string, ctx context.Context) (*Rule, error) {
 	rule, err := ReadRuleFromFile(path)
 	if err != nil {
-		return fmt.Errorf("cannot find rules %+v", err)
+		return nil, fmt.Errorf("cannot find rules %+v", err)
 	}
 
 	err = rule.Parse(ctx)
-	if err != nil {
-		return fmt.Errorf("cannot Parse rule %+v", err)
-	}
-
-	err = rule.SaveToDisk()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return rule, err
 }
-
-//func azPolicy2Rego(path string, ctx context.Context) error {
-//	var action string
-//	fmt.Printf("the path is %+v\n", path)
-//
-//	rule, err := ReadRuleFromFile(path)
-//	if err != nil {
-//		fmt.Printf("cannot find rules %+v\n", err)
-//		return err
-//	}
-//
-//	then := rule.Properties.PolicyRule.GetThen()
-//	action, err = then.MapEffectToAction(rule.Properties.Parameters.GetEffect().GetDefaultValue())
-//	if err != nil {
-//		return err
-//	}
-//	fmt.Printf("the effect is %+v\n", action)
-//	condition, err := rule.Properties.PolicyRule.BuildIfBody().condition(ctx)
-//	if err != nil {
-//		fmt.Printf("cannot find conditions %+v\n", err)
-//		return err
-//	}
-//	if err != nil {
-//		return err
-//	}
-//	fileName := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) + ".rego"
-//	conditionNames, result, err := condition.RuleSetReader("", ctx)
-//	fmt.Printf("the condition names are %+v\n", conditionNames)
-//	if action == disabled {
-//		result = "default allow := true\n\n" + result
-//	} else if action == deny {
-//		top := "deny if {\n" + " " + conditionNames[0] + "\n}\n"
-//		result = top + result
-//	} else if action == warn {
-//		top := "warn if {\n" + " " + conditionNames[0] + "\n}\n"
-//		result = top + result
-//	}
-//
-//	result = "package main\n\n" + "import rego.v1\n\n" + "r := tfplan.resource_changes[_]\n\n" + result
-//
-//	err = afero.WriteFile(Fs, fileName, []byte(result), 0644)
-//	if err != nil {
-//		fmt.Println(err)
-//		return err
-//	}
-//	return nil
-//}
 
 func currentResourceType(ctx context.Context) (string, error) {
 	resourceTypeStack := ctx.Value("context").(map[string]stacks.Stack)["resourceType"]
@@ -474,11 +341,6 @@ func pushResourceType(ctx context.Context, rt string) {
 	contextMap := ctx.Value("context").(map[string]stacks.Stack)
 	contextMap["resourceType"].Push(rt)
 }
-
-//func popResourceType(ctx context.Context) {
-//	resourceTypeStack := ctx.Value("resourceType").(stacks.Stack)
-//	resourceTypeStack.Pop()
-//}
 
 func jsonFiles(dir string) ([]string, error) {
 	res, err := readJsonFilePaths(dir)
@@ -519,9 +381,7 @@ func readJsonFilePaths(path string) ([]string, error) {
 func ReadRuleFromFile(path string) (*Rule, error) {
 	data, err := afero.ReadFile(Fs, path)
 	if err != nil {
-		fmt.Printf("unable to read file content %+v\n\n", err)
 		return nil, err
-		//return nil, nil, err
 	}
 
 	var rule Rule
@@ -531,155 +391,11 @@ func ReadRuleFromFile(path string) (*Rule, error) {
 		return nil, err
 	}
 	m := make(map[string]any)
-	json.Unmarshal(data, &m)
+	err = json.Unmarshal(data, &m)
+	if err != nil {
+		return nil, err
+	}
 	rule.path = path
 
 	return &rule, nil
-}
-
-// In this function, the input is a single condition or a set of conditions(allof, anyof)
-func conditionFinder(conditions map[string]interface{}, ctx context.Context) (*RuleSet, error) {
-	if conditions == nil {
-		return nil, errors.New("cannot find conditions")
-	}
-
-	var fieldName any
-	var operatorName string
-	var operatorValue any
-	//var operatorValueType reflect.Type
-	andRules := RuleSet{
-		Flag: allOf,
-	}
-	orRules := RuleSet{
-		Flag: anyOf,
-	}
-	whereRules := RuleSet{
-		Flag: where,
-	}
-	notRules := RuleSet{
-		Flag: not,
-	}
-
-	for k, v := range conditions {
-		switch strings.ToLower(k) {
-		case allOf:
-			allOfConditions := v.([]interface{})
-			for _, condition := range allOfConditions {
-				rule, err := conditionFinder(condition.(map[string]interface{}), ctx)
-				if err != nil {
-					fmt.Printf("cannot find AND conditions %+v\n", err)
-					return nil, err
-				}
-				if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count || rule.Flag == not {
-					andRules.RuleSets = append(andRules.RuleSets, *rule)
-				} else {
-					andRules.SingleRules = append(andRules.SingleRules, rule.SingleRules...)
-				}
-			}
-			return &andRules, nil
-		case anyOf:
-			anyOfConditions := v.([]interface{})
-			for _, condition := range anyOfConditions {
-				rule, err := conditionFinder(condition.(map[string]interface{}), ctx)
-				if err != nil {
-					fmt.Printf("cannot find OR conditions %+v\n", err)
-					return nil, err
-				}
-				if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count || rule.Flag == not {
-					orRules.RuleSets = append(orRules.RuleSets, *rule)
-				} else {
-					orRules.SingleRules = append(orRules.SingleRules, rule.SingleRules...)
-				}
-			}
-			return &orRules, nil
-		case not:
-			notCondition := v.(map[string]interface{})
-			rule, err := conditionFinder(notCondition, ctx)
-			if err != nil {
-				fmt.Printf("cannot find NOT conditions %+v\n", err)
-				return nil, err
-			}
-			//fmt.Printf("the not rule is %+v\n", *rule)
-
-			notRules.RuleSets = append(notRules.RuleSets, *rule)
-			notRules.SingleRules = append(notRules.SingleRules, rule.SingleRules...)
-			return &notRules, nil
-		case where:
-			whereConditions := v.(map[string]interface{})
-			//fmt.Printf("the where conditions are %+v\n", whereConditions)
-			rule, err := conditionFinder(whereConditions, ctx)
-			if err != nil {
-				fmt.Printf("cannot find WHERE conditions %+v\n", err)
-				return nil, err
-			}
-			if rule.Flag == allOf || rule.Flag == anyOf || rule.Flag == where || rule.Flag == count || rule.Flag == not {
-				whereRules.RuleSets = append(whereRules.RuleSets, *rule)
-			} else {
-				whereRules.SingleRules = append(whereRules.SingleRules, rule.SingleRules...)
-			}
-
-			operatorName = where
-			operatorValue = whereRules
-		case count:
-			countConditions := v.(map[string]interface{})
-			rule, err := conditionFinder(countConditions, ctx)
-			if err != nil {
-				fmt.Printf("cannot find COUNT conditions %+v\n", err)
-				return nil, err
-			}
-
-			countSingleRule := SingleRule{}
-			countSingleRule.Field = rule.SingleRules[0].Field
-			countSingleRule.FieldOperation = count
-			countSingleRule.Operator = rule.SingleRules[0].Operator
-			fieldName = countSingleRule
-		case field:
-			fieldName = v.(string)
-		case value:
-			fieldName = v.(string)
-		default:
-			operatorName = k
-			operatorValue = v
-		}
-	}
-	operator := OperatorModel{
-		Name:  operatorName,
-		Value: operatorValue,
-	}
-
-	singleRule := SingleRule{
-		Field:    fieldName,
-		Operator: operator,
-	}
-
-	if fieldName == typeOfResource {
-		switch operatorValue.(type) {
-		case string:
-			rt := operatorValue.(string)
-			pushResourceType(ctx, rt)
-			v, err := ResourceTypeParser(rt)
-			if err != nil {
-				fmt.Printf("cannot find resource type %+v\n", err)
-				return nil, err
-			}
-			singleRule.Operator.Value = v
-		case []interface{}:
-			var res []string
-			for _, v := range operatorValue.([]interface{}) {
-				parsedType, err := ResourceTypeParser(v.(string))
-				if err != nil {
-					fmt.Printf("cannot find resource type %+v\n", err)
-					return nil, err
-				}
-				res = append(res, parsedType)
-			}
-			singleRule.Operator.Value = res
-		}
-	}
-
-	var singleRules []SingleRule
-	return &RuleSet{
-		Flag:        "single",
-		SingleRules: append(singleRules, singleRule),
-	}, nil
 }
