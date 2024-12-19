@@ -9,8 +9,8 @@ import (
 )
 
 func TestNotInCondition(t *testing.T) {
-	sut := NotInOperation{
-		operation: operation{
+	sut := NotInCondition{
+		condition: condition{
 			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 		},
 		Values: []string{
@@ -35,8 +35,8 @@ func TestNotInCondition(t *testing.T) {
 }
 
 func TestInCondition(t *testing.T) {
-	sut := InOperation{
-		operation: operation{
+	sut := InCondition{
+		condition: condition{
 			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 		},
 		Values: []string{
@@ -61,8 +61,8 @@ func TestInCondition(t *testing.T) {
 }
 
 func TestLikeCondition(t *testing.T) {
-	sut := LikeOperation{
-		operation: operation{
+	sut := LikeCondition{
+		condition: condition{
 			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 		},
 		Value: `^[^@]+@[^@]+\.[^@]+$`,
@@ -75,8 +75,8 @@ func TestLikeCondition(t *testing.T) {
 }
 
 func TestNotLikeCondition(t *testing.T) {
-	sut := NotLikeOperation{
-		operation: operation{
+	sut := NotLikeCondition{
+		condition: condition{
 			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 		},
 		Value: `^[^@]+@[^@]+\.[^@]+$`,
@@ -88,23 +88,23 @@ func TestNotLikeCondition(t *testing.T) {
 	assert.Equal(t, "not regex.match(`^[^@]+@[^@]+\\.[^@]+$`,r.change.after.sku[0].tier)", actual)
 }
 
-func TestEqualsCondition(t *testing.T) {
-	sut := EqualsOperation{
-		operation: operation{
-			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
-		},
-		Value: "Standard",
-	}
-	ctx := NewContext()
-	pushResourceType(ctx, "Microsoft.Web/serverFarms")
-	actual, err := sut.Rego(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, "r.change.after.sku[0].tier == \"Standard\"", actual)
-}
+//func TestEqualsCondition(t *testing.T) {
+//	sut := EqualsCondition{
+//		condition: condition{
+//			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+//		},
+//		Value: "Standard",
+//	}
+//	ctx := NewContext()
+//	pushResourceType(ctx, "Microsoft.Web/serverFarms")
+//	actual, err := sut.Rego(ctx)
+//	require.NoError(t, err)
+//	assert.Equal(t, "r.change.after.sku[0].tier == \"Standard\"", actual)
+//}
 
 func TestNotEqualsCondition(t *testing.T) {
-	sut := NotEqualsOperation{
-		operation: operation{
+	sut := NotEqualsCondition{
+		condition: condition{
 			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 		},
 		Value: "Standard",
@@ -127,7 +127,7 @@ func TestOperations(t *testing.T) {
 		//	operation: CountOperator{
 		//		Where: WhereOperator{
 		//			Conditions: []Rego{
-		//				EqualsOperation{
+		//				EqualsCondition{
 		//					operation: operation{
 		//						Subject: OperationField("Microsoft.Network/networkSecurityGroups/securityRules[x].direction"),
 		//					},
@@ -136,7 +136,7 @@ func TestOperations(t *testing.T) {
 		//			},
 		//			ConditionSetName: "aaaaaaaaa",
 		//		},
-		//		//Operation: GreaterOperation{
+		//		//Operation: GreaterCondition{
 		//		//	operation: operation{
 		//		//		Subject: FieldValue{"count({x | r.change.after.properties.Microsoft.Network.networkSecurityGroups.securityRules[x]; whereOperatorName})"},
 		//		//	},
@@ -152,20 +152,20 @@ func TestOperations(t *testing.T) {
 				Conditions: []Rego{
 					AllOf{
 						Conditions: []Rego{
-							EqualsOperation{
-								operation: operation{
+							EqualsCondition{
+								condition: condition{
 									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 								},
 								Value: "Standard",
 							},
-							ExistsOperation{
-								operation: operation{
+							ExistsCondition{
+								condition: condition{
 									Subject: OperationField("Microsoft.Web/serverFarms/sku.name"),
 								},
 								Value: true,
 							},
-							EqualsOperation{
-								operation: operation{
+							EqualsCondition{
+								condition: condition{
 									Subject: OperationField("Microsoft.Web/serverFarms/sku.size"),
 								},
 								Value: "P1v3",
@@ -182,8 +182,8 @@ func TestOperations(t *testing.T) {
 			name: "WhereOperator",
 			operation: WhereOperator{
 				Conditions: []Rego{
-					EqualsOperation{
-						operation: operation{
+					EqualsCondition{
+						condition: condition{
 							Subject: OperationField("type"),
 						},
 						Value: "azurerm_app_service_plan",
@@ -199,14 +199,14 @@ func TestOperations(t *testing.T) {
 				Conditions: []Rego{
 					AllOf{
 						Conditions: []Rego{
-							EqualsOperation{
-								operation: operation{
+							EqualsCondition{
+								condition: condition{
 									Subject: OperationField("type"),
 								},
 								Value: "azurerm_app_service_plan",
 							},
-							ExistsOperation{
-								operation: operation{
+							ExistsCondition{
+								condition: condition{
 									Subject: OperationField("Microsoft.Web/serverFarms/sku.name"),
 								},
 								Value: true,
@@ -216,14 +216,14 @@ func TestOperations(t *testing.T) {
 					},
 					AnyOf{
 						Conditions: []Rego{
-							EqualsOperation{
-								operation: operation{
+							EqualsCondition{
+								condition: condition{
 									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 								},
 								Value: "Standard",
 							},
-							EqualsOperation{
-								operation: operation{
+							EqualsCondition{
+								condition: condition{
 									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 								},
 								Value: "Basic",
@@ -242,14 +242,14 @@ func TestOperations(t *testing.T) {
 				Conditions: []Rego{
 					AnyOf{
 						Conditions: []Rego{
-							EqualsOperation{
-								operation: operation{
+							EqualsCondition{
+								condition: condition{
 									Subject: OperationField("type"),
 								},
 								Value: "azurerm_app_service_plan",
 							},
-							EqualsOperation{
-								operation: operation{
+							EqualsCondition{
+								condition: condition{
 									Subject: OperationField("type"),
 								},
 								Value: "azurerm_app_service_environment",
@@ -259,14 +259,14 @@ func TestOperations(t *testing.T) {
 					},
 					AnyOf{
 						Conditions: []Rego{
-							EqualsOperation{
-								operation: operation{
+							EqualsCondition{
+								condition: condition{
 									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 								},
 								Value: "Standard",
 							},
-							EqualsOperation{
-								operation: operation{
+							EqualsCondition{
+								condition: condition{
 									Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 								},
 								Value: "Basic",
@@ -283,14 +283,14 @@ func TestOperations(t *testing.T) {
 			name: "AllOfOperator",
 			operation: AllOf{
 				Conditions: []Rego{
-					EqualsOperation{
-						operation: operation{
+					EqualsCondition{
+						condition: condition{
 							Subject: OperationField("type"),
 						},
 						Value: "azurerm_app_service_plan",
 					},
-					ExistsOperation{
-						operation: operation{
+					ExistsCondition{
+						condition: condition{
 							Subject: OperationField("Microsoft.Web/serverFarms/sku.name"),
 						},
 						Value: true,
@@ -304,14 +304,14 @@ func TestOperations(t *testing.T) {
 			name: "AnyOfOperator",
 			operation: AnyOf{
 				Conditions: []Rego{
-					EqualsOperation{
-						operation: operation{
+					EqualsCondition{
+						condition: condition{
 							Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 						},
 						Value: "Standard",
 					},
-					InOperation{
-						operation: operation{
+					InCondition{
+						condition: condition{
 							Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 						},
 						Values: []string{"Basic", "Premium"},
@@ -324,8 +324,8 @@ func TestOperations(t *testing.T) {
 		{
 			name: "NotOperator",
 			operation: NotOperator{
-				Body: EqualsOperation{
-					operation: operation{
+				Body: EqualsCondition{
+					condition: condition{
 						Subject: FieldValue{
 							Name: "Microsoft.Web/serverFarms/sku.tier",
 						},
@@ -337,9 +337,9 @@ func TestOperations(t *testing.T) {
 			expected: "aaa if {\nr.change.after.sku[0].tier == \"Standard\"\n}",
 		},
 		{
-			name: "EqualsOperation",
-			operation: EqualsOperation{
-				operation: operation{
+			name: "EqualsCondition",
+			operation: EqualsCondition{
+				condition: condition{
 					Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 				},
 				Value: "Standard",
@@ -347,9 +347,9 @@ func TestOperations(t *testing.T) {
 			expected: "r.change.after.sku[0].tier == \"Standard\"",
 		},
 		{
-			name: "NotEqualsOperation",
-			operation: NotEqualsOperation{
-				operation: operation{
+			name: "NotEqualsCondition",
+			operation: NotEqualsCondition{
+				condition: condition{
 					Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 				},
 				Value: "Standard",
@@ -357,9 +357,9 @@ func TestOperations(t *testing.T) {
 			expected: "r.change.after.sku[0].tier != \"Standard\"",
 		},
 		{
-			name: "LikeOperation",
-			operation: LikeOperation{
-				operation: operation{
+			name: "LikeCondition",
+			operation: LikeCondition{
+				condition: condition{
 					Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 				},
 				Value: `^[^@]+@[^@]+\.[^@]+$`,
@@ -367,9 +367,9 @@ func TestOperations(t *testing.T) {
 			expected: "regex.match(\"^[^@]+@[^@]+\\.[^@]+$\",r.change.after.sku[0].tier)",
 		},
 		{
-			name: "NotLikeOperation",
-			operation: NotLikeOperation{
-				operation: operation{
+			name: "NotLikeCondition",
+			operation: NotLikeCondition{
+				condition: condition{
 					Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 				},
 				Value: `^[^@]+@[^@]+\.[^@]+$`,
@@ -377,9 +377,9 @@ func TestOperations(t *testing.T) {
 			expected: "not regex.match(`^[^@]+@[^@]+\\.[^@]+$`,r.change.after.sku[0].tier)",
 		},
 		{
-			name: "InOperation",
-			operation: InOperation{
-				operation: operation{
+			name: "InCondition",
+			operation: InCondition{
+				condition: condition{
 					Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 				},
 				Values: []string{"Basic", "Standard", "Premium"},
@@ -387,9 +387,9 @@ func TestOperations(t *testing.T) {
 			expected: "some r.change.after.sku[0].tier in [\"Basic\",\"Standard\",\"Premium\"]",
 		},
 		{
-			name: "NotInOperation",
-			operation: NotInOperation{
-				operation: operation{
+			name: "NotInCondition",
+			operation: NotInCondition{
+				condition: condition{
 					Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
 				},
 				Values: []string{"Basic", "Standard", "Premium"},
@@ -428,13 +428,13 @@ func TestNewPolicyRuleBody(t *testing.T) {
 				"greater": 0,
 			},
 			expected: &PolicyRuleBody{
-				IfBody: GreaterOperation{
-					operation: operation{
+				IfBody: GreaterCondition{
+					condition: condition{
 						Subject: CountOperator{
 							Where: WhereOperator{
 								Conditions: []Rego{
-									EqualsOperation{
-										operation: operation{
+									EqualsCondition{
+										condition: condition{
 											Subject: FieldValue{
 												Name: "Microsoft.Network/networkSecurityGroups/securityRules[x].direction",
 											},
@@ -461,8 +461,8 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: &PolicyRuleBody{
 				IfBody: NotOperator{
-					Body: NotEqualsOperation{
-						operation: operation{
+					Body: NotEqualsCondition{
+						condition: condition{
 							Subject: FieldValue{
 								Name: "Microsoft.HealthcareApis/services/corsConfiguration.origins[x]",
 							},
@@ -508,16 +508,16 @@ func TestNewPolicyRuleBody(t *testing.T) {
 					Conditions: []Rego{
 						AnyOf{
 							Conditions: []Rego{
-								ExistsOperation{
-									operation: operation{
+								ExistsCondition{
+									condition: condition{
 										Subject: FieldValue{
 											Name: "Microsoft.Sql/servers/minimalTlsVersion",
 										},
 									},
 									Value: false,
 								},
-								LessOperation{
-									operation: operation{
+								LessCondition{
+									condition: condition{
 										Subject: FieldValue{
 											Name: "Microsoft.Sql/servers/minimalTlsVersion",
 										},
@@ -529,16 +529,16 @@ func TestNewPolicyRuleBody(t *testing.T) {
 						},
 						AllOf{
 							Conditions: []Rego{
-								EqualsOperation{
-									operation: operation{
+								EqualsCondition{
+									condition: condition{
 										Subject: FieldValue{
 											Name: "type",
 										},
 									},
 									Value: "azurerm_mssql_server",
 								},
-								ExistsOperation{
-									operation: operation{
+								ExistsCondition{
+									condition: condition{
 										Subject: FieldValue{
 											Name: "Microsoft.Sql/servers/minimalTlsVersion",
 										},
@@ -570,16 +570,16 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			expected: &PolicyRuleBody{
 				IfBody: AnyOf{
 					Conditions: []Rego{
-						ExistsOperation{
-							operation: operation{
+						ExistsCondition{
+							condition: condition{
 								Subject: FieldValue{
 									Name: "Microsoft.Sql/servers/minimalTlsVersion",
 								},
 							},
 							Value: false,
 						},
-						LessOperation{
-							operation: operation{
+						LessCondition{
+							condition: condition{
 								Subject: FieldValue{
 									Name: "Microsoft.Sql/servers/minimalTlsVersion",
 								},
@@ -608,16 +608,16 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			expected: &PolicyRuleBody{
 				IfBody: AllOf{
 					Conditions: []Rego{
-						EqualsOperation{
-							operation: operation{
+						EqualsCondition{
+							condition: condition{
 								Subject: FieldValue{
 									Name: "type",
 								},
 							},
 							Value: "azurerm_healthcare_service",
 						},
-						ExistsOperation{
-							operation: operation{
+						ExistsCondition{
+							condition: condition{
 								Subject: FieldValue{
 									Name: "Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri",
 								},
@@ -630,14 +630,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "EqualsOperation",
+			name: "EqualsCondition",
 			input: map[string]any{
 				"field":  "type",
 				"equals": "Microsoft.Web/serverFarms",
 			},
 			expected: &PolicyRuleBody{
-				IfBody: EqualsOperation{
-					operation: operation{
+				IfBody: EqualsCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Value: "Microsoft.Web/serverFarms",
@@ -645,14 +645,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "NotEqualsOperation",
+			name: "NotEqualsCondition",
 			input: map[string]any{
 				"field":     "type",
 				"notEquals": "Microsoft.Web/serverFarms",
 			},
 			expected: &PolicyRuleBody{
-				IfBody: NotEqualsOperation{
-					operation: operation{
+				IfBody: NotEqualsCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Value: "Microsoft.Web/serverFarms",
@@ -660,14 +660,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "LikeOperation",
+			name: "LikeCondition",
 			input: map[string]any{
 				"field": "type",
 				"like":  "Microsoft.Web/serverFarms",
 			},
 			expected: &PolicyRuleBody{
-				IfBody: LikeOperation{
-					operation: operation{
+				IfBody: LikeCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Value: "Microsoft.Web/serverFarms",
@@ -675,14 +675,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "NotLikeOperation",
+			name: "NotLikeCondition",
 			input: map[string]any{
 				"field":   "type",
 				"notLike": "Microsoft.Web/serverFarms",
 			},
 			expected: &PolicyRuleBody{
-				IfBody: NotLikeOperation{
-					operation: operation{
+				IfBody: NotLikeCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Value: "Microsoft.Web/serverFarms",
@@ -690,14 +690,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "InOperation",
+			name: "InCondition",
 			input: map[string]any{
 				"field": "type",
 				"in":    []any{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
 			},
 			expected: &PolicyRuleBody{
-				IfBody: InOperation{
-					operation: operation{
+				IfBody: InCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Values: []string{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
@@ -705,14 +705,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "NotInOperation",
+			name: "NotInCondition",
 			input: map[string]any{
 				"field": "type",
 				"notIn": []any{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
 			},
 			expected: &PolicyRuleBody{
-				IfBody: NotInOperation{
-					operation: operation{
+				IfBody: NotInCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Values: []string{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
@@ -720,14 +720,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "ContainsOperation",
+			name: "ContainsCondition",
 			input: map[string]any{
 				"field":    "type",
 				"contains": "Microsoft.Web/serverFarms",
 			},
 			expected: &PolicyRuleBody{
-				IfBody: ContainsOperation{
-					operation: operation{
+				IfBody: ContainsCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Value: "Microsoft.Web/serverFarms",
@@ -735,14 +735,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "NotContainsOperation",
+			name: "NotContainsCondition",
 			input: map[string]any{
 				"field":       "type",
 				"notContains": "Microsoft.Web/serverFarms",
 			},
 			expected: &PolicyRuleBody{
-				IfBody: NotContainsOperation{
-					operation: operation{
+				IfBody: NotContainsCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Value: "Microsoft.Web/serverFarms",
@@ -750,14 +750,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "ContainsKeyOperation",
+			name: "ContainsKeyCondition",
 			input: map[string]any{
 				"field":       "type",
 				"containsKey": "Microsoft.Web/serverFarms",
 			},
 			expected: &PolicyRuleBody{
-				IfBody: ContainsKeyOperation{
-					operation: operation{
+				IfBody: ContainsKeyCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					KeyName: "Microsoft.Web/serverFarms",
@@ -765,14 +765,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "NotContainsKeyOperation",
+			name: "NotContainsKeyCondition",
 			input: map[string]any{
 				"field":          "type",
 				"notContainsKey": "Microsoft.Web/serverFarms",
 			},
 			expected: &PolicyRuleBody{
-				IfBody: NotContainsKeyOperation{
-					operation: operation{
+				IfBody: NotContainsKeyCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					KeyName: "Microsoft.Web/serverFarms",
@@ -780,14 +780,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "LessOperation",
+			name: "LessCondition",
 			input: map[string]any{
 				"field": "type",
 				"less":  10,
 			},
 			expected: &PolicyRuleBody{
-				IfBody: LessOperation{
-					operation: operation{
+				IfBody: LessCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Value: 10,
@@ -795,14 +795,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "LessOrEqualsOperation",
+			name: "LessOrEqualsCondition",
 			input: map[string]any{
 				"field":        "type",
 				"lessOrEquals": 10,
 			},
 			expected: &PolicyRuleBody{
-				IfBody: LessOrEqualsOperation{
-					operation: operation{
+				IfBody: LessOrEqualsCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Value: 10,
@@ -810,14 +810,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "GreaterOperation",
+			name: "GreaterCondition",
 			input: map[string]any{
 				"field":   "type",
 				"greater": 10,
 			},
 			expected: &PolicyRuleBody{
-				IfBody: GreaterOperation{
-					operation: operation{
+				IfBody: GreaterCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Value: 10,
@@ -825,14 +825,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "GreaterOrEqualsOperation",
+			name: "GreaterOrEqualsCondition",
 			input: map[string]any{
 				"field":           "type",
 				"greaterOrEquals": 10,
 			},
 			expected: &PolicyRuleBody{
-				IfBody: GreaterOrEqualsOperation{
-					operation: operation{
+				IfBody: GreaterOrEqualsCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Value: 10,
@@ -840,14 +840,14 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 		},
 		{
-			name: "ExistsOperation",
+			name: "ExistsCondition",
 			input: map[string]any{
 				"field":  "type",
 				"exists": true,
 			},
 			expected: &PolicyRuleBody{
-				IfBody: ExistsOperation{
-					operation: operation{
+				IfBody: ExistsCondition{
+					condition: condition{
 						Subject: OperationField("type"),
 					},
 					Value: true,
