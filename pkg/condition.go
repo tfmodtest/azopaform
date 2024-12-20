@@ -3,9 +3,10 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"github.com/emirpasic/gods/stacks"
 	"reflect"
 	"strings"
+
+	"github.com/emirpasic/gods/stacks"
 )
 
 type OperationValue string
@@ -39,14 +40,6 @@ type condition struct {
 }
 
 var conditionFactory = map[string]func(Rego, any) Rego{
-	//"anyOf": func(s Rego, input any) Rego {
-	//	return AnyOf(input.([]Rego))
-	//},
-	//"not": func(s Rego, input any) Rego {
-	//	return NotOperator{
-	//		Body: input.(Rego),
-	//	}
-	//},
 	"equals": func(s Rego, input any) Rego {
 		return EqualsCondition{
 			condition: condition{Subject: s},

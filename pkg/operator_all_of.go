@@ -6,8 +6,6 @@ import (
 	"reflect"
 )
 
-var _ Rego = &AllOf{}
-
 var _ Operator = &AllOf{}
 
 type AllOf struct {

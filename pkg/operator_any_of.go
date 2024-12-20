@@ -3,11 +3,12 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"github.com/emirpasic/gods/stacks"
 	"reflect"
+	
+	"github.com/emirpasic/gods/stacks"
 )
 
-var _ Rego = &AnyOf{}
+var _ Operator = &AnyOf{}
 
 type AnyOf struct {
 	Conditions       []Rego
@@ -53,12 +54,6 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			res += fmt.Sprintf("%s if {%s}", head, condition)
 		}
 	}
-	//if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-	//	res = a.ConditionSetName + "(x)" + " " + ifCondition + " {\n" + res
-	//} else {
-	//	res = a.ConditionSetName + " " + ifCondition + " {\n" + res
-	//}
-	//res = res + "\n" + "}"
 
 	for _, subSet := range subSets {
 		res += "\n" + subSet

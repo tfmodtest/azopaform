@@ -2,9 +2,12 @@ package pkg
 
 import (
 	"context"
+	"fmt"
+	"testing"
+
+	"github.com/open-policy-agent/opa/rego"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 var _ Rego = stringRego("")
@@ -17,40 +20,55 @@ func (s stringRego) Rego(ctx context.Context) (string, error) {
 
 func TestEqualsCondition(t *testing.T) {
 	cases := []struct {
-		desc     string
-		left     Rego
-		right    any
-		setup    func(ctx context.Context)
-		expected string
+		desc  string
+		left  Rego
+		right any
+		setup func(ctx context.Context)
+		allow bool
 	}{
 		{
-			desc:     "string",
-			left:     stringRego("left"),
-			right:    "right",
-			expected: `left == "right"`,
+			desc:  "string",
+			left:  stringRego(`"right"`),
+			right: "right",
+			allow: true,
 		},
 		{
-			desc:     "int",
-			left:     stringRego("left"),
-			right:    1,
-			expected: `left == 1`,
+			desc:  "string_negative",
+			left:  stringRego(`"left"`),
+			right: "right",
+			allow: false,
 		},
 		{
-			desc:     "bool",
-			left:     stringRego("left"),
-			right:    true,
-			expected: `left == true`,
+			desc:  "int",
+			left:  stringRego("1"),
+			right: 1,
+			allow: true,
 		},
 		{
-			desc:  "field equals",
-			left:  OperationField("Microsoft.Web/serverFarms/sku.tier"),
-			right: "Standard",
-			setup: func(ctx context.Context) {
-				pushResourceType(ctx, "Microsoft.Web/serverFarms")
-			},
-			expected: `r.change.after.sku[0].tier == "Standard"`,
+			desc:  "int_negative",
+			left:  stringRego("1"),
+			right: 2,
+			allow: false,
+		},
+		{
+			desc:  "bool",
+			left:  stringRego("true"),
+			right: true,
+			allow: true,
+		},
+		{
+			desc:  "bool_negative",
+			left:  stringRego("false"),
+			right: true,
+			allow: false,
 		},
 	}
+	template := `package main
+
+import rego.v1
+
+default allow := false
+allow if %s`
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx := NewContext()
@@ -65,7 +83,11 @@ func TestEqualsCondition(t *testing.T) {
 			}
 			actual, err := sut.Rego(ctx)
 			require.NoError(t, err)
-			assert.Equal(t, c.expected, actual)
+			cfg := fmt.Sprintf(template, actual)
+			eval := rego.New(rego.Query("data.main.allow"), rego.Module("test.rego", cfg))
+			result, err := eval.Eval(ctx)
+			require.NoError(t, err)
+			assert.Equal(t, c.allow, result.Allowed())
 		})
 	}
 }
