@@ -11,7 +11,6 @@ import (
 type Operator interface {
 	Rego
 	GetConditionSetName() string
-	GetConditionSetNameRev() string
 }
 
 var operatorFactories = make(map[string]func(input any, ctx context.Context) Rego)

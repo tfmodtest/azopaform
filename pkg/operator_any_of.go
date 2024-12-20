@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
 	"reflect"
-	"strings"
 )
 
 var _ Rego = &AnyOf{}
@@ -17,10 +16,6 @@ type AnyOf struct {
 
 func (a AnyOf) GetConditionSetName() string {
 	return a.ConditionSetName
-}
-
-func (a AnyOf) GetConditionSetNameRev() string {
-	return strings.Join([]string{"not", a.ConditionSetName}, " ")
 }
 
 func (a AnyOf) Rego(ctx context.Context) (string, error) {

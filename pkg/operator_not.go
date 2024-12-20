@@ -3,10 +3,8 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"strings"
-
 	"github.com/emirpasic/gods/stacks"
+	"reflect"
 )
 
 var _ Rego = &NotOperator{}
@@ -20,10 +18,6 @@ type NotOperator struct {
 
 func (n NotOperator) GetConditionSetName() string {
 	return n.ConditionSetName
-}
-
-func (n NotOperator) GetConditionSetNameRev() string {
-	return strings.Join([]string{"not", n.ConditionSetName}, " ")
 }
 
 func (n NotOperator) Rego(ctx context.Context) (string, error) {
