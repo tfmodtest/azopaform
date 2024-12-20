@@ -9,6 +9,7 @@ import (
 )
 
 type Operator interface {
+	Rego
 	GetConditionSetName() string
 	GetConditionSetNameRev() string
 }
@@ -309,56 +310,6 @@ func init() {
 			ConditionSetName: conditionSetName,
 		}
 	}
-}
-
-var _ Rego = &NotOperator{}
-
-var _ Operator = &NotOperator{}
-
-type NotOperator struct {
-	Body             Rego
-	ConditionSetName string
-}
-
-func (n NotOperator) GetConditionSetName() string {
-	return strings.Join([]string{"not", n.ConditionSetName}, " ")
-}
-
-func (n NotOperator) GetConditionSetNameRev() string {
-	return n.ConditionSetName
-}
-
-func (n NotOperator) Rego(ctx context.Context) (string, error) {
-	var res string
-	var subSets []string
-
-	res = n.ConditionSetName + " " + ifCondition + " {\n"
-	if _, ok := n.Body.(Operator); ok {
-		if reflect.TypeOf(n.Body) != reflect.TypeOf(WhereOperator{}) {
-			if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-				res += n.Body.(Operator).GetConditionSetName() + "(x)"
-			} else {
-				res += n.Body.(Operator).GetConditionSetName()
-			}
-		}
-		subSet, err := n.Body.Rego(ctx)
-		if err != nil {
-			return "", err
-		}
-		subSets = append(subSets, subSet)
-	} else {
-		condition, err := n.Body.Rego(ctx)
-		if err != nil {
-			return "", err
-		}
-		res += condition
-	}
-
-	res += "\n}"
-	for _, subSet := range subSets {
-		res += "\n" + subSet
-	}
-	return res, nil
 }
 
 var _ Rego = &CountOperator{}
