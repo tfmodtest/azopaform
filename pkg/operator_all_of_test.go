@@ -2,70 +2,41 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/open-policy-agent/opa/format"
 	"testing"
 
-	"github.com/open-policy-agent/opa/format"
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-const testRegoModuleTemplate = `
-	package main
-	
-	import rego.v1
-	
-	default allow := false
-	r := input.resource_changes[_]
-	
-	allow if condition0
-	
-	%s
-	`
-
-func TestAnyOfOperator(t *testing.T) {
+func TestAllOfOperator(t *testing.T) {
 	cases := []struct {
-		desc       string
-		conditions []Rego
-		protocol   string
-		allowed    bool
+		desc             string
+		conditions       []Rego
+		protocol         string
+		port             int
+		publicAccessible bool
+		allowed          bool
 	}{
 		{
-			desc: "alllow left",
+			desc: "alllow",
 			conditions: []Rego{
 				&EqualsCondition{
 					condition: condition{
 						Subject: stringRego(`r.change.after.protocols[x]`),
 					},
-					Value: "http",
+					Value: "tcp",
 				},
 				&EqualsCondition{
 					condition: condition{
-						Subject: stringRego(`r.change.after.protocols[x]`),
+						Subject: stringRego(`r.change.after.port`),
 					},
-					Value: "ws",
+					Value: 22,
 				},
 			},
-			protocol: "http",
-			allowed:  true,
-		},
-		{
-			desc: "alllow right",
-			conditions: []Rego{
-				&EqualsCondition{
-					condition: condition{
-						Subject: stringRego(`r.change.after.protocols[x]`),
-					},
-					Value: "http",
-				},
-				&EqualsCondition{
-					condition: condition{
-						Subject: stringRego(`r.change.after.protocols[x]`),
-					},
-					Value: "ws",
-				},
-			},
-			protocol: "ws",
+			protocol: "tcp",
+			port:     22,
 			allowed:  true,
 		},
 		{
@@ -77,26 +48,28 @@ func TestAnyOfOperator(t *testing.T) {
 							condition: condition{
 								Subject: stringRego(`r.change.after.protocols[x]`),
 							},
-							Value: "http",
+							Value: "tcp",
 						},
 						&EqualsCondition{
 							condition: condition{
-								Subject: stringRego(`r.change.after.protocols[x]`),
+								Subject: stringRego(`r.change.after.port`),
 							},
-							Value: "https",
+							Value: 22,
 						},
 					},
 					ConditionSetName: "condition1",
 				},
 				&EqualsCondition{
 					condition: condition{
-						Subject: stringRego(`r.change.after.protocols[x]`),
+						Subject: stringRego(`r.change.after.public_accessible`),
 					},
-					Value: "ws",
+					Value: false,
 				},
 			},
-			protocol: "https",
-			allowed:  true,
+			protocol:         "https",
+			publicAccessible: false,
+			port:             22,
+			allowed:          true,
 		},
 		{
 			desc: "disallow",
@@ -105,22 +78,23 @@ func TestAnyOfOperator(t *testing.T) {
 					condition: condition{
 						Subject: stringRego(`r.change.after.protocols[x]`),
 					},
-					Value: "http",
+					Value: "tcp",
 				},
 				&EqualsCondition{
 					condition: condition{
-						Subject: stringRego(`r.change.after.protocols[x]`),
+						Subject: stringRego(`r.change.after.port`),
 					},
-					Value: "ws",
+					Value: 22,
 				},
 			},
-			protocol: "tcp",
+			protocol: "http",
+			port:     22,
 			allowed:  false,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			sut := &AnyOf{
+			sut := &AllOf{
 				Conditions:       c.conditions,
 				ConditionSetName: "condition0",
 			}
@@ -139,7 +113,9 @@ func TestAnyOfOperator(t *testing.T) {
 						"type": "azapi_resource",
 						"change": map[string]any{
 							"after": map[string]any{
-								"protocols": []string{c.protocol},
+								"protocols":         []string{c.protocol},
+								"port":              c.port,
+								"public_accessible": c.publicAccessible,
 							},
 						},
 					},
