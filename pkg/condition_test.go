@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"github.com/open-policy-agent/opa/rego"
 	"github.com/prashantv/gostub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -102,19 +103,19 @@ func TestNotLikeCondition(t *testing.T) {
 //	assert.Equal(t, "r.change.after.sku[0].tier == \"Standard\"", actual)
 //}
 
-func TestNotEqualsCondition(t *testing.T) {
-	sut := NotEqualsCondition{
-		condition: condition{
-			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
-		},
-		Value: "Standard",
-	}
-	ctx := NewContext()
-	pushResourceType(ctx, "Microsoft.Web/serverFarms")
-	actual, err := sut.Rego(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, "r.change.after.sku[0].tier != \"Standard\"", actual)
-}
+//func TestNotEqualsCondition(t *testing.T) {
+//	sut := NotEqualsCondition{
+//		condition: condition{
+//			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+//		},
+//		Value: "Standard",
+//	}
+//	ctx := NewContext()
+//	pushResourceType(ctx, "Microsoft.Web/serverFarms")
+//	actual, err := sut.Rego(ctx)
+//	require.NoError(t, err)
+//	assert.Equal(t, "r.change.after.sku[0].tier != \"Standard\"", actual)
+//}
 
 func TestOperations(t *testing.T) {
 	tests := []struct {
@@ -879,4 +880,17 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			}
 		})
 	}
+}
+
+func assertRegoAllow(t *testing.T, cfg string, input *rego.EvalOption, allowed bool, ctx context.Context) {
+	eval, err := rego.New(rego.Query("data.main.allow"), rego.Module("test.rego", cfg)).PrepareForEval(ctx)
+	require.NoError(t, err)
+	var result rego.ResultSet
+	if input == nil {
+		result, err = eval.Eval(ctx)
+	} else {
+		result, err = eval.Eval(ctx, *input)
+	}
+	require.NoError(t, err)
+	assert.Equal(t, allowed, result.Allowed())
 }

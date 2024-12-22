@@ -8,15 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ Rego = stringRego("")
-
-type stringRego string
-
-func (s stringRego) Rego(ctx context.Context) (string, error) {
-	return string(s), nil
-}
-
-func TestEqualsCondition(t *testing.T) {
+func TestNotEqualsCondition(t *testing.T) {
 	cases := []struct {
 		desc  string
 		left  Rego
@@ -25,40 +17,40 @@ func TestEqualsCondition(t *testing.T) {
 		allow bool
 	}{
 		{
-			desc:  "string",
-			left:  stringRego(`"right"`),
-			right: "right",
-			allow: true,
-		},
-		{
 			desc:  "string_negative",
-			left:  stringRego(`"left"`),
+			left:  stringRego(`"right"`),
 			right: "right",
 			allow: false,
 		},
 		{
-			desc:  "int",
-			left:  stringRego("1"),
-			right: 1,
+			desc:  "string",
+			left:  stringRego(`"left"`),
+			right: "right",
 			allow: true,
 		},
 		{
 			desc:  "int_negative",
 			left:  stringRego("1"),
-			right: 2,
+			right: 1,
 			allow: false,
 		},
 		{
-			desc:  "bool",
-			left:  stringRego("true"),
-			right: true,
+			desc:  "int",
+			left:  stringRego("1"),
+			right: 2,
 			allow: true,
 		},
 		{
 			desc:  "bool_negative",
-			left:  stringRego("false"),
+			left:  stringRego("true"),
 			right: true,
 			allow: false,
+		},
+		{
+			desc:  "bool",
+			left:  stringRego("false"),
+			right: true,
+			allow: true,
 		},
 	}
 	template := `package main
@@ -73,7 +65,7 @@ allow if %s`
 			if c.setup != nil {
 				c.setup(ctx)
 			}
-			sut := EqualsCondition{
+			sut := NotEqualsCondition{
 				condition: condition{
 					Subject: c.left,
 				},

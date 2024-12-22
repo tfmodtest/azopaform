@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/open-policy-agent/opa/rego"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -105,24 +104,23 @@ func TestAllOfOperator(t *testing.T) {
 			formattedCfg, err := format.Source("test.rego", []byte(regoCfg))
 			require.NoError(t, err)
 			regoCfg = string(formattedCfg)
-			query, err := rego.New(rego.Query("data.main.allow"), rego.Module("test.rego", regoCfg)).PrepareForEval(ctx)
-			require.NoError(t, err)
-			eval, err := query.Eval(ctx, rego.EvalInput(map[string]any{
-				"resource_changes": []map[string]any{
-					{
-						"type": "azapi_resource",
-						"change": map[string]any{
-							"after": map[string]any{
-								"protocols":         []string{c.protocol},
-								"port":              c.port,
-								"public_accessible": c.publicAccessible,
+			assertRegoAllow(t, regoCfg, func() *rego.EvalOption {
+				input := rego.EvalInput(map[string]any{
+					"resource_changes": []map[string]any{
+						{
+							"type": "azapi_resource",
+							"change": map[string]any{
+								"after": map[string]any{
+									"protocols":         []string{c.protocol},
+									"port":              c.port,
+									"public_accessible": c.publicAccessible,
+								},
 							},
 						},
 					},
-				},
-			}))
-			require.NoError(t, err)
-			assert.Equal(t, c.allowed, eval.Allowed())
+				})
+				return &input
+			}(), c.allowed, ctx)
 		})
 	}
 }

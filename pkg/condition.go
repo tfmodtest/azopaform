@@ -28,7 +28,6 @@ type Rego interface {
 
 type Condition interface {
 	Rego
-	GetReverseRego(ctx context.Context) (string, error)
 }
 
 type Operation interface {
@@ -171,52 +170,6 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 	},
 }
 
-var _ Rego = NotEqualsCondition{}
-var _ Condition = NotEqualsCondition{}
-
-type NotEqualsCondition struct {
-	condition
-	Value any
-}
-
-func (n NotEqualsCondition) Rego(ctx context.Context) (string, error) {
-	fieldName, err := n.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	var v string
-	if reflect.TypeOf(n.Value).Kind() == reflect.String {
-		v = strings.Join([]string{"\"", fmt.Sprint(n.Value), "\""}, "")
-	} else if reflect.TypeOf(n.Value).Kind() == reflect.Bool {
-		v = fmt.Sprint(n.Value)
-	} else {
-		v = fmt.Sprint(n.Value)
-	}
-	return strings.Join([]string{fieldName, "!=", v}, " "), nil
-}
-
-func (n NotEqualsCondition) GetReverseRego(ctx context.Context) (string, error) {
-	fieldName, err := n.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	var v string
-	if reflect.TypeOf(n.Value).Kind() == reflect.String {
-		v = strings.Join([]string{"\"", fmt.Sprint(n.Value), "\""}, "")
-	} else if reflect.TypeOf(n.Value).Kind() == reflect.Bool {
-		v = fmt.Sprint(n.Value)
-	} else {
-		v = fmt.Sprint(n.Value)
-	}
-	return strings.Join([]string{fieldName, "==", v}, " "), nil
-}
-
 var _ Rego = LikeCondition{}
 var _ Condition = LikeCondition{}
 
@@ -237,18 +190,6 @@ func (l LikeCondition) Rego(ctx context.Context) (string, error) {
 	return strings.Join([]string{regexExp, "(", v, ",", fieldName, ")"}, ""), nil
 }
 
-func (l LikeCondition) GetReverseRego(ctx context.Context) (string, error) {
-	fieldName, err := l.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	v := strings.Join([]string{"\"", fmt.Sprint(l.Value), "\""}, "")
-	return strings.Join([]string{not, " ", regexExp, "(", v, ",", fieldName, ")"}, ""), nil
-}
-
 var _ Rego = NotLikeCondition{}
 var _ Condition = NotLikeCondition{}
 
@@ -267,18 +208,6 @@ func (n NotLikeCondition) Rego(ctx context.Context) (string, error) {
 	}
 	v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")
 	return strings.Join([]string{not, " ", regexExp, "(", v, ",", fieldName, ")"}, ""), nil
-}
-
-func (n NotLikeCondition) GetReverseRego(ctx context.Context) (string, error) {
-	fieldName, err := n.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")
-	return strings.Join([]string{regexExp, "(", v, ",", fieldName, ")"}, ""), nil
 }
 
 var _ Rego = MatchCondition{}
@@ -368,14 +297,6 @@ func (i InCondition) Rego(ctx context.Context) (string, error) {
 	return strings.Join([]string{"some", fieldName, "in", SliceConstructor(i.Values)}, " "), nil
 }
 
-func (i InCondition) GetReverseRego(ctx context.Context) (string, error) {
-	fieldName, err := i.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join([]string{not, fieldName, "in", SliceConstructor(i.Values)}, " "), nil
-}
-
 var _ Rego = NotInCondition{}
 var _ Condition = NotInCondition{}
 
@@ -390,14 +311,6 @@ func (n NotInCondition) Rego(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return strings.Join([]string{not, fieldName, "in", SliceConstructor(n.Values)}, " "), nil
-}
-
-func (n NotInCondition) GetReverseRego(ctx context.Context) (string, error) {
-	fieldName, err := n.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join([]string{"some", fieldName, "in", SliceConstructor(n.Values)}, " "), nil
 }
 
 var _ Rego = ContainsKeyCondition{}
@@ -441,17 +354,6 @@ func (l LessCondition) Rego(ctx context.Context) (string, error) {
 	return strings.Join([]string{fieldName, "<", fmt.Sprint(l.Value)}, " "), nil
 }
 
-func (l LessCondition) GetReverseRego(ctx context.Context) (string, error) {
-	fieldName, err := l.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	return strings.Join([]string{fieldName, ">=", fmt.Sprint(l.Value)}, " "), nil
-}
-
 var _ Rego = LessOrEqualsCondition{}
 var _ Condition = LessOrEqualsCondition{}
 
@@ -469,17 +371,6 @@ func (l LessOrEqualsCondition) Rego(ctx context.Context) (string, error) {
 		fieldName = replaceIndex(fieldName)
 	}
 	return strings.Join([]string{fieldName, "<=", fmt.Sprint(l.Value)}, " "), nil
-}
-
-func (l LessOrEqualsCondition) GetReverseRego(ctx context.Context) (string, error) {
-	fieldName, err := l.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	return strings.Join([]string{fieldName, ">", fmt.Sprint(l.Value)}, " "), nil
 }
 
 var _ Rego = GreaterCondition{}
@@ -501,17 +392,6 @@ func (g GreaterCondition) Rego(ctx context.Context) (string, error) {
 	return strings.Join([]string{fieldName, ">", fmt.Sprint(g.Value)}, " "), nil
 }
 
-func (g GreaterCondition) GetReverseRego(ctx context.Context) (string, error) {
-	fieldName, err := g.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	return strings.Join([]string{fieldName, "<=", fmt.Sprint(g.Value)}, " "), nil
-}
-
 var _ Rego = GreaterOrEqualsCondition{}
 var _ Condition = GreaterOrEqualsCondition{}
 
@@ -529,17 +409,6 @@ func (g GreaterOrEqualsCondition) Rego(ctx context.Context) (string, error) {
 		fieldName = replaceIndex(fieldName)
 	}
 	return strings.Join([]string{fieldName, ">=", fmt.Sprint(g.Value)}, " "), nil
-}
-
-func (g GreaterOrEqualsCondition) GetReverseRego(ctx context.Context) (string, error) {
-	fieldName, err := g.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	return strings.Join([]string{fieldName, "<", fmt.Sprint(g.Value)}, " "), nil
 }
 
 var _ Rego = ExistsCondition{}
@@ -562,20 +431,5 @@ func (e ExistsCondition) Rego(ctx context.Context) (string, error) {
 		return fieldName, nil
 	} else {
 		return strings.Join([]string{not, fieldName}, " "), nil
-	}
-}
-
-func (e ExistsCondition) GetReverseRego(ctx context.Context) (string, error) {
-	fieldName, err := e.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	if (reflect.TypeOf(e.Value).Kind() == reflect.Bool && e.Value.(bool)) || (reflect.TypeOf(e.Value).Kind() == reflect.String && e.Value.(string) == "true") {
-		return strings.Join([]string{not, fieldName}, " "), nil
-	} else {
-		return fieldName, nil
 	}
 }
