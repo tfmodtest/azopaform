@@ -9,6 +9,13 @@ import (
 	"testing"
 )
 
+const conditionRegoTemplate = `package main
+
+import rego.v1
+
+default allow := false
+allow if %s`
+
 func TestNotInCondition(t *testing.T) {
 	sut := NotInCondition{
 		condition: condition{

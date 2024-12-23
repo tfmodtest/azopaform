@@ -61,12 +61,6 @@ func TestEqualsCondition(t *testing.T) {
 			allow: false,
 		},
 	}
-	template := `package main
-
-import rego.v1
-
-default allow := false
-allow if %s`
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx := NewContext()
@@ -81,7 +75,7 @@ allow if %s`
 			}
 			actual, err := sut.Rego(ctx)
 			require.NoError(t, err)
-			cfg := fmt.Sprintf(template, actual)
+			cfg := fmt.Sprintf(conditionRegoTemplate, actual)
 			assertRegoAllow(t, cfg, nil, c.allow, ctx)
 		})
 	}

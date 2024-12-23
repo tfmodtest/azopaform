@@ -2,9 +2,9 @@ package pkg
 
 import (
 	"fmt"
-	"github.com/open-policy-agent/opa/format"
 	"testing"
 
+	"github.com/open-policy-agent/opa/format"
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/stretchr/testify/require"
 )
