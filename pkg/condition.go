@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
-
-	"github.com/emirpasic/gods/stacks"
 )
 
 type OperationValue string
@@ -170,46 +167,6 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 	},
 }
 
-var _ Rego = LikeCondition{}
-var _ Condition = LikeCondition{}
-
-type LikeCondition struct {
-	condition
-	Value string
-}
-
-func (l LikeCondition) Rego(ctx context.Context) (string, error) {
-	fieldName, err := l.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	v := strings.Join([]string{"\"", fmt.Sprint(l.Value), "\""}, "")
-	return strings.Join([]string{regexExp, "(", v, ",", fieldName, ")"}, ""), nil
-}
-
-var _ Rego = NotLikeCondition{}
-var _ Condition = NotLikeCondition{}
-
-type NotLikeCondition struct {
-	condition
-	Value string
-}
-
-func (n NotLikeCondition) Rego(ctx context.Context) (string, error) {
-	fieldName, err := n.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")
-	return strings.Join([]string{not, " ", regexExp, "(", v, ",", fieldName, ")"}, ""), nil
-}
-
 var _ Rego = MatchCondition{}
 
 type MatchCondition struct {
@@ -254,65 +211,6 @@ func (n NotMatchInsensitivelyCondition) Rego(context.Context) (string, error) {
 	return "", fmt.Errorf("`notMatchInsensitively` condition is not supported, yet")
 }
 
-var _ Rego = ContainsCondition{}
-
-type ContainsCondition struct {
-	condition
-	Value string
-}
-
-func (c ContainsCondition) Rego(ctx context.Context) (string, error) {
-	fieldName, err := c.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join([]string{regexExp, "(", "\"", ".*", fmt.Sprint(c.Value), ".*", "\"", ",", fieldName, ")"}, ""), nil
-
-}
-
-var _ Rego = NotContainsCondition{}
-
-type NotContainsCondition struct {
-	condition
-	Value string
-}
-
-func (n NotContainsCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`notContains` condition is not supported, yet")
-}
-
-var _ Rego = InCondition{}
-var _ Condition = InCondition{}
-
-type InCondition struct {
-	condition
-	Values []string
-}
-
-func (i InCondition) Rego(ctx context.Context) (string, error) {
-	fieldName, err := i.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join([]string{"some", fieldName, "in", SliceConstructor(i.Values)}, " "), nil
-}
-
-var _ Rego = NotInCondition{}
-var _ Condition = NotInCondition{}
-
-type NotInCondition struct {
-	condition
-	Values []string
-}
-
-func (n NotInCondition) Rego(ctx context.Context) (string, error) {
-	fieldName, err := n.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join([]string{not, fieldName, "in", SliceConstructor(n.Values)}, " "), nil
-}
-
 var _ Rego = ContainsKeyCondition{}
 
 type ContainsKeyCondition struct {
@@ -333,103 +231,4 @@ type NotContainsKeyCondition struct {
 
 func (n NotContainsKeyCondition) Rego(context.Context) (string, error) {
 	return "", fmt.Errorf("`notContainsKey` condition is not supported, yet")
-}
-
-var _ Rego = LessCondition{}
-var _ Condition = LessCondition{}
-
-type LessCondition struct {
-	condition
-	Value any
-}
-
-func (l LessCondition) Rego(ctx context.Context) (string, error) {
-	fieldName, err := l.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	return strings.Join([]string{fieldName, "<", fmt.Sprint(l.Value)}, " "), nil
-}
-
-var _ Rego = LessOrEqualsCondition{}
-var _ Condition = LessOrEqualsCondition{}
-
-type LessOrEqualsCondition struct {
-	condition
-	Value any
-}
-
-func (l LessOrEqualsCondition) Rego(ctx context.Context) (string, error) {
-	fieldName, err := l.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	return strings.Join([]string{fieldName, "<=", fmt.Sprint(l.Value)}, " "), nil
-}
-
-var _ Rego = GreaterCondition{}
-var _ Condition = GreaterCondition{}
-
-type GreaterCondition struct {
-	condition
-	Value any
-}
-
-func (g GreaterCondition) Rego(ctx context.Context) (string, error) {
-	fieldName, err := g.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	return strings.Join([]string{fieldName, ">", fmt.Sprint(g.Value)}, " "), nil
-}
-
-var _ Rego = GreaterOrEqualsCondition{}
-var _ Condition = GreaterOrEqualsCondition{}
-
-type GreaterOrEqualsCondition struct {
-	condition
-	Value any
-}
-
-func (g GreaterOrEqualsCondition) Rego(ctx context.Context) (string, error) {
-	fieldName, err := g.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	return strings.Join([]string{fieldName, ">=", fmt.Sprint(g.Value)}, " "), nil
-}
-
-var _ Rego = ExistsCondition{}
-var _ Condition = ExistsCondition{}
-
-type ExistsCondition struct {
-	condition
-	Value any
-}
-
-func (e ExistsCondition) Rego(ctx context.Context) (string, error) {
-	fieldName, err := e.Subject.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
-	}
-	if (reflect.TypeOf(e.Value).Kind() == reflect.Bool && e.Value.(bool)) || (reflect.TypeOf(e.Value).Kind() == reflect.String && e.Value.(string) == "true") {
-		return fieldName, nil
-	} else {
-		return strings.Join([]string{not, fieldName}, " "), nil
-	}
 }

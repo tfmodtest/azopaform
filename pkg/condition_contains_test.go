@@ -1,0 +1,50 @@
+package pkg
+
+import (
+	"context"
+	"fmt"
+	"github.com/stretchr/testify/require"
+	"testing"
+)
+
+func TestContainsCondition(t *testing.T) {
+	cases := []struct {
+		desc  string
+		left  Rego
+		right string
+		setup func(ctx context.Context)
+		allow bool
+	}{
+		{
+			desc:  "contains_negative",
+			left:  stringRego("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group1/providers/Microsoft.RecoveryServices/vaults/vault1"),
+			right: "Microsoft.Web/sites",
+			allow: false,
+		},
+		{
+			desc:  "contains_negative",
+			left:  stringRego("/subscriptions/12345678-1234-9876-4563-123456789012/resourceGroups/resGroup1/providers/Microsoft.Web/sites/site1/slots/slot1"),
+			right: "Microsoft.Web/sites",
+			allow: true,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			ctx := NewContext()
+			if c.setup != nil {
+				c.setup(ctx)
+			}
+
+			sut := ContainsCondition{
+				condition: condition{
+					Subject: c.left,
+				},
+				Value: c.right,
+			}
+			actual, err := sut.Rego(ctx)
+			require.NoError(t, err)
+			cfg := fmt.Sprintf(conditionRegoTemplate, actual)
+			assertRegoAllow(t, cfg, nil, c.allow, ctx)
+		})
+	}
+}
