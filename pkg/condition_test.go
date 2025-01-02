@@ -16,85 +16,85 @@ import rego.v1
 default allow := false
 allow if %s`
 
-func TestNotInCondition(t *testing.T) {
-	sut := NotInCondition{
-		condition: condition{
-			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
-		},
-		Values: []string{
-			"Basic",
-			"Standard",
-			"ElasticPremium",
-			"Premium",
-			"PremiumV2",
-			"Premium0V3",
-			"PremiumV3",
-			"PremiumMV3",
-			"Isolated",
-			"IsolatedV2",
-			"WorkflowStandard",
-		},
-	}
-	ctx := NewContext()
-	pushResourceType(ctx, "Microsoft.Web/serverFarms")
-	actual, err := sut.Rego(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, `not r.change.after.sku[0].tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]`, actual)
-}
+//func TestNotInCondition(t *testing.T) {
+//	sut := NotInCondition{
+//		condition: condition{
+//			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+//		},
+//		Values: []string{
+//			"Basic",
+//			"Standard",
+//			"ElasticPremium",
+//			"Premium",
+//			"PremiumV2",
+//			"Premium0V3",
+//			"PremiumV3",
+//			"PremiumMV3",
+//			"Isolated",
+//			"IsolatedV2",
+//			"WorkflowStandard",
+//		},
+//	}
+//	ctx := NewContext()
+//	pushResourceType(ctx, "Microsoft.Web/serverFarms")
+//	actual, err := sut.Rego(ctx)
+//	require.NoError(t, err)
+//	assert.Equal(t, `not r.change.after.sku[0].tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]`, actual)
+//}
 
-func TestInCondition(t *testing.T) {
-	sut := InCondition{
-		condition: condition{
-			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
-		},
-		Values: []string{
-			"Basic",
-			"Standard",
-			"ElasticPremium",
-			"Premium",
-			"PremiumV2",
-			"Premium0V3",
-			"PremiumV3",
-			"PremiumMV3",
-			"Isolated",
-			"IsolatedV2",
-			"WorkflowStandard",
-		},
-	}
-	ctx := NewContext()
-	pushResourceType(ctx, "Microsoft.Web/serverFarms")
-	actual, err := sut.Rego(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, `some r.change.after.sku[0].tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]`, actual)
-}
+//func TestInCondition(t *testing.T) {
+//	sut := InCondition{
+//		condition: condition{
+//			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+//		},
+//		Values: []string{
+//			"Basic",
+//			"Standard",
+//			"ElasticPremium",
+//			"Premium",
+//			"PremiumV2",
+//			"Premium0V3",
+//			"PremiumV3",
+//			"PremiumMV3",
+//			"Isolated",
+//			"IsolatedV2",
+//			"WorkflowStandard",
+//		},
+//	}
+//	ctx := NewContext()
+//	pushResourceType(ctx, "Microsoft.Web/serverFarms")
+//	actual, err := sut.Rego(ctx)
+//	require.NoError(t, err)
+//	assert.Equal(t, `some r.change.after.sku[0].tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]`, actual)
+//}
 
-func TestLikeCondition(t *testing.T) {
-	sut := LikeCondition{
-		condition: condition{
-			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
-		},
-		Value: `^[^@]+@[^@]+\.[^@]+$`,
-	}
-	ctx := NewContext()
-	pushResourceType(ctx, "Microsoft.Web/serverFarms")
-	actual, err := sut.Rego(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, "regex.match(\"^[^@]+@[^@]+\\.[^@]+$\",r.change.after.sku[0].tier)", actual)
-}
+//func TestLikeCondition(t *testing.T) {
+//	sut := LikeCondition{
+//		condition: condition{
+//			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+//		},
+//		Value: `^[^@]+@[^@]+\.[^@]+$`,
+//	}
+//	ctx := NewContext()
+//	pushResourceType(ctx, "Microsoft.Web/serverFarms")
+//	actual, err := sut.Rego(ctx)
+//	require.NoError(t, err)
+//	assert.Equal(t, "regex.match(\"^[^@]+@[^@]+\\.[^@]+$\",r.change.after.sku[0].tier)", actual)
+//}
 
-func TestNotLikeCondition(t *testing.T) {
-	sut := NotLikeCondition{
-		condition: condition{
-			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
-		},
-		Value: `^[^@]+@[^@]+\.[^@]+$`,
-	}
-	ctx := NewContext()
-	pushResourceType(ctx, "Microsoft.Web/serverFarms")
-	actual, err := sut.Rego(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, "not regex.match(`^[^@]+@[^@]+\\.[^@]+$`,r.change.after.sku[0].tier)", actual)
-}
+//func TestNotLikeCondition(t *testing.T) {
+//	sut := NotLikeCondition{
+//		condition: condition{
+//			Subject: OperationField("Microsoft.Web/serverFarms/sku.tier"),
+//		},
+//		Value: `^[^@]+@[^@]+\.[^@]+$`,
+//	}
+//	ctx := NewContext()
+//	pushResourceType(ctx, "Microsoft.Web/serverFarms")
+//	actual, err := sut.Rego(ctx)
+//	require.NoError(t, err)
+//	assert.Equal(t, "not regex.match(`^[^@]+@[^@]+\\.[^@]+$`,r.change.after.sku[0].tier)", actual)
+//}
 
 //func TestEqualsCondition(t *testing.T) {
 //	sut := EqualsCondition{

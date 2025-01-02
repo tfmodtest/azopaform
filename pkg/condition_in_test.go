@@ -7,25 +7,25 @@ import (
 	"testing"
 )
 
-func TestContainsCondition(t *testing.T) {
+func TestInCondition(t *testing.T) {
 	cases := []struct {
 		desc  string
 		left  Rego
-		right string
+		right []string
 		setup func(ctx context.Context)
 		allow bool
 	}{
 		{
-			desc:  "contains_negative",
-			left:  stringRego("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group1/providers/Microsoft.RecoveryServices/vaults/vault1"),
-			right: "Microsoft.Web/sites",
-			allow: false,
+			desc:  "in",
+			left:  stringRego(`"right"`),
+			right: []string{"right", "left"},
+			allow: true,
 		},
 		{
-			desc:  "contains",
-			left:  stringRego("/subscriptions/12345678-1234-9876-4563-123456789012/resourceGroups/resGroup1/providers/Microsoft.Web/sites/site1/slots/slot1"),
-			right: "Microsoft.Web/sites",
-			allow: true,
+			desc:  "in_negative",
+			left:  stringRego(`"left"`),
+			right: []string{"right", "middle"},
+			allow: false,
 		},
 	}
 	for _, c := range cases {
@@ -34,12 +34,11 @@ func TestContainsCondition(t *testing.T) {
 			if c.setup != nil {
 				c.setup(ctx)
 			}
-
-			sut := ContainsCondition{
+			sut := InCondition{
 				condition: condition{
 					Subject: c.left,
 				},
-				Value: c.right,
+				Values: c.right,
 			}
 			actual, err := sut.Rego(ctx)
 			require.NoError(t, err)

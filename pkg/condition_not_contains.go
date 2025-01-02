@@ -22,5 +22,5 @@ func (n NotContainsCondition) Rego(ctx context.Context) (string, error) {
 	//	fieldName = replaceIndex(fieldName)
 	//}
 	//v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")
-	return strings.Join([]string{not, " ", regexExp, "(", "\"", ".*", fmt.Sprint(n.Value), ".*", "\"", ",", fieldName, ")"}, ""), nil
+	return strings.Join([]string{not, " ", regexExp, "(", "\"", ".*", fmt.Sprint(n.Value), ".*", "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
 }

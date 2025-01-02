@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestContainsCondition(t *testing.T) {
+func TestNotContainsCondition(t *testing.T) {
 	cases := []struct {
 		desc  string
 		left  Rego
@@ -16,16 +16,16 @@ func TestContainsCondition(t *testing.T) {
 		allow bool
 	}{
 		{
-			desc:  "contains_negative",
+			desc:  "not_contains",
 			left:  stringRego("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group1/providers/Microsoft.RecoveryServices/vaults/vault1"),
 			right: "Microsoft.Web/sites",
-			allow: false,
+			allow: true,
 		},
 		{
-			desc:  "contains",
+			desc:  "not_contains_negative",
 			left:  stringRego("/subscriptions/12345678-1234-9876-4563-123456789012/resourceGroups/resGroup1/providers/Microsoft.Web/sites/site1/slots/slot1"),
 			right: "Microsoft.Web/sites",
-			allow: true,
+			allow: false,
 		},
 	}
 	for _, c := range cases {
@@ -35,7 +35,7 @@ func TestContainsCondition(t *testing.T) {
 				c.setup(ctx)
 			}
 
-			sut := ContainsCondition{
+			sut := NotContainsCondition{
 				condition: condition{
 					Subject: c.left,
 				},

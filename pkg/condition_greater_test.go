@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestContainsCondition(t *testing.T) {
+func TestGreaterCondition(t *testing.T) {
 	cases := []struct {
 		desc  string
 		left  Rego
@@ -16,16 +16,22 @@ func TestContainsCondition(t *testing.T) {
 		allow bool
 	}{
 		{
-			desc:  "contains_negative",
-			left:  stringRego("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group1/providers/Microsoft.RecoveryServices/vaults/vault1"),
-			right: "Microsoft.Web/sites",
+			desc:  "greater",
+			left:  stringRego("2"),
+			right: "1",
+			allow: true,
+		},
+		{
+			desc:  "less",
+			left:  stringRego("1"),
+			right: "2",
 			allow: false,
 		},
 		{
-			desc:  "contains",
-			left:  stringRego("/subscriptions/12345678-1234-9876-4563-123456789012/resourceGroups/resGroup1/providers/Microsoft.Web/sites/site1/slots/slot1"),
-			right: "Microsoft.Web/sites",
-			allow: true,
+			desc:  "equal",
+			left:  stringRego("1"),
+			right: "1",
+			allow: false,
 		},
 	}
 	for _, c := range cases {
@@ -34,8 +40,7 @@ func TestContainsCondition(t *testing.T) {
 			if c.setup != nil {
 				c.setup(ctx)
 			}
-
-			sut := ContainsCondition{
+			sut := GreaterCondition{
 				condition: condition{
 					Subject: c.left,
 				},

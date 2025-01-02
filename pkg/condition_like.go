@@ -22,6 +22,6 @@ func (l LikeCondition) Rego(ctx context.Context) (string, error) {
 	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
 		fieldName = replaceIndex(fieldName)
 	}
-	v := strings.Join([]string{"\"", fmt.Sprint(l.Value), "\""}, "")
-	return strings.Join([]string{regexExp, "(", v, ",", fieldName, ")"}, ""), nil
+
+	return strings.Join([]string{regexExp, "(", "\"", fmt.Sprintf(l.Value), "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
 }
