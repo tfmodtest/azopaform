@@ -36,7 +36,19 @@ func (r *Rule) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return "package main\n\n" + "import rego.v1\n\n" + "r := tfplan.resource_changes[_]\n\n" + rego, nil
+	return fmt.Sprintf(`package main
+
+import future.keywords.if
+import future.keywords.in
+tfplan := input if {
+     input.terraform_version
+} else := input.plan if {
+     input.plan.terraform_version
+}
+
+r := tfplan.resource_changes[_]
+
+%s`, rego), nil
 }
 
 func (r *Rule) Parse(ctx context.Context) error {
@@ -260,7 +272,6 @@ type OperatorModel struct {
 var Fs = afero.NewOsFs()
 
 func AzurePolicyToRego(policyPath string, dir string, ctx context.Context) error {
-	//policyPath := testPath
 	var paths []string
 	var err error
 
