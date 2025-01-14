@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"json-rule-finder/pkg/shared"
 	"strings"
 )
 
@@ -15,7 +16,7 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 			var cv any
 			for key, conditionValue := range conditionMap {
 				key = strings.ToLower(key)
-				if key == count {
+				if key == shared.Count_ {
 					operationFactory, ok := operatorFactories[key]
 					if !ok {
 						panic(fmt.Sprintf("unknown operation: %s", key))
@@ -24,7 +25,7 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 					subject = conditionSet
 					continue
 				}
-				if key == allOf {
+				if key == shared.AllOf_ {
 					operationFactory, ok := operatorFactories[key]
 					if !ok {
 						panic(fmt.Sprintf("unknown operation: %s", key))
@@ -32,7 +33,7 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 					conditionSet := operationFactory(conditionValue, ctx)
 					return conditionSet
 				}
-				if key == anyOf {
+				if key == shared.AnyOf_ {
 					operationFactory, ok := operatorFactories[key]
 					if !ok {
 						panic(fmt.Sprintf("unknown operation: %s", key))
@@ -40,7 +41,7 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 					conditionSet := operationFactory(conditionValue, ctx)
 					return conditionSet
 				}
-				if key == not {
+				if key == shared.Not {
 					operationFactory, ok := operatorFactories[key]
 					if !ok {
 						panic(fmt.Sprintf("unknown operation: %s", key))
@@ -48,14 +49,14 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 					conditionSet := operationFactory(conditionValue, ctx)
 					return conditionSet
 				}
-				if key == field {
-					if conditionValue == typeOfResource {
+				if key == shared.Field {
+					if conditionValue == shared.TypeOfResource {
 						pushResourceType(ctx, conditionValue.(string))
 					}
 					subject = OperationField(conditionValue.(string))
 					continue
 				}
-				if key == value {
+				if key == shared.Value_ {
 					subject = OperationValue(conditionValue.(string))
 					continue
 				}

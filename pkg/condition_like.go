@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
+	"json-rule-finder/pkg/shared"
 	"strings"
 )
 
@@ -23,5 +24,5 @@ func (l LikeCondition) Rego(ctx context.Context) (string, error) {
 		fieldName = ReplaceIndex(fieldName)
 	}
 
-	return strings.Join([]string{regexExp, "(", "\"", fmt.Sprintf(l.Value), "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
+	return strings.Join([]string{shared.RegexExp, "(", "\"", fmt.Sprintf(l.Value), "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
 }

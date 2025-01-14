@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"json-rule-finder/pkg/shared"
 	"strings"
 )
 
@@ -18,5 +19,5 @@ func (c ContainsCondition) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{regexExp, "(", "\"", ".*", fmt.Sprint(c.Value), ".*", "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
+	return strings.Join([]string{shared.RegexExp, "(", "\"", ".*", fmt.Sprint(c.Value), ".*", "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
 }

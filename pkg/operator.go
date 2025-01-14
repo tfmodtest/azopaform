@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
+	"json-rule-finder/pkg/shared"
 	"reflect"
 	"strings"
 )
@@ -16,30 +17,30 @@ type Operator interface {
 var operatorFactories = make(map[string]func(input any, ctx context.Context) Rego)
 
 func init() {
-	operatorFactories[count] = func(input any, ctx context.Context) Rego {
+	operatorFactories[shared.Count_] = func(input any, ctx context.Context) Rego {
 		items := input.(map[string]any)
 		var whereBody Rego
-		if items[where] != nil {
-			whereMap := items[where].(map[string]any)
-			of := operatorFactories[where]
+		if items[shared.Where] != nil {
+			whereMap := items[shared.Where].(map[string]any)
+			of := operatorFactories[shared.Where]
 			whereBody = of(whereMap, ctx)
 		}
-		fieldName := items[field]
-		if items[field] == nil {
-			fieldName = items[value]
+		fieldName := items[shared.Field]
+		if items[shared.Field] == nil {
+			fieldName = items[shared.Value_]
 		}
-		countField, _, err := FieldNameProcessor(fieldName.(string), ctx)
+		countField, _, err := shared.FieldNameProcessor(fieldName.(string), ctx)
 		if err != nil {
-			countField = items[field].(string)
+			countField = items[shared.Field].(string)
 			fmt.Printf("error in field name processor: %v\n", err)
 		}
 		fmt.Printf("count field is %v\n", countField)
 		countFieldConverted := replaceIndex(countField)
 		var countBody string
 		if whereBody != nil {
-			countBody = count + "(" + "{" + "x" + "|" + countFieldConverted + ";" + whereBody.(WhereOperator).ConditionSetName + "(x)" + "}" + ")"
+			countBody = shared.Count_ + "(" + "{" + "x" + "|" + countFieldConverted + ";" + whereBody.(WhereOperator).ConditionSetName + "(x)" + "}" + ")"
 		} else {
-			countBody = count + "(" + "{" + "x" + "|" + countFieldConverted + "}" + ")"
+			countBody = shared.Count_ + "(" + "{" + "x" + "|" + countFieldConverted + "}" + ")"
 		}
 		countBody = strings.Replace(countBody, "*", "x", -1)
 		return CountOperator{
@@ -47,7 +48,7 @@ func init() {
 			CountExp: countBody,
 		}
 	}
-	operatorFactories[allOf] = func(input any, ctx context.Context) Rego {
+	operatorFactories[shared.AllOf_] = func(input any, ctx context.Context) Rego {
 		items := input.([]any)
 		var body []Rego
 		for _, item := range items {
@@ -59,7 +60,7 @@ func init() {
 			var operatorValue any
 			var containsTypeOfResource bool
 			for k, v := range itemMap {
-				if k == field && v == typeOfResource {
+				if k == shared.Field && v == shared.TypeOfResource {
 					containsTypeOfResource = true
 				}
 				if f, ok := conditionFactory[strings.ToLower(k)]; ok {
@@ -78,7 +79,7 @@ func init() {
 			}
 			if containsTypeOfResource {
 				for k, v := range itemMap {
-					if k == field && v == typeOfResource {
+					if k == shared.Field && v == shared.TypeOfResource {
 						continue
 					}
 					if reflect.TypeOf(v).Kind() == reflect.String {
@@ -95,7 +96,7 @@ func init() {
 					fmt.Printf("subject key is %v\n", subjectKey)
 				}
 				subjectItem := itemMap[subjectKey]
-				if subjectKey == field && subjectItem == typeOfResource {
+				if subjectKey == shared.Field && subjectItem == shared.TypeOfResource {
 					if reflect.TypeOf(itemMap[conditionKey]).Kind() == reflect.String {
 						rawType := itemMap[conditionKey]
 						translatedType, err := ResourceTypeParser(rawType.(string))
@@ -141,7 +142,7 @@ func init() {
 			ConditionSetName: conditionSetName,
 		}
 	}
-	operatorFactories[anyOf] = func(input any, ctx context.Context) Rego {
+	operatorFactories[shared.AnyOf_] = func(input any, ctx context.Context) Rego {
 		items := input.([]any)
 		var body []Rego
 		for _, item := range items {
@@ -153,7 +154,7 @@ func init() {
 			var operatorValue any
 			var containsTypeOfResource bool
 			for k, v := range itemMap {
-				if k == field && v == typeOfResource {
+				if k == shared.Field && v == shared.TypeOfResource {
 					containsTypeOfResource = true
 				}
 				if f, ok := conditionFactory[strings.ToLower(k)]; ok {
@@ -171,7 +172,7 @@ func init() {
 			}
 			if containsTypeOfResource {
 				for k, v := range itemMap {
-					if k == field && v == typeOfResource {
+					if k == shared.Field && v == shared.TypeOfResource {
 						continue
 					}
 					pushResourceType(ctx, v.(string))
@@ -185,7 +186,7 @@ func init() {
 					subjectKey = k
 				}
 				subjectItem := itemMap[subjectKey]
-				if subjectKey == field && subjectItem == typeOfResource {
+				if subjectKey == shared.Field && subjectItem == shared.TypeOfResource {
 					rawType := itemMap[conditionKey]
 					translatedType, err := ResourceTypeParser(rawType.(string))
 					if err != nil {
@@ -215,7 +216,7 @@ func init() {
 			ConditionSetName: conditionName,
 		}
 	}
-	operatorFactories[not] = func(input any, ctx context.Context) Rego {
+	operatorFactories[shared.Not] = func(input any, ctx context.Context) Rego {
 		itemMap := input.(map[string]any)
 		fmt.Printf("item map is %v\n", itemMap)
 		var cf func(Rego, any) Rego
@@ -263,7 +264,7 @@ func init() {
 			ConditionSetName: conditionName,
 		}
 	}
-	operatorFactories[where] = func(input any, ctx context.Context) Rego {
+	operatorFactories[shared.Where] = func(input any, ctx context.Context) Rego {
 		itemMap := input.(map[string]any)
 		var body []Rego
 		var cf func(Rego, any) Rego
@@ -373,7 +374,7 @@ func (w WhereOperator) Rego(ctx context.Context) (string, error) {
 		}
 	}
 
-	res = w.ConditionSetName + "(x)" + " " + ifCondition + " {\n" + res
+	res = w.ConditionSetName + "(x)" + " " + shared.IfCondition + " {\n" + res
 	res = res + "\n" + "}"
 
 	for _, subSet := range subSets {

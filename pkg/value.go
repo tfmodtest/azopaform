@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"json-rule-finder/pkg/shared"
 	"strings"
 )
 
@@ -21,7 +22,7 @@ var subjectFactories = map[string]func(input any, ctx context.Context) Rego{
 		}
 	},
 	"count": func(input any, ctx context.Context) Rego {
-		f := operatorFactories[count]
+		f := operatorFactories[shared.Count_]
 		countConditionSet := f(input, ctx)
 		//fmt.Printf("countConditionSet: %v\n", countConditionSet)
 		return Count{
@@ -38,7 +39,7 @@ type FieldValue struct {
 }
 
 func (f FieldValue) Rego(ctx context.Context) (string, error) {
-	processed, _, err := FieldNameProcessor(f.Name, ctx)
+	processed, _, err := shared.FieldNameProcessor(f.Name, ctx)
 	return processed, err
 }
 

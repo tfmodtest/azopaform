@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"json-rule-finder/pkg/shared"
 	"strings"
 )
 
@@ -17,5 +18,5 @@ func (i InCondition) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{"some", fieldName, "in", SliceConstructor(i.Values)}, " "), nil
+	return strings.Join([]string{"some", fieldName, "in", shared.SliceConstructor(i.Values)}, " "), nil
 }

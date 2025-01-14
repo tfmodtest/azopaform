@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"json-rule-finder/pkg/shared"
 	"strings"
 )
 
@@ -22,5 +23,5 @@ func (n NotContainsCondition) Rego(ctx context.Context) (string, error) {
 	//	fieldName = ReplaceIndex(fieldName)
 	//}
 	//v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")
-	return strings.Join([]string{not, " ", regexExp, "(", "\"", ".*", fmt.Sprint(n.Value), ".*", "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
+	return strings.Join([]string{shared.Not, " ", shared.RegexExp, "(", "\"", ".*", fmt.Sprint(n.Value), ".*", "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
 }

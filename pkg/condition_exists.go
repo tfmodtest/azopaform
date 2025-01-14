@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"github.com/emirpasic/gods/stacks"
+	"json-rule-finder/pkg/shared"
 	"reflect"
 	"strings"
 )
@@ -25,6 +26,6 @@ func (e ExistsCondition) Rego(ctx context.Context) (string, error) {
 	if (reflect.TypeOf(e.Value).Kind() == reflect.Bool && e.Value.(bool)) || (reflect.TypeOf(e.Value).Kind() == reflect.String && e.Value.(string) == "true") {
 		return fieldName, nil
 	} else {
-		return strings.Join([]string{not, fieldName}, " "), nil
+		return strings.Join([]string{shared.Not, fieldName}, " "), nil
 	}
 }

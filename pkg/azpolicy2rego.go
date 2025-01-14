@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/emirpasic/gods/stacks/arraystack"
+	"json-rule-finder/pkg/shared"
 	"path/filepath"
 	"strings"
 
 	"github.com/emirpasic/gods/stacks"
 	"github.com/spf13/afero"
 )
-
-var NoResourceTypeFound int
 
 var _ Rego = &Rule{}
 
@@ -72,7 +71,7 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 	var cv any
 	for key, conditionValue := range conditionMap {
 		key = strings.ToLower(key)
-		if key == count {
+		if key == shared.Count_ {
 			operationFactory, ok := operatorFactories[key]
 			if !ok {
 				panic(fmt.Sprintf("unknown operation: %s", key))
@@ -82,7 +81,7 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 			subject = conditionSet
 			continue
 		}
-		if key == allOf {
+		if key == shared.AllOf_ {
 			operationFactory, ok := operatorFactories[key]
 			if !ok {
 				panic(fmt.Sprintf("unknown operation: %s", key))
@@ -93,7 +92,7 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 				IfBody: conditionSet,
 			}
 		}
-		if key == anyOf {
+		if key == shared.AnyOf_ {
 			operationFactory, ok := operatorFactories[key]
 			if !ok {
 				panic(fmt.Sprintf("unknown operation: %s", key))
@@ -104,7 +103,7 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 				IfBody: conditionSet,
 			}
 		}
-		if key == not {
+		if key == shared.Not {
 			operationFactory, ok := operatorFactories[key]
 			if !ok {
 				panic(fmt.Sprintf("unknown operation: %s", key))
@@ -115,14 +114,14 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 				IfBody: conditionSet,
 			}
 		}
-		if key == field {
-			if conditionValue == typeOfResource {
+		if key == shared.Field {
+			if conditionValue == shared.TypeOfResource {
 				pushResourceType(ctx, conditionValue.(string))
 			}
 			subject = OperationField(conditionValue.(string))
 			continue
 		}
-		if key == value {
+		if key == shared.Value_ {
 			subject = OperationValue(conditionValue.(string))
 			continue
 		}
@@ -172,17 +171,17 @@ func (t *ThenBody) MapEffectToAction(defaultEffect string) (string, error) {
 		return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
 	}
 	effect = strings.ToLower(effect)
-	if effect == deny {
-		return deny, nil
+	if effect == shared.Deny {
+		return shared.Deny, nil
 	}
 	if effect != "[parameters('effect')]" {
 		return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
 	}
 	defaultEffect = strings.ToLower(defaultEffect)
-	if defaultEffect == audit {
-		return warn, nil
+	if defaultEffect == shared.Audit {
+		return shared.Warn, nil
 	}
-	if defaultEffect == deny || defaultEffect == disabled {
+	if defaultEffect == shared.Deny || defaultEffect == shared.Disabled {
 		return defaultEffect, nil
 	}
 	return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
@@ -194,12 +193,12 @@ func (t *ThenBody) Action(result, conditionName string, rule *Rule) (string, err
 		fmt.Printf("cannot map effect to action %+v\n", err)
 		return "", err
 	}
-	if action == disabled {
+	if action == shared.Disabled {
 		result = "default allow := true\n\n" + result
-	} else if action == deny {
+	} else if action == shared.Deny {
 		top := "deny if {\n" + " " + conditionName + "\n}\n"
 		result = top + result
-	} else if action == warn {
+	} else if action == shared.Warn {
 		top := "warn if {\n" + " " + conditionName + "\n}\n"
 		result = top + result
 	}
@@ -326,26 +325,6 @@ func LoadRule(path string, ctx context.Context) (*Rule, error) {
 
 	err = rule.Parse(ctx)
 	return rule, err
-}
-
-func currentResourceType(ctx context.Context) (string, error) {
-	resourceTypeStack := ctx.Value("context").(map[string]stacks.Stack)["resourceType"]
-	if resourceTypeStack == nil {
-		NoResourceTypeFound++
-		fmt.Printf("no resource type found number is %d\n", NoResourceTypeFound)
-		return "", fmt.Errorf("cannot find the resource type in the context")
-	}
-	resourceType, ok := resourceTypeStack.Peek()
-	if !ok {
-		NoResourceTypeFound++
-		fmt.Printf("no resource type found number is %d\n", NoResourceTypeFound)
-		return "", fmt.Errorf("cannot find the resource type in the context")
-	}
-	rt, ok := resourceType.(string)
-	if !ok {
-		return "", fmt.Errorf("cannot convert the resource type to string")
-	}
-	return rt, nil
 }
 
 func pushResourceType(ctx context.Context, rt string) {

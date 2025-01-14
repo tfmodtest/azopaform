@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"json-rule-finder/pkg/shared"
 	"strings"
 )
 
@@ -17,5 +18,5 @@ func (n NotInCondition) Rego(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{not, fieldName, "in", SliceConstructor(n.Values)}, " "), nil
+	return strings.Join([]string{shared.Not, fieldName, "in", shared.SliceConstructor(n.Values)}, " "), nil
 }

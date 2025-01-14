@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
+	"json-rule-finder/pkg/shared"
 	"strings"
 )
 
@@ -23,5 +24,5 @@ func (n NotLikeCondition) Rego(ctx context.Context) (string, error) {
 		fieldName = ReplaceIndex(fieldName)
 	}
 	v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")
-	return strings.Join([]string{not, " ", regexExp, "(", v, ",", fieldName, ")"}, ""), nil
+	return strings.Join([]string{shared.Not, " ", shared.RegexExp, "(", v, ",", fieldName, ")"}, ""), nil
 }
