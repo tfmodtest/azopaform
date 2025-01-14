@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"reflect"
 
@@ -47,8 +48,8 @@ func (a AnyOf) Rego(ctx context.Context) (string, error) {
 			continue
 		}
 
-		if _, ok := item.(Condition); ok {
-			condition, err := item.(Condition).Rego(ctx)
+		if _, ok := item.(condition.Condition); ok {
+			condition, err := item.(condition.Condition).Rego(ctx)
 			if err != nil {
 				return "", err
 			}

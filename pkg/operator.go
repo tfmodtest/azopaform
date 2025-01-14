@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
+	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"reflect"
 	"strings"
@@ -63,7 +64,7 @@ func init() {
 				if k == shared.Field && v == shared.TypeOfResource {
 					containsTypeOfResource = true
 				}
-				if f, ok := ConditionFactory[strings.ToLower(k)]; ok {
+				if f, ok := condition.ConditionFactory[strings.ToLower(k)]; ok {
 					cf = f
 					conditionKey = k
 					continue
@@ -157,7 +158,7 @@ func init() {
 				if k == shared.Field && v == shared.TypeOfResource {
 					containsTypeOfResource = true
 				}
-				if f, ok := ConditionFactory[strings.ToLower(k)]; ok {
+				if f, ok := condition.ConditionFactory[strings.ToLower(k)]; ok {
 					cf = f
 					conditionKey = k
 					continue
@@ -227,7 +228,7 @@ func init() {
 		var body shared.Rego
 		var operatorValue any
 		for k, _ := range itemMap {
-			if f, ok := ConditionFactory[strings.ToLower(k)]; ok {
+			if f, ok := condition.ConditionFactory[strings.ToLower(k)]; ok {
 				cf = f
 				conditionKey = k
 				continue
@@ -273,7 +274,7 @@ func init() {
 		var of func(any, context.Context) shared.Rego
 		var operatorValue any
 		for k, _ := range itemMap {
-			if f, ok := ConditionFactory[k]; ok {
+			if f, ok := condition.ConditionFactory[k]; ok {
 				cf = f
 				conditionKey = k
 				continue

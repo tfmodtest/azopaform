@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"strings"
 )
@@ -60,7 +61,7 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 					subject = OperationValue(conditionValue.(string))
 					continue
 				}
-				factory, ok := ConditionFactory[key]
+				factory, ok := condition.ConditionFactory[key]
 				if !ok {
 					panic(fmt.Sprintf("unknown BaseCondition: %s", key))
 				}

@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"testing"
 
@@ -22,14 +23,14 @@ func TestAllOfOperator(t *testing.T) {
 		{
 			desc: "alllow",
 			conditions: []shared.Rego{
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
 					Value: "tcp",
 				},
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.port`),
 					},
 					Value: 22,
@@ -44,14 +45,14 @@ func TestAllOfOperator(t *testing.T) {
 			conditions: []shared.Rego{
 				&AnyOf{
 					Conditions: []shared.Rego{
-						&EqualsCondition{
-							BaseCondition: BaseCondition{
+						&condition.Equals{
+							BaseCondition: condition.BaseCondition{
 								Subject: shared.StringRego(`r.change.after.protocols[x]`),
 							},
 							Value: "tcp",
 						},
-						&EqualsCondition{
-							BaseCondition: BaseCondition{
+						&condition.Equals{
+							BaseCondition: condition.BaseCondition{
 								Subject: shared.StringRego(`r.change.after.port`),
 							},
 							Value: 22,
@@ -59,8 +60,8 @@ func TestAllOfOperator(t *testing.T) {
 					},
 					ConditionSetName: "condition1",
 				},
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.public_accessible`),
 					},
 					Value: false,
@@ -74,14 +75,14 @@ func TestAllOfOperator(t *testing.T) {
 		{
 			desc: "disallow",
 			conditions: []shared.Rego{
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
 					Value: "tcp",
 				},
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.port`),
 					},
 					Value: 22,

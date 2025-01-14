@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/emirpasic/gods/stacks/arraystack"
+	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"path/filepath"
 	"strings"
@@ -125,7 +126,7 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 			subject = OperationValue(conditionValue.(string))
 			continue
 		}
-		factory, ok := ConditionFactory[key]
+		factory, ok := condition.ConditionFactory[key]
 		if !ok {
 			panic(fmt.Sprintf("unknown BaseCondition: %s", key))
 		}

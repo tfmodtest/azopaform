@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"testing"
 
@@ -33,14 +34,14 @@ func TestAnyOfOperator(t *testing.T) {
 		{
 			desc: "alllow left",
 			conditions: []shared.Rego{
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
 					Value: "http",
 				},
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
 					Value: "ws",
@@ -52,14 +53,14 @@ func TestAnyOfOperator(t *testing.T) {
 		{
 			desc: "alllow right",
 			conditions: []shared.Rego{
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
 					Value: "http",
 				},
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
 					Value: "ws",
@@ -73,14 +74,14 @@ func TestAnyOfOperator(t *testing.T) {
 			conditions: []shared.Rego{
 				&AnyOf{
 					Conditions: []shared.Rego{
-						&EqualsCondition{
-							BaseCondition: BaseCondition{
+						&condition.Equals{
+							BaseCondition: condition.BaseCondition{
 								Subject: shared.StringRego(`r.change.after.protocols[x]`),
 							},
 							Value: "http",
 						},
-						&EqualsCondition{
-							BaseCondition: BaseCondition{
+						&condition.Equals{
+							BaseCondition: condition.BaseCondition{
 								Subject: shared.StringRego(`r.change.after.protocols[x]`),
 							},
 							Value: "https",
@@ -88,8 +89,8 @@ func TestAnyOfOperator(t *testing.T) {
 					},
 					ConditionSetName: "condition1",
 				},
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
 					Value: "ws",
@@ -101,14 +102,14 @@ func TestAnyOfOperator(t *testing.T) {
 		{
 			desc: "disallow",
 			conditions: []shared.Rego{
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
 					Value: "http",
 				},
-				&EqualsCondition{
-					BaseCondition: BaseCondition{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
 					Value: "ws",

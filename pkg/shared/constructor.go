@@ -60,7 +60,7 @@ func (t LookupTable) QueryResource(resourceType, apiVersion string) (map[string]
 }
 
 var ResourceTypeLookupTable = func() LookupTable {
-	b, err := os.ReadFile("output.json")
+	b, err := os.ReadFile("../output.json")
 	if err != nil {
 		panic(err.Error())
 	}
