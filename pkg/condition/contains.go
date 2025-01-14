@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"json-rule-finder/pkg/shared"
 	"strings"
@@ -14,7 +13,7 @@ type Contains struct {
 	Value string
 }
 
-func (c Contains) Rego(ctx context.Context) (string, error) {
+func (c Contains) Rego(ctx *shared.Context) (string, error) {
 	fieldName, err := c.Subject.Rego(ctx)
 	if err != nil {
 		return "", err

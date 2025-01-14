@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"context"
 	"json-rule-finder/pkg/shared"
 )
 
@@ -24,7 +23,7 @@ func (p *PolicyRuleBody) GetThen() *ThenBody {
 	return p.Then
 }
 
-func (p *PolicyRuleBody) BuildIfBody(ctx context.Context) *PolicyRuleBody {
+func (p *PolicyRuleBody) BuildIfBody(ctx *shared.Context) *PolicyRuleBody {
 	if p == nil {
 		return nil
 	}

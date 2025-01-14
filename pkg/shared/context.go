@@ -6,16 +6,22 @@ import (
 	"github.com/emirpasic/gods/stacks/arraystack"
 )
 
-func NewContext() context.Context {
+type Context struct {
+	context.Context
+}
+
+func NewContext() *Context {
 	contextMap := make(map[string]stacks.Stack)
 	contextMap["resourceType"] = arraystack.New()
 	contextMap["fieldNameReplacer"] = arraystack.New()
 	contextMap["conditionNameCounter"] = arraystack.New()
 	ctx := context.WithValue(context.Background(), "context", contextMap)
-	return ctx
+	return &Context{
+		Context: ctx,
+	}
 }
 
-func PushResourceType(ctx context.Context, rt string) {
-	contextMap := ctx.Value("context").(map[string]stacks.Stack)
+func (c *Context) PushResourceType(rt string) {
+	contextMap := c.Context.Value("context").(map[string]stacks.Stack)
 	contextMap["resourceType"].Push(rt)
 }

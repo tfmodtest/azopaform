@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"context"
 	"github.com/emirpasic/gods/stacks"
 	"json-rule-finder/pkg/shared"
 	"reflect"
@@ -18,7 +17,7 @@ func (a AllOf) GetConditionSetName() string {
 	return a.ConditionSetName
 }
 
-func (a AllOf) Rego(ctx context.Context) (string, error) {
+func (a AllOf) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	var subSets []string
 

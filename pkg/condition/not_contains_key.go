@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"json-rule-finder/pkg/shared"
 )
@@ -13,6 +12,6 @@ type NotContainsKey struct {
 
 var _ shared.Rego = NotContainsKey{}
 
-func (n NotContainsKey) Rego(context.Context) (string, error) {
+func (n NotContainsKey) Rego(*shared.Context) (string, error) {
 	return "", fmt.Errorf("`notContainsKey` BaseCondition is not supported, yet")
 }

@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"context"
 	"fmt"
 	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
@@ -21,7 +20,7 @@ func (a AnyOf) GetConditionSetName() string {
 	return a.ConditionSetName
 }
 
-func (a AnyOf) Rego(ctx context.Context) (string, error) {
+func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	var subSets []string
 	head := a.ConditionSetName

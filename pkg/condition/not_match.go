@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"json-rule-finder/pkg/shared"
 )
@@ -13,6 +12,6 @@ type NotMatch struct {
 	Value string
 }
 
-func (n NotMatch) Rego(context.Context) (string, error) {
+func (n NotMatch) Rego(*shared.Context) (string, error) {
 	return "", fmt.Errorf("`notMatch` condition is not supported, yet")
 }

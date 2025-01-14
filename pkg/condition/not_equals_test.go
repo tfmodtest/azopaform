@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"json-rule-finder/pkg/shared"
 	"testing"
@@ -14,7 +13,6 @@ func TestNotEqualsCondition(t *testing.T) {
 		desc  string
 		left  shared.Rego
 		right any
-		setup func(ctx context.Context)
 		allow bool
 	}{
 		{
@@ -57,9 +55,6 @@ func TestNotEqualsCondition(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx := shared.NewContext()
-			if c.setup != nil {
-				c.setup(ctx)
-			}
 			sut := NotEquals{
 				BaseCondition: BaseCondition{
 					Subject: c.left,

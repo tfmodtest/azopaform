@@ -1,9 +1,9 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
+	"json-rule-finder/pkg/shared"
 	"strings"
 )
 
@@ -14,7 +14,7 @@ type Less struct {
 	Value any
 }
 
-func (l Less) Rego(ctx context.Context) (string, error) {
+func (l Less) Rego(ctx *shared.Context) (string, error) {
 	fieldName, err := l.Subject.Rego(ctx)
 	if err != nil {
 		return "", err

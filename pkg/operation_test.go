@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"context"
 	"github.com/prashantv/gostub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -271,7 +270,7 @@ func TestOperations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := shared.NewContext()
-			shared.PushResourceType(ctx, "Microsoft.Web/serverFarms")
+			ctx.PushResourceType("Microsoft.Web/serverFarms")
 			actual, err := tt.operation.Rego(ctx)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, actual)
@@ -737,10 +736,10 @@ func TestNewPolicyRuleBody(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.expected == nil {
 				assert.Panics(t, func() {
-					NewPolicyRuleBody(tt.input, context.Context(nil))
+					NewPolicyRuleBody(tt.input, shared.NewContext())
 				})
 			} else {
-				stub := gostub.Stub(&NeoConditionNameGenerator, func(ctx context.Context) (string, error) {
+				stub := gostub.Stub(&NeoConditionNameGenerator, func(ctx *shared.Context) (string, error) {
 					return "condition1", nil
 				})
 				defer stub.Reset()

@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"json-rule-finder/pkg/shared"
 )
@@ -13,6 +12,6 @@ type Match struct {
 	Value string
 }
 
-func (m Match) Rego(ctx context.Context) (string, error) {
+func (m Match) Rego(ctx *shared.Context) (string, error) {
 	return "", fmt.Errorf("`match` BaseCondition is not supported, yet")
 }

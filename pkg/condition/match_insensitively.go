@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"json-rule-finder/pkg/shared"
 )
@@ -13,6 +12,6 @@ type MatchInsensitivelyCondition struct {
 	Value string
 }
 
-func (m MatchInsensitivelyCondition) Rego(context.Context) (string, error) {
+func (m MatchInsensitivelyCondition) Rego(*shared.Context) (string, error) {
 	return "", fmt.Errorf("`matchInsensitively` condition is not supported, yet")
 }

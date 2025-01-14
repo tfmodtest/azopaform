@@ -1,14 +1,13 @@
 package pkg
 
 import (
-	"context"
 	"fmt"
 	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"strings"
 )
 
-func (i *If) Rego(ctx context.Context) (string, error) {
+func (i *If) Rego(ctx *shared.Context) (string, error) {
 	if i.rego == nil {
 		i.rego = func() shared.Rego {
 			conditionMap := i.body
@@ -52,7 +51,7 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 				}
 				if key == shared.Field {
 					if conditionValue == shared.TypeOfResource {
-						shared.PushResourceType(ctx, conditionValue.(string))
+						ctx.PushResourceType(conditionValue.(string))
 					}
 					subject = OperationField(conditionValue.(string))
 					continue

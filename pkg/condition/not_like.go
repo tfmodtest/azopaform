@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
 	"json-rule-finder/pkg/shared"
@@ -15,7 +14,7 @@ type NotLike struct {
 	Value string
 }
 
-func (n NotLike) Rego(ctx context.Context) (string, error) {
+func (n NotLike) Rego(ctx *shared.Context) (string, error) {
 	fieldName, err := n.Subject.Rego(ctx)
 	if err != nil {
 		return "", err

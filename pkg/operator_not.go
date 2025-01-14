@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
 	"json-rule-finder/pkg/shared"
@@ -19,7 +18,7 @@ func (n NotOperator) GetConditionSetName() string {
 	return n.ConditionSetName
 }
 
-func (n NotOperator) Rego(ctx context.Context) (string, error) {
+func (n NotOperator) Rego(ctx *shared.Context) (string, error) {
 	body, ok := n.Body.(Operator)
 	if !ok {
 		body = &AllOf{

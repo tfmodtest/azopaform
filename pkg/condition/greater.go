@@ -1,9 +1,9 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
+	"json-rule-finder/pkg/shared"
 	"strings"
 )
 
@@ -14,7 +14,7 @@ type Greater struct {
 	Value any
 }
 
-func (g Greater) Rego(ctx context.Context) (string, error) {
+func (g Greater) Rego(ctx *shared.Context) (string, error) {
 	fieldName, err := g.Subject.Rego(ctx)
 	if err != nil {
 		return "", err

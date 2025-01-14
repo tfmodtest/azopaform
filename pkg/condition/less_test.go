@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"json-rule-finder/pkg/shared"
@@ -13,7 +12,7 @@ func TestLessCondition(t *testing.T) {
 		desc  string
 		left  shared.Rego
 		right string
-		setup func(ctx context.Context)
+		setup func(ctx *shared.Context)
 		allow bool
 	}{
 		{

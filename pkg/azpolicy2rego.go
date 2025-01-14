@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/emirpasic/gods/stacks/arraystack"
@@ -24,7 +23,7 @@ type Rule struct {
 	result     string
 }
 
-func (r *Rule) Rego(ctx context.Context) (string, error) {
+func (r *Rule) Rego(ctx *shared.Context) (string, error) {
 	ifBody := r.Properties.PolicyRule.GetIf()
 	ifRego, err := ifBody.Rego(ctx)
 	if err != nil {
@@ -51,7 +50,7 @@ r := tfplan.resource_changes[_]
 %s`, rego), nil
 }
 
-func (r *Rule) Parse(ctx context.Context) error {
+func (r *Rule) Parse(ctx *shared.Context) error {
 	ruleRego, err := r.Rego(ctx)
 	if err != nil {
 		return err
@@ -65,7 +64,7 @@ func (r *Rule) SaveToDisk() error {
 	return afero.WriteFile(Fs, fileName, []byte(r.result), 0644)
 }
 
-func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBody {
+func NewPolicyRuleBody(input map[string]any, ctx *shared.Context) *PolicyRuleBody {
 	conditionMap := input
 	var subject shared.Rego
 	var creator func(subject shared.Rego, input any) shared.Rego
@@ -117,7 +116,7 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 		}
 		if key == shared.Field {
 			if conditionValue == shared.TypeOfResource {
-				shared.PushResourceType(ctx, conditionValue.(string))
+				ctx.PushResourceType(conditionValue.(string))
 			}
 			subject = OperationField(conditionValue.(string))
 			continue
@@ -271,7 +270,7 @@ type OperatorModel struct {
 
 var Fs = afero.NewOsFs()
 
-func AzurePolicyToRego(policyPath string, dir string, ctx context.Context) error {
+func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error {
 	var paths []string
 	var err error
 
@@ -309,7 +308,7 @@ func AzurePolicyToRego(policyPath string, dir string, ctx context.Context) error
 	return nil
 }
 
-func LoadRule(path string, ctx context.Context) (*Rule, error) {
+func LoadRule(path string, ctx *shared.Context) (*Rule, error) {
 	rule, err := ReadRuleFromFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot find rules %+v", err)

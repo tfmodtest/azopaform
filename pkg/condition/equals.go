@@ -1,8 +1,8 @@
 package condition
 
 import (
-	"context"
 	"fmt"
+	"json-rule-finder/pkg/shared"
 	"reflect"
 	"strings"
 
@@ -17,7 +17,7 @@ type Equals struct {
 }
 
 // Rego For conditions under 'where' operator, "[[0-9]+]" should be replaced with "[x]"
-func (e Equals) Rego(ctx context.Context) (string, error) {
+func (e Equals) Rego(ctx *shared.Context) (string, error) {
 	fieldName, err := e.Subject.Rego(ctx)
 	if err != nil {
 		return "", err
@@ -36,7 +36,7 @@ func (e Equals) Rego(ctx context.Context) (string, error) {
 	return strings.Join([]string{fieldName, "==", v}, " "), nil
 }
 
-func (e Equals) GetReverseRego(ctx context.Context) (string, error) {
+func (e Equals) GetReverseRego(ctx *shared.Context) (string, error) {
 	fieldName, err := e.Subject.Rego(ctx)
 	if err != nil {
 		return "", err

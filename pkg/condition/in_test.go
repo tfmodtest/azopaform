@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"json-rule-finder/pkg/shared"
@@ -13,7 +12,6 @@ func TestInCondition(t *testing.T) {
 		desc  string
 		left  shared.Rego
 		right []string
-		setup func(ctx context.Context)
 		allow bool
 	}{
 		{
@@ -32,9 +30,6 @@ func TestInCondition(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx := shared.NewContext()
-			if c.setup != nil {
-				c.setup(ctx)
-			}
 			sut := In{
 				BaseCondition: BaseCondition{
 					Subject: c.left,

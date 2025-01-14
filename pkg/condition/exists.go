@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"github.com/emirpasic/gods/stacks"
 	"json-rule-finder/pkg/shared"
 	"reflect"
@@ -15,7 +14,7 @@ type Exists struct {
 	Value any
 }
 
-func (e Exists) Rego(ctx context.Context) (string, error) {
+func (e Exists) Rego(ctx *shared.Context) (string, error) {
 	fieldName, err := e.Subject.Rego(ctx)
 	if err != nil {
 		return "", err

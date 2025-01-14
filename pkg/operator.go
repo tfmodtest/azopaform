@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
 	"json-rule-finder/pkg/condition"
@@ -15,10 +14,10 @@ type Operator interface {
 	GetConditionSetName() string
 }
 
-var operatorFactories = make(map[string]func(input any, ctx context.Context) shared.Rego)
+var operatorFactories = make(map[string]func(input any, ctx *shared.Context) shared.Rego)
 
 func init() {
-	operatorFactories[shared.Count] = func(input any, ctx context.Context) shared.Rego {
+	operatorFactories[shared.Count] = func(input any, ctx *shared.Context) shared.Rego {
 		items := input.(map[string]any)
 		var whereBody shared.Rego
 		if items[shared.Where] != nil {
@@ -49,7 +48,7 @@ func init() {
 			CountExp: countBody,
 		}
 	}
-	operatorFactories[shared.AllOf] = func(input any, ctx context.Context) shared.Rego {
+	operatorFactories[shared.AllOf] = func(input any, ctx *shared.Context) shared.Rego {
 		items := input.([]any)
 		var body []shared.Rego
 		for _, item := range items {
@@ -57,7 +56,7 @@ func init() {
 			var cf func(shared.Rego, any) shared.Rego
 			var conditionKey string
 			var subjectKey string
-			var of func(any, context.Context) shared.Rego
+			var of func(any, *shared.Context) shared.Rego
 			var operatorValue any
 			var containsTypeOfResource bool
 			for k, v := range itemMap {
@@ -84,7 +83,7 @@ func init() {
 						continue
 					}
 					if reflect.TypeOf(v).Kind() == reflect.String {
-						shared.PushResourceType(ctx, v.(string))
+						ctx.PushResourceType(v.(string))
 					}
 				}
 			}
@@ -143,7 +142,7 @@ func init() {
 			ConditionSetName: conditionSetName,
 		}
 	}
-	operatorFactories[shared.AnyOf] = func(input any, ctx context.Context) shared.Rego {
+	operatorFactories[shared.AnyOf] = func(input any, ctx *shared.Context) shared.Rego {
 		items := input.([]any)
 		var body []shared.Rego
 		for _, item := range items {
@@ -151,7 +150,7 @@ func init() {
 			var cf func(shared.Rego, any) shared.Rego
 			var conditionKey string
 			var subjectKey string
-			var of func(any, context.Context) shared.Rego
+			var of func(any, *shared.Context) shared.Rego
 			var operatorValue any
 			var containsTypeOfResource bool
 			for k, v := range itemMap {
@@ -176,7 +175,7 @@ func init() {
 					if k == shared.Field && v == shared.TypeOfResource {
 						continue
 					}
-					shared.PushResourceType(ctx, v.(string))
+					ctx.PushResourceType(v.(string))
 				}
 			}
 			if cf != nil {
@@ -217,13 +216,13 @@ func init() {
 			ConditionSetName: conditionName,
 		}
 	}
-	operatorFactories[shared.Not] = func(input any, ctx context.Context) shared.Rego {
+	operatorFactories[shared.Not] = func(input any, ctx *shared.Context) shared.Rego {
 		itemMap := input.(map[string]any)
 		fmt.Printf("item map is %v\n", itemMap)
 		var cf func(shared.Rego, any) shared.Rego
 		var conditionKey string
 		var subjectKey string
-		var of func(any, context.Context) shared.Rego
+		var of func(any, *shared.Context) shared.Rego
 		var subject shared.Rego
 		var body shared.Rego
 		var operatorValue any
@@ -254,8 +253,6 @@ func init() {
 		} else if of != nil {
 			body = of(operatorValue, ctx)
 		}
-		fmt.Printf("subject is %v\n", subject)
-		//conditionName := conditionNameGenerator(singleConditionLen, charNum)
 		conditionName, err := NeoConditionNameGenerator(ctx)
 		if err != nil {
 			return nil
@@ -265,13 +262,13 @@ func init() {
 			ConditionSetName: conditionName,
 		}
 	}
-	operatorFactories[shared.Where] = func(input any, ctx context.Context) shared.Rego {
+	operatorFactories[shared.Where] = func(input any, ctx *shared.Context) shared.Rego {
 		itemMap := input.(map[string]any)
 		var body []shared.Rego
 		var cf func(shared.Rego, any) shared.Rego
 		var conditionKey string
 		var subjectKey string
-		var of func(any, context.Context) shared.Rego
+		var of func(any, *shared.Context) shared.Rego
 		var operatorValue any
 		for k, _ := range itemMap {
 			if f, ok := condition.ConditionFactory[k]; ok {
@@ -320,7 +317,7 @@ type CountOperator struct {
 	CountExp string
 }
 
-func (c CountOperator) Rego(ctx context.Context) (string, error) {
+func (c CountOperator) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	whereSubset, err := c.Where.Rego(ctx)
 	if err != nil {
@@ -350,7 +347,7 @@ func (w WhereOperator) GetConditionSetNameRev() string {
 	return strings.Join([]string{"not", w.ConditionSetName}, " ")
 }
 
-func (w WhereOperator) Rego(ctx context.Context) (string, error) {
+func (w WhereOperator) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	var subSets []string
 
@@ -386,7 +383,7 @@ func (w WhereOperator) Rego(ctx context.Context) (string, error) {
 	return res, nil
 }
 
-var NeoConditionNameGenerator = func(ctx context.Context) (string, error) {
+var NeoConditionNameGenerator = func(ctx *shared.Context) (string, error) {
 	conditionNameStack := ctx.Value("context").(map[string]stacks.Stack)["conditionNameCounter"]
 	if conditionNameStack == nil {
 		return "", fmt.Errorf("conditionNameStack is nil")

@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"json-rule-finder/pkg/shared"
 )
@@ -13,6 +12,6 @@ type ContainsKey struct {
 	KeyName string
 }
 
-func (c ContainsKey) Rego(context.Context) (string, error) {
+func (c ContainsKey) Rego(*shared.Context) (string, error) {
 	return "", fmt.Errorf("`containsKey` BaseCondition is not supported, yet")
 }

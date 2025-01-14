@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"context"
 	"json-rule-finder/pkg/shared"
 	"strings"
 )
@@ -13,7 +12,7 @@ type NotIn struct {
 	Values []string
 }
 
-func (n NotIn) Rego(ctx context.Context) (string, error) {
+func (n NotIn) Rego(ctx *shared.Context) (string, error) {
 	fieldName, err := n.Subject.Rego(ctx)
 	if err != nil {
 		return "", err

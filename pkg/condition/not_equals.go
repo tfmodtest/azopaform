@@ -1,9 +1,9 @@
 package condition
 
 import (
-	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
+	"json-rule-finder/pkg/shared"
 	"reflect"
 	"strings"
 )
@@ -15,7 +15,7 @@ type NotEquals struct {
 	Value any
 }
 
-func (n NotEquals) Rego(ctx context.Context) (string, error) {
+func (n NotEquals) Rego(ctx *shared.Context) (string, error) {
 	fieldName, err := n.Subject.Rego(ctx)
 	if err != nil {
 		return "", err
