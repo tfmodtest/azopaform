@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"json-rule-finder/pkg/shared"
 	"testing"
 
 	"github.com/open-policy-agent/opa/format"
@@ -12,7 +13,7 @@ import (
 func TestAllOfOperator(t *testing.T) {
 	cases := []struct {
 		desc             string
-		conditions       []Rego
+		conditions       []shared.Rego
 		protocol         string
 		port             int
 		publicAccessible bool
@@ -20,16 +21,16 @@ func TestAllOfOperator(t *testing.T) {
 	}{
 		{
 			desc: "alllow",
-			conditions: []Rego{
+			conditions: []shared.Rego{
 				&EqualsCondition{
-					condition: condition{
-						Subject: stringRego(`r.change.after.protocols[x]`),
+					BaseCondition: BaseCondition{
+						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
 					Value: "tcp",
 				},
 				&EqualsCondition{
-					condition: condition{
-						Subject: stringRego(`r.change.after.port`),
+					BaseCondition: BaseCondition{
+						Subject: shared.StringRego(`r.change.after.port`),
 					},
 					Value: 22,
 				},
@@ -40,18 +41,18 @@ func TestAllOfOperator(t *testing.T) {
 		},
 		{
 			desc: "nested operator",
-			conditions: []Rego{
+			conditions: []shared.Rego{
 				&AnyOf{
-					Conditions: []Rego{
+					Conditions: []shared.Rego{
 						&EqualsCondition{
-							condition: condition{
-								Subject: stringRego(`r.change.after.protocols[x]`),
+							BaseCondition: BaseCondition{
+								Subject: shared.StringRego(`r.change.after.protocols[x]`),
 							},
 							Value: "tcp",
 						},
 						&EqualsCondition{
-							condition: condition{
-								Subject: stringRego(`r.change.after.port`),
+							BaseCondition: BaseCondition{
+								Subject: shared.StringRego(`r.change.after.port`),
 							},
 							Value: 22,
 						},
@@ -59,8 +60,8 @@ func TestAllOfOperator(t *testing.T) {
 					ConditionSetName: "condition1",
 				},
 				&EqualsCondition{
-					condition: condition{
-						Subject: stringRego(`r.change.after.public_accessible`),
+					BaseCondition: BaseCondition{
+						Subject: shared.StringRego(`r.change.after.public_accessible`),
 					},
 					Value: false,
 				},
@@ -72,16 +73,16 @@ func TestAllOfOperator(t *testing.T) {
 		},
 		{
 			desc: "disallow",
-			conditions: []Rego{
+			conditions: []shared.Rego{
 				&EqualsCondition{
-					condition: condition{
-						Subject: stringRego(`r.change.after.protocols[x]`),
+					BaseCondition: BaseCondition{
+						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
 					Value: "tcp",
 				},
 				&EqualsCondition{
-					condition: condition{
-						Subject: stringRego(`r.change.after.port`),
+					BaseCondition: BaseCondition{
+						Subject: shared.StringRego(`r.change.after.port`),
 					},
 					Value: 22,
 				},

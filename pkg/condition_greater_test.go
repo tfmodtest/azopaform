@@ -4,32 +4,33 @@ import (
 	"context"
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"json-rule-finder/pkg/shared"
 	"testing"
 )
 
 func TestGreaterCondition(t *testing.T) {
 	cases := []struct {
 		desc  string
-		left  Rego
+		left  shared.Rego
 		right string
 		setup func(ctx context.Context)
 		allow bool
 	}{
 		{
 			desc:  "greater",
-			left:  stringRego("2"),
+			left:  shared.StringRego("2"),
 			right: "1",
 			allow: true,
 		},
 		{
 			desc:  "less",
-			left:  stringRego("1"),
+			left:  shared.StringRego("1"),
 			right: "2",
 			allow: false,
 		},
 		{
 			desc:  "equal",
-			left:  stringRego("1"),
+			left:  shared.StringRego("1"),
 			right: "1",
 			allow: false,
 		},
@@ -41,7 +42,7 @@ func TestGreaterCondition(t *testing.T) {
 				c.setup(ctx)
 			}
 			sut := GreaterCondition{
-				condition: condition{
+				BaseCondition: BaseCondition{
 					Subject: c.left,
 				},
 				Value: c.right,

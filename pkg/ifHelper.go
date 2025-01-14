@@ -9,10 +9,10 @@ import (
 
 func (i *If) Rego(ctx context.Context) (string, error) {
 	if i.rego == nil {
-		i.rego = func() Rego {
+		i.rego = func() shared.Rego {
 			conditionMap := i.body
-			var subject Rego
-			var creator func(subject Rego, input any) Rego
+			var subject shared.Rego
+			var creator func(subject shared.Rego, input any) shared.Rego
 			var cv any
 			for key, conditionValue := range conditionMap {
 				key = strings.ToLower(key)
@@ -60,9 +60,9 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 					subject = OperationValue(conditionValue.(string))
 					continue
 				}
-				factory, ok := conditionFactory[key]
+				factory, ok := ConditionFactory[key]
 				if !ok {
-					panic(fmt.Sprintf("unknown condition: %s", key))
+					panic(fmt.Sprintf("unknown BaseCondition: %s", key))
 				}
 				creator = factory
 				cv = conditionValue
@@ -81,9 +81,9 @@ func (i *If) ConditionName(defaultConditionName string) string {
 	return defaultConditionName
 }
 
-var _ Rego = &If{}
+var _ shared.Rego = &If{}
 
 type If struct {
 	body IfBody
-	rego Rego
+	rego shared.Rego
 }

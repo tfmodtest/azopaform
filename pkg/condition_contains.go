@@ -10,7 +10,7 @@ import (
 var _ Condition = ContainsCondition{}
 
 type ContainsCondition struct {
-	condition
+	BaseCondition
 	Value string
 }
 

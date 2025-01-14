@@ -4,26 +4,27 @@ import (
 	"context"
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"json-rule-finder/pkg/shared"
 	"testing"
 )
 
 func TestExistsCondition(t *testing.T) {
 	cases := []struct {
 		desc  string
-		left  Rego
+		left  shared.Rego
 		right string
 		setup func(ctx context.Context)
 		allow bool
 	}{
 		{
 			desc:  "exists",
-			left:  stringRego(`"ingress[0].transport"`),
+			left:  shared.StringRego(`"ingress[0].transport"`),
 			right: "true",
 			allow: true,
 		},
 		{
 			desc:  "not_exists",
-			left:  stringRego(`"ingress[0].transport"`),
+			left:  shared.StringRego(`"ingress[0].transport"`),
 			right: "false",
 			allow: false,
 		},
@@ -35,7 +36,7 @@ func TestExistsCondition(t *testing.T) {
 				c.setup(ctx)
 			}
 			sut := ExistsCondition{
-				condition: condition{
+				BaseCondition: BaseCondition{
 					Subject: c.left,
 				},
 				Value: c.right,

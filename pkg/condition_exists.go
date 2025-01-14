@@ -11,7 +11,7 @@ import (
 var _ Condition = ExistsCondition{}
 
 type ExistsCondition struct {
-	condition
+	BaseCondition
 	Value any
 }
 

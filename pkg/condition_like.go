@@ -11,7 +11,7 @@ import (
 var _ Condition = LikeCondition{}
 
 type LikeCondition struct {
-	condition
+	BaseCondition
 	Value string
 }
 

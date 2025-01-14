@@ -4,26 +4,27 @@ import (
 	"context"
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"json-rule-finder/pkg/shared"
 	"testing"
 )
 
 func TestNotContainsCondition(t *testing.T) {
 	cases := []struct {
 		desc  string
-		left  Rego
+		left  shared.Rego
 		right string
 		setup func(ctx context.Context)
 		allow bool
 	}{
 		{
 			desc:  "not_contains",
-			left:  stringRego("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group1/providers/Microsoft.RecoveryServices/vaults/vault1"),
+			left:  shared.StringRego("/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/group1/providers/Microsoft.RecoveryServices/vaults/vault1"),
 			right: "Microsoft.Web/sites",
 			allow: true,
 		},
 		{
 			desc:  "not_contains_negative",
-			left:  stringRego("/subscriptions/12345678-1234-9876-4563-123456789012/resourceGroups/resGroup1/providers/Microsoft.Web/sites/site1/slots/slot1"),
+			left:  shared.StringRego("/subscriptions/12345678-1234-9876-4563-123456789012/resourceGroups/resGroup1/providers/Microsoft.Web/sites/site1/slots/slot1"),
 			right: "Microsoft.Web/sites",
 			allow: false,
 		},
@@ -36,7 +37,7 @@ func TestNotContainsCondition(t *testing.T) {
 			}
 
 			sut := NotContainsCondition{
-				condition: condition{
+				BaseCondition: BaseCondition{
 					Subject: c.left,
 				},
 				Value: c.right,

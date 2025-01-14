@@ -11,7 +11,7 @@ import (
 var _ Condition = NotEqualsCondition{}
 
 type NotEqualsCondition struct {
-	condition
+	BaseCondition
 	Value any
 }
 

@@ -4,26 +4,27 @@ import (
 	"context"
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"json-rule-finder/pkg/shared"
 	"testing"
 )
 
 func TestInCondition(t *testing.T) {
 	cases := []struct {
 		desc  string
-		left  Rego
+		left  shared.Rego
 		right []string
 		setup func(ctx context.Context)
 		allow bool
 	}{
 		{
 			desc:  "in",
-			left:  stringRego(`"right"`),
+			left:  shared.StringRego(`"right"`),
 			right: []string{"right", "left"},
 			allow: true,
 		},
 		{
 			desc:  "in_negative",
-			left:  stringRego(`"left"`),
+			left:  shared.StringRego(`"left"`),
 			right: []string{"right", "middle"},
 			allow: false,
 		},
@@ -35,7 +36,7 @@ func TestInCondition(t *testing.T) {
 				c.setup(ctx)
 			}
 			sut := InCondition{
-				condition: condition{
+				BaseCondition: BaseCondition{
 					Subject: c.left,
 				},
 				Values: c.right,

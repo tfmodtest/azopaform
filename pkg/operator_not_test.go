@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"json-rule-finder/pkg/shared"
 	"testing"
 
 	"github.com/open-policy-agent/opa/format"
@@ -12,15 +13,15 @@ import (
 func TestNotOperator(t *testing.T) {
 	cases := []struct {
 		desc      string
-		condition Rego
+		condition shared.Rego
 		protocol  string
 		allowed   bool
 	}{
 		{
 			desc: "alllow",
 			condition: &EqualsCondition{
-				condition: condition{
-					Subject: stringRego(`r.change.after.protocols[x]`),
+				BaseCondition: BaseCondition{
+					Subject: shared.StringRego(`r.change.after.protocols[x]`),
 				},
 				Value: "http",
 			},
@@ -30,8 +31,8 @@ func TestNotOperator(t *testing.T) {
 		{
 			desc: "disallow",
 			condition: &EqualsCondition{
-				condition: condition{
-					Subject: stringRego(`r.change.after.protocols[x]`),
+				BaseCondition: BaseCondition{
+					Subject: shared.StringRego(`r.change.after.protocols[x]`),
 				},
 				Value: "http",
 			},
@@ -42,18 +43,18 @@ func TestNotOperator(t *testing.T) {
 			desc: "nested operator disallow",
 			condition: &AnyOf{
 				ConditionSetName: "condition_any_of_0",
-				Conditions: []Rego{
+				Conditions: []shared.Rego{
 					&AnyOf{
-						Conditions: []Rego{
+						Conditions: []shared.Rego{
 							&EqualsCondition{
-								condition: condition{
-									Subject: stringRego(`r.change.after.protocols[x]`),
+								BaseCondition: BaseCondition{
+									Subject: shared.StringRego(`r.change.after.protocols[x]`),
 								},
 								Value: "http",
 							},
 							&EqualsCondition{
-								condition: condition{
-									Subject: stringRego(`r.change.after.protocols[x]`),
+								BaseCondition: BaseCondition{
+									Subject: shared.StringRego(`r.change.after.protocols[x]`),
 								},
 								Value: "https",
 							},
@@ -61,8 +62,8 @@ func TestNotOperator(t *testing.T) {
 						ConditionSetName: "condition_any_of_1",
 					},
 					&EqualsCondition{
-						condition: condition{
-							Subject: stringRego(`r.change.after.protocols[x]`),
+						BaseCondition: BaseCondition{
+							Subject: shared.StringRego(`r.change.after.protocols[x]`),
 						},
 						Value: "ws",
 					},
@@ -75,18 +76,18 @@ func TestNotOperator(t *testing.T) {
 			desc: "nested operator allow",
 			condition: &AllOf{
 				ConditionSetName: "condition_all_of",
-				Conditions: []Rego{
+				Conditions: []shared.Rego{
 					&AnyOf{
-						Conditions: []Rego{
+						Conditions: []shared.Rego{
 							&EqualsCondition{
-								condition: condition{
-									Subject: stringRego(`r.change.after.protocols[x]`),
+								BaseCondition: BaseCondition{
+									Subject: shared.StringRego(`r.change.after.protocols[x]`),
 								},
 								Value: "http",
 							},
 							&EqualsCondition{
-								condition: condition{
-									Subject: stringRego(`r.change.after.protocols[x]`),
+								BaseCondition: BaseCondition{
+									Subject: shared.StringRego(`r.change.after.protocols[x]`),
 								},
 								Value: "https",
 							},
@@ -94,8 +95,8 @@ func TestNotOperator(t *testing.T) {
 						ConditionSetName: "condition_any_of",
 					},
 					&EqualsCondition{
-						condition: condition{
-							Subject: stringRego(`r.change.after.protocols[x]`),
+						BaseCondition: BaseCondition{
+							Subject: shared.StringRego(`r.change.after.protocols[x]`),
 						},
 						Value: "ws",
 					},

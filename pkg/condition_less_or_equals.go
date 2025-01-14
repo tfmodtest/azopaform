@@ -10,7 +10,7 @@ import (
 var _ Condition = LessOrEqualsCondition{}
 
 type LessOrEqualsCondition struct {
-	condition
+	BaseCondition
 	Value any
 }
 

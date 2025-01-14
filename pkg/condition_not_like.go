@@ -11,7 +11,7 @@ import (
 var _ Condition = NotLikeCondition{}
 
 type NotLikeCondition struct {
-	condition
+	BaseCondition
 	Value string
 }
 

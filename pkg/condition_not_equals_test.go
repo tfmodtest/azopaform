@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"json-rule-finder/pkg/shared"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,44 +12,44 @@ import (
 func TestNotEqualsCondition(t *testing.T) {
 	cases := []struct {
 		desc  string
-		left  Rego
+		left  shared.Rego
 		right any
 		setup func(ctx context.Context)
 		allow bool
 	}{
 		{
 			desc:  "string_negative",
-			left:  stringRego(`"right"`),
+			left:  shared.StringRego(`"right"`),
 			right: "right",
 			allow: false,
 		},
 		{
 			desc:  "string",
-			left:  stringRego(`"left"`),
+			left:  shared.StringRego(`"left"`),
 			right: "right",
 			allow: true,
 		},
 		{
 			desc:  "int_negative",
-			left:  stringRego("1"),
+			left:  shared.StringRego("1"),
 			right: 1,
 			allow: false,
 		},
 		{
 			desc:  "int",
-			left:  stringRego("1"),
+			left:  shared.StringRego("1"),
 			right: 2,
 			allow: true,
 		},
 		{
 			desc:  "bool_negative",
-			left:  stringRego("true"),
+			left:  shared.StringRego("true"),
 			right: true,
 			allow: false,
 		},
 		{
 			desc:  "bool",
-			left:  stringRego("false"),
+			left:  shared.StringRego("false"),
 			right: true,
 			allow: true,
 		},
@@ -60,7 +61,7 @@ func TestNotEqualsCondition(t *testing.T) {
 				c.setup(ctx)
 			}
 			sut := NotEqualsCondition{
-				condition: condition{
+				BaseCondition: BaseCondition{
 					Subject: c.left,
 				},
 				Value: c.right,

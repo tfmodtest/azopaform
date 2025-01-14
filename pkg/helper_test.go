@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"json-rule-finder/pkg/shared"
 	"testing"
 
 	"github.com/emirpasic/gods/stacks"
@@ -45,8 +46,8 @@ func TestReplaceIndex_WithWildcardIndex(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			sut := EqualsCondition{
-				condition: condition{
-					Subject: stringRego(c.subject),
+				BaseCondition: BaseCondition{
+					Subject: shared.StringRego(c.subject),
 				},
 				Value: c.value,
 			}

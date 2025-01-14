@@ -12,7 +12,7 @@ import (
 var _ Condition = EqualsCondition{}
 
 type EqualsCondition struct {
-	condition
+	BaseCondition
 	Value any
 }
 

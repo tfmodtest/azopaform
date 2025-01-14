@@ -10,7 +10,7 @@ import (
 var _ Condition = NotContainsCondition{}
 
 type NotContainsCondition struct {
-	condition
+	BaseCondition
 	Value string
 }
 

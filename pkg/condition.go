@@ -20,86 +20,78 @@ func (o OperationField) Rego(ctx context.Context) (string, error) {
 	return processed, err
 }
 
-type Rego interface {
-	Rego(ctx context.Context) (string, error)
-}
-
 type Condition interface {
-	Rego
+	shared.Rego
 }
 
-type Operation interface {
-	Rego
+type BaseCondition struct {
+	Subject shared.Rego
 }
 
-type condition struct {
-	Subject Rego
-}
-
-var conditionFactory = map[string]func(Rego, any) Rego{
-	"equals": func(s Rego, input any) Rego {
+var ConditionFactory = map[string]func(shared.Rego, any) shared.Rego{
+	"equals": func(s shared.Rego, input any) shared.Rego {
 		return EqualsCondition{
-			condition: condition{Subject: s},
-			Value:     input,
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input,
 		}
 	},
-	"notequals": func(s Rego, input any) Rego {
+	"notequals": func(s shared.Rego, input any) shared.Rego {
 		return NotEqualsCondition{
-			condition: condition{Subject: s},
-			Value:     input,
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input,
 		}
 	},
-	"like": func(s Rego, input any) Rego {
+	"like": func(s shared.Rego, input any) shared.Rego {
 		return LikeCondition{
-			condition: condition{Subject: s},
-			Value:     input.(string),
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input.(string),
 		}
 	},
-	"notlike": func(s Rego, input any) Rego {
+	"notlike": func(s shared.Rego, input any) shared.Rego {
 		return NotLikeCondition{
-			condition: condition{Subject: s},
-			Value:     input.(string),
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input.(string),
 		}
 	},
-	"match": func(s Rego, input any) Rego {
+	"match": func(s shared.Rego, input any) shared.Rego {
 		return MatchCondition{
-			condition: condition{Subject: s},
-			Value:     input.(string),
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input.(string),
 		}
 	},
-	"matchinsensitively": func(s Rego, input any) Rego {
+	"matchinsensitively": func(s shared.Rego, input any) shared.Rego {
 		return MatchInsensitivelyCondition{
-			condition: condition{Subject: s},
-			Value:     input.(string),
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input.(string),
 		}
 	},
-	"notmatch": func(s Rego, input any) Rego {
+	"notmatch": func(s shared.Rego, input any) shared.Rego {
 		return NotMatchCondition{
-			condition: condition{Subject: s},
-			Value:     input.(string),
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input.(string),
 		}
 	},
-	"notmatchinsensitively": func(s Rego, input any) Rego {
+	"notmatchinsensitively": func(s shared.Rego, input any) shared.Rego {
 		return NotMatchInsensitivelyCondition{
-			condition: condition{Subject: s},
-			Value:     input.(string),
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input.(string),
 		}
 	},
-	"contains": func(s Rego, input any) Rego {
+	"contains": func(s shared.Rego, input any) shared.Rego {
 		return ContainsCondition{
-			condition: condition{Subject: s},
-			Value:     input.(string),
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input.(string),
 		}
 	},
-	"notcontains": func(s Rego, input any) Rego {
+	"notcontains": func(s shared.Rego, input any) shared.Rego {
 		return NotContainsCondition{
-			condition: condition{Subject: s},
-			Value:     input.(string),
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input.(string),
 		}
 	},
-	"in": func(s Rego, input any) Rego {
+	"in": func(s shared.Rego, input any) shared.Rego {
 		return InCondition{
-			condition: condition{Subject: s},
+			BaseCondition: BaseCondition{Subject: s},
 			Values: func() []string {
 				var v []string
 				if reflect.TypeOf(input).Kind() != reflect.Slice {
@@ -112,9 +104,9 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 			}(),
 		}
 	},
-	"notin": func(s Rego, input any) Rego {
+	"notin": func(s shared.Rego, input any) shared.Rego {
 		return NotInCondition{
-			condition: condition{Subject: s},
+			BaseCondition: BaseCondition{Subject: s},
 			Values: func() []string {
 				var v []string
 				for _, i := range input.([]any) {
@@ -124,112 +116,112 @@ var conditionFactory = map[string]func(Rego, any) Rego{
 			}(),
 		}
 	},
-	"containskey": func(s Rego, input any) Rego {
+	"containskey": func(s shared.Rego, input any) shared.Rego {
 		return ContainsKeyCondition{
-			condition: condition{Subject: s},
-			KeyName:   input.(string),
+			BaseCondition: BaseCondition{Subject: s},
+			KeyName:       input.(string),
 		}
 	},
-	"notcontainskey": func(s Rego, input any) Rego {
+	"notcontainskey": func(s shared.Rego, input any) shared.Rego {
 		return NotContainsKeyCondition{
-			condition: condition{Subject: s},
-			KeyName:   input.(string),
+			BaseCondition: BaseCondition{Subject: s},
+			KeyName:       input.(string),
 		}
 	},
-	"less": func(s Rego, input any) Rego {
+	"less": func(s shared.Rego, input any) shared.Rego {
 		return LessCondition{
-			condition: condition{Subject: s},
-			Value:     input,
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input,
 		}
 	},
-	"lessorequals": func(s Rego, input any) Rego {
+	"lessorequals": func(s shared.Rego, input any) shared.Rego {
 		return LessOrEqualsCondition{
-			condition: condition{Subject: s},
-			Value:     input,
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input,
 		}
 	},
-	"greater": func(s Rego, input any) Rego {
+	"greater": func(s shared.Rego, input any) shared.Rego {
 		return GreaterCondition{
-			condition: condition{Subject: s},
-			Value:     input,
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input,
 		}
 	},
-	"greaterorequals": func(s Rego, input any) Rego {
+	"greaterorequals": func(s shared.Rego, input any) shared.Rego {
 		return GreaterOrEqualsCondition{
-			condition: condition{Subject: s},
-			Value:     input,
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input,
 		}
 	},
-	"exists": func(s Rego, input any) Rego {
+	"exists": func(s shared.Rego, input any) shared.Rego {
 		return ExistsCondition{
-			condition: condition{Subject: s},
-			Value:     input,
+			BaseCondition: BaseCondition{Subject: s},
+			Value:         input,
 		}
 	},
 }
 
-var _ Rego = MatchCondition{}
+var _ shared.Rego = MatchCondition{}
 
 type MatchCondition struct {
-	condition
+	BaseCondition
 	Value string
 }
 
 func (m MatchCondition) Rego(ctx context.Context) (string, error) {
-	return "", fmt.Errorf("`match` condition is not supported, yet")
+	return "", fmt.Errorf("`match` BaseCondition is not supported, yet")
 }
 
-var _ Rego = MatchInsensitivelyCondition{}
+var _ shared.Rego = MatchInsensitivelyCondition{}
 
 type MatchInsensitivelyCondition struct {
-	condition
+	BaseCondition
 	Value string
 }
 
 func (m MatchInsensitivelyCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`matchInsensitively` condition is not supported, yet")
+	return "", fmt.Errorf("`matchInsensitively` BaseCondition is not supported, yet")
 }
 
-var _ Rego = NotMatchCondition{}
+var _ shared.Rego = NotMatchCondition{}
 
 type NotMatchCondition struct {
-	condition
+	BaseCondition
 	Value string
 }
 
 func (n NotMatchCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`notMatch` condition is not supported, yet")
+	return "", fmt.Errorf("`notMatch` BaseCondition is not supported, yet")
 }
 
-var _ Rego = NotMatchInsensitivelyCondition{}
+var _ shared.Rego = NotMatchInsensitivelyCondition{}
 
 type NotMatchInsensitivelyCondition struct {
-	condition
+	BaseCondition
 	Value string
 }
 
 func (n NotMatchInsensitivelyCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`notMatchInsensitively` condition is not supported, yet")
+	return "", fmt.Errorf("`notMatchInsensitively` BaseCondition is not supported, yet")
 }
 
-var _ Rego = ContainsKeyCondition{}
+var _ shared.Rego = ContainsKeyCondition{}
 
 type ContainsKeyCondition struct {
-	condition
+	BaseCondition
 	KeyName string
 }
 
 func (c ContainsKeyCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`containsKey` condition is not supported, yet")
+	return "", fmt.Errorf("`containsKey` BaseCondition is not supported, yet")
 }
 
-var _ Rego = NotContainsKeyCondition{}
+var _ shared.Rego = NotContainsKeyCondition{}
 
 type NotContainsKeyCondition struct {
-	condition
+	BaseCondition
 	KeyName string
 }
 
 func (n NotContainsKeyCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`notContainsKey` condition is not supported, yet")
+	return "", fmt.Errorf("`notContainsKey` BaseCondition is not supported, yet")
 }

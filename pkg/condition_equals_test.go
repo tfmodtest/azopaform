@@ -3,60 +3,53 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"json-rule-finder/pkg/shared"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-var _ Rego = stringRego("")
-
-type stringRego string
-
-func (s stringRego) Rego(ctx context.Context) (string, error) {
-	return string(s), nil
-}
-
 func TestEqualsCondition(t *testing.T) {
 	cases := []struct {
 		desc  string
-		left  Rego
+		left  shared.Rego
 		right any
 		setup func(ctx context.Context)
 		allow bool
 	}{
 		{
 			desc:  "string",
-			left:  stringRego(`"right"`),
+			left:  shared.StringRego(`"right"`),
 			right: "right",
 			allow: true,
 		},
 		{
 			desc:  "string_negative",
-			left:  stringRego(`"left"`),
+			left:  shared.StringRego(`"left"`),
 			right: "right",
 			allow: false,
 		},
 		{
 			desc:  "int",
-			left:  stringRego("1"),
+			left:  shared.StringRego("1"),
 			right: 1,
 			allow: true,
 		},
 		{
 			desc:  "int_negative",
-			left:  stringRego("1"),
+			left:  shared.StringRego("1"),
 			right: 2,
 			allow: false,
 		},
 		{
 			desc:  "bool",
-			left:  stringRego("true"),
+			left:  shared.StringRego("true"),
 			right: true,
 			allow: true,
 		},
 		{
 			desc:  "bool_negative",
-			left:  stringRego("false"),
+			left:  shared.StringRego("false"),
 			right: true,
 			allow: false,
 		},
@@ -68,7 +61,7 @@ func TestEqualsCondition(t *testing.T) {
 				c.setup(ctx)
 			}
 			sut := EqualsCondition{
-				condition: condition{
+				BaseCondition: BaseCondition{
 					Subject: c.left,
 				},
 				Value: c.right,

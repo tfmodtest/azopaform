@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var _ Rego = &Rule{}
+var _ shared.Rego = &Rule{}
 
 type Rule struct {
 	Properties *PolicyRuleModel
@@ -66,8 +66,8 @@ func (r *Rule) SaveToDisk() error {
 
 func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBody {
 	conditionMap := input
-	var subject Rego
-	var creator func(subject Rego, input any) Rego
+	var subject shared.Rego
+	var creator func(subject shared.Rego, input any) shared.Rego
 	var cv any
 	for key, conditionValue := range conditionMap {
 		key = strings.ToLower(key)
@@ -76,7 +76,7 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 			if !ok {
 				panic(fmt.Sprintf("unknown operation: %s", key))
 			}
-			//fmt.Printf("the condition value is %v\n", conditionValue)
+			//fmt.Printf("the BaseCondition value is %v\n", conditionValue)
 			conditionSet := operationFactory(conditionValue, ctx)
 			subject = conditionSet
 			continue
@@ -125,9 +125,9 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 			subject = OperationValue(conditionValue.(string))
 			continue
 		}
-		factory, ok := conditionFactory[key]
+		factory, ok := ConditionFactory[key]
 		if !ok {
-			panic(fmt.Sprintf("unknown condition: %s", key))
+			panic(fmt.Sprintf("unknown BaseCondition: %s", key))
 		}
 		creator = factory
 		cv = conditionValue

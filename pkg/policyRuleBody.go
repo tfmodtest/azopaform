@@ -1,11 +1,14 @@
 package pkg
 
-import "context"
+import (
+	"context"
+	"json-rule-finder/pkg/shared"
+)
 
 type PolicyRuleBody struct {
 	Then   *ThenBody
 	If     IfBody `json:"if,omitempty"`
-	IfBody Rego
+	IfBody shared.Rego
 }
 
 func (p *PolicyRuleBody) GetIf() *If {

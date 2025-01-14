@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/emirpasic/gods/stacks"
+	"json-rule-finder/pkg/shared"
 	"reflect"
 )
 
 var _ Operator = &NotOperator{}
 
 type NotOperator struct {
-	Body             Rego
+	Body             shared.Rego
 	ConditionSetName string
 }
 
@@ -22,7 +23,7 @@ func (n NotOperator) Rego(ctx context.Context) (string, error) {
 	body, ok := n.Body.(Operator)
 	if !ok {
 		body = &AllOf{
-			Conditions: []Rego{
+			Conditions: []shared.Rego{
 				n.Body,
 			},
 			ConditionSetName: fmt.Sprintf("%s_%s", n.ConditionSetName, "negation"),

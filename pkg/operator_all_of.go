@@ -10,7 +10,7 @@ import (
 var _ Operator = &AllOf{}
 
 type AllOf struct {
-	Conditions       []Rego
+	Conditions       []shared.Rego
 	ConditionSetName string
 }
 
@@ -58,6 +58,6 @@ func (a AllOf) Rego(ctx context.Context) (string, error) {
 		res += "\n" + subSet
 	}
 
-	// add condition set body at the end
+	// add BaseCondition set body at the end
 	return res, nil
 }

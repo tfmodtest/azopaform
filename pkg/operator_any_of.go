@@ -3,15 +3,16 @@ package pkg
 import (
 	"context"
 	"fmt"
+	"json-rule-finder/pkg/shared"
 	"reflect"
-	
+
 	"github.com/emirpasic/gods/stacks"
 )
 
 var _ Operator = &AnyOf{}
 
 type AnyOf struct {
-	Conditions       []Rego
+	Conditions       []shared.Rego
 	ConditionSetName string
 }
 
