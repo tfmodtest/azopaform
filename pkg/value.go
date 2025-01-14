@@ -22,7 +22,7 @@ var subjectFactories = map[string]func(input any, ctx context.Context) shared.Re
 		}
 	},
 	"count": func(input any, ctx context.Context) shared.Rego {
-		f := operatorFactories[shared.Count_]
+		f := operatorFactories[shared.Count]
 		countConditionSet := f(input, ctx)
 		//fmt.Printf("countConditionSet: %v\n", countConditionSet)
 		return Count{

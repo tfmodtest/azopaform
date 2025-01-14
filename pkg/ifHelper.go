@@ -17,7 +17,7 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 			var cv any
 			for key, conditionValue := range conditionMap {
 				key = strings.ToLower(key)
-				if key == shared.Count_ {
+				if key == shared.Count {
 					operationFactory, ok := operatorFactories[key]
 					if !ok {
 						panic(fmt.Sprintf("unknown operation: %s", key))
@@ -26,7 +26,7 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 					subject = conditionSet
 					continue
 				}
-				if key == shared.AllOf_ {
+				if key == shared.AllOf {
 					operationFactory, ok := operatorFactories[key]
 					if !ok {
 						panic(fmt.Sprintf("unknown operation: %s", key))
@@ -34,7 +34,7 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 					conditionSet := operationFactory(conditionValue, ctx)
 					return conditionSet
 				}
-				if key == shared.AnyOf_ {
+				if key == shared.AnyOf {
 					operationFactory, ok := operatorFactories[key]
 					if !ok {
 						panic(fmt.Sprintf("unknown operation: %s", key))
@@ -57,7 +57,7 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 					subject = OperationField(conditionValue.(string))
 					continue
 				}
-				if key == shared.Value_ {
+				if key == shared.Value {
 					subject = OperationValue(conditionValue.(string))
 					continue
 				}

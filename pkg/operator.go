@@ -18,7 +18,7 @@ type Operator interface {
 var operatorFactories = make(map[string]func(input any, ctx context.Context) shared.Rego)
 
 func init() {
-	operatorFactories[shared.Count_] = func(input any, ctx context.Context) shared.Rego {
+	operatorFactories[shared.Count] = func(input any, ctx context.Context) shared.Rego {
 		items := input.(map[string]any)
 		var whereBody shared.Rego
 		if items[shared.Where] != nil {
@@ -28,7 +28,7 @@ func init() {
 		}
 		fieldName := items[shared.Field]
 		if items[shared.Field] == nil {
-			fieldName = items[shared.Value_]
+			fieldName = items[shared.Value]
 		}
 		countField, _, err := shared.FieldNameProcessor(fieldName.(string), ctx)
 		if err != nil {
@@ -39,9 +39,9 @@ func init() {
 		countFieldConverted := replaceIndex(countField)
 		var countBody string
 		if whereBody != nil {
-			countBody = shared.Count_ + "(" + "{" + "x" + "|" + countFieldConverted + ";" + whereBody.(WhereOperator).ConditionSetName + "(x)" + "}" + ")"
+			countBody = shared.Count + "(" + "{" + "x" + "|" + countFieldConverted + ";" + whereBody.(WhereOperator).ConditionSetName + "(x)" + "}" + ")"
 		} else {
-			countBody = shared.Count_ + "(" + "{" + "x" + "|" + countFieldConverted + "}" + ")"
+			countBody = shared.Count + "(" + "{" + "x" + "|" + countFieldConverted + "}" + ")"
 		}
 		countBody = strings.Replace(countBody, "*", "x", -1)
 		return CountOperator{
@@ -49,7 +49,7 @@ func init() {
 			CountExp: countBody,
 		}
 	}
-	operatorFactories[shared.AllOf_] = func(input any, ctx context.Context) shared.Rego {
+	operatorFactories[shared.AllOf] = func(input any, ctx context.Context) shared.Rego {
 		items := input.([]any)
 		var body []shared.Rego
 		for _, item := range items {
@@ -143,7 +143,7 @@ func init() {
 			ConditionSetName: conditionSetName,
 		}
 	}
-	operatorFactories[shared.AnyOf_] = func(input any, ctx context.Context) shared.Rego {
+	operatorFactories[shared.AnyOf] = func(input any, ctx context.Context) shared.Rego {
 		items := input.([]any)
 		var body []shared.Rego
 		for _, item := range items {
