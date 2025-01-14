@@ -1,9 +1,7 @@
 package shared
 
 import (
-	"context"
 	"fmt"
-	"github.com/emirpasic/gods/stacks"
 	"github.com/magodo/aztfq/aztfq"
 	"os"
 	"regexp"
@@ -71,7 +69,7 @@ var ResourceTypeLookupTable = func() LookupTable {
 	return LookupTable(t)
 }()
 
-func FieldNameProcessor(fieldName interface{}, ctx context.Context) (string, string, error) {
+func FieldNameProcessor(fieldName interface{}, ctx *Context) (string, string, error) {
 	var result string
 	var rules string
 	switch fn := fieldName.(type) {
@@ -118,29 +116,18 @@ func SliceConstructor(input any) string {
 	return res
 }
 
-func currentResourceType(ctx context.Context) (string, error) {
-	resourceTypeStack := ctx.Value("context").(map[string]stacks.Stack)["resourceType"]
-	if resourceTypeStack == nil {
-		return "", fmt.Errorf("cannot find the resource type in the context")
-	}
-	resourceType, ok := resourceTypeStack.Peek()
+func currentResourceType(ctx *Context) (string, error) {
+	resourceType, ok := ctx.currentResourceType()
 	if !ok {
 		return "", fmt.Errorf("cannot find the resource type in the context")
 	}
-	rt, ok := resourceType.(string)
-	if !ok {
-		return "", fmt.Errorf("cannot convert the resource type to string")
-	}
-	return rt, nil
+	return resourceType, nil
 }
 
 func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error) {
 	if fieldNameRaw == TypeOfResource {
 		return fieldNameRaw, nil
 	}
-	//if strings.Contains(fieldNameRaw, "count") {
-	//	return fieldNameRaw, nil
-	//}
 	if strings.HasPrefix(strings.ToLower(fieldNameRaw), strings.ToLower(resourceType)) {
 		rtLen := len(resourceType)
 		fieldNameRaw = fieldNameRaw[rtLen:]

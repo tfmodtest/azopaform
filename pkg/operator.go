@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"fmt"
-	"github.com/emirpasic/gods/stacks"
 	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"reflect"
@@ -354,16 +353,14 @@ func (w WhereOperator) Rego(ctx *shared.Context) (string, error) {
 	for _, item := range w.Conditions {
 		if _, ok := item.(Operator); ok {
 			res += item.(Operator).GetConditionSetName() + "(x)"
-			fieldNameReplacerStack := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"]
-			fieldNameReplacerStack.Push("x")
+			ctx.PushFieldName("x")
 			subSet, err := item.Rego(ctx)
 			if err != nil {
 				return "", err
 			}
 			subSets = append(subSets, subSet)
 		} else {
-			fieldNameReplacerStack := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"]
-			fieldNameReplacerStack.Push("x")
+			ctx.PushFieldName("x")
 			condition, err := item.Rego(ctx)
 			if err != nil {
 				return "", err
@@ -384,14 +381,10 @@ func (w WhereOperator) Rego(ctx *shared.Context) (string, error) {
 }
 
 var NeoConditionNameGenerator = func(ctx *shared.Context) (string, error) {
-	conditionNameStack := ctx.Value("context").(map[string]stacks.Stack)["conditionNameCounter"]
-	if conditionNameStack == nil {
-		return "", fmt.Errorf("conditionNameStack is nil")
-	}
-	index, ok := conditionNameStack.Pop()
+	index, ok := ctx.PopConditionNameCounter()
 	if !ok {
 		return "", fmt.Errorf("conditionNameStack is empty")
 	}
-	conditionName := "BaseCondition" + fmt.Sprintf("%v", index)
+	conditionName := "condition" + fmt.Sprintf("%d", index)
 	return conditionName, nil
 }

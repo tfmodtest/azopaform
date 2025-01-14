@@ -5,8 +5,6 @@ import (
 	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"reflect"
-
-	"github.com/emirpasic/gods/stacks"
 )
 
 var _ Operator = &AnyOf{}
@@ -24,7 +22,7 @@ func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	var subSets []string
 	head := a.ConditionSetName
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+	if _, ok := ctx.FieldNameReplacer(); ok {
 		head = a.ConditionSetName + "(x)"
 	}
 	for _, item := range a.Conditions {
@@ -33,7 +31,7 @@ func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
 		}
 		if _, ok := item.(Operator); ok {
 			if reflect.TypeOf(item) != reflect.TypeOf(WhereOperator{}) {
-				if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+				if _, ok := ctx.FieldNameReplacer(); ok {
 					res += head + " if {" + item.(Operator).GetConditionSetName() + "(x)}"
 				} else {
 					res += head + " if {" + item.(Operator).GetConditionSetName() + "}"

@@ -5,8 +5,6 @@ import (
 	"json-rule-finder/pkg/shared"
 	"reflect"
 	"strings"
-
-	"github.com/emirpasic/gods/stacks"
 )
 
 var _ Condition = Equals{}
@@ -22,7 +20,7 @@ func (e Equals) Rego(ctx *shared.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+	if _, ok := ctx.FieldNameReplacer(); ok {
 		fieldName = ReplaceIndex(fieldName)
 	}
 	var v string
@@ -41,7 +39,7 @@ func (e Equals) GetReverseRego(ctx *shared.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if stack, ok := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack); ok && stack.Size() > 0 {
+	if _, ok := ctx.FieldNameReplacer(); ok {
 		fieldName = ReplaceIndex(fieldName)
 	}
 	var v string

@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"fmt"
-	"github.com/emirpasic/gods/stacks"
 	"json-rule-finder/pkg/shared"
 	"reflect"
 )
@@ -30,7 +29,7 @@ func (n NotOperator) Rego(ctx *shared.Context) (string, error) {
 	}
 	var bodyRes string
 	if reflect.TypeOf(body) != reflect.TypeOf(WhereOperator{}) {
-		if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+		if _, ok := ctx.FieldNameReplacer(); ok {
 			bodyRes = body.GetConditionSetName() + "(x)"
 		} else {
 			bodyRes = body.GetConditionSetName()

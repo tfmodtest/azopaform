@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"github.com/emirpasic/gods/stacks"
 	"json-rule-finder/pkg/shared"
 	"reflect"
 	"strings"
@@ -19,7 +18,7 @@ func (e Exists) Rego(ctx *shared.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+	if _, ok := ctx.FieldNameReplacer(); ok {
 		fieldName = ReplaceIndex(fieldName)
 	}
 	if (reflect.TypeOf(e.Value).Kind() == reflect.Bool && e.Value.(bool)) || (reflect.TypeOf(e.Value).Kind() == reflect.String && e.Value.(string) == "true") {

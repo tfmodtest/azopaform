@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"github.com/emirpasic/gods/stacks"
 	"json-rule-finder/pkg/shared"
 	"reflect"
 )
@@ -21,7 +20,7 @@ func (a AllOf) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	var subSets []string
 
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+	if _, ok := ctx.FieldNameReplacer(); ok {
 		res = a.ConditionSetName + "(x)" + " " + shared.IfCondition + " {"
 	} else {
 		res = a.ConditionSetName + " " + shared.IfCondition + " {"
@@ -30,7 +29,7 @@ func (a AllOf) Rego(ctx *shared.Context) (string, error) {
 	for _, item := range a.Conditions {
 		if _, ok := item.(Operator); ok {
 			if reflect.TypeOf(item) != reflect.TypeOf(WhereOperator{}) {
-				if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+				if _, ok := ctx.FieldNameReplacer(); ok {
 					res += "\n" + item.(Operator).GetConditionSetName() + "(x)"
 				} else {
 					res += "\n" + item.(Operator).GetConditionSetName()

@@ -3,13 +3,11 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/emirpasic/gods/stacks/arraystack"
 	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"path/filepath"
 	"strings"
 
-	"github.com/emirpasic/gods/stacks"
 	"github.com/spf13/afero"
 )
 
@@ -288,12 +286,10 @@ func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error
 		paths = []string{policyPath}
 	}
 	for _, path := range paths {
-		fmt.Printf("start to convert azure policy %s to rego\n", path)
-		conditionNameCounter := arraystack.New()
+		ctx.ClearConditionNameCounter()
 		for i := 100; i > 0; i-- {
-			conditionNameCounter.Push(i)
+			ctx.PushConditionNameCounter(i)
 		}
-		ctx.Value("context").(map[string]stacks.Stack)["conditionNameCounter"] = conditionNameCounter
 
 		rule, err := LoadRule(path, ctx)
 		if err != nil {

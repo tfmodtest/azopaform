@@ -2,7 +2,6 @@ package condition
 
 import (
 	"fmt"
-	"github.com/emirpasic/gods/stacks"
 	"json-rule-finder/pkg/shared"
 	"strings"
 )
@@ -19,7 +18,7 @@ func (n NotLike) Rego(ctx *shared.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
+	if _, ok := ctx.FieldNameReplacer(); ok {
 		fieldName = ReplaceIndex(fieldName)
 	}
 	v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")

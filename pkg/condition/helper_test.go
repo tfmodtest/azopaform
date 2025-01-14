@@ -5,7 +5,6 @@ import (
 	"json-rule-finder/pkg/shared"
 	"testing"
 
-	"github.com/emirpasic/gods/stacks"
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -52,8 +51,7 @@ func TestReplaceIndex_WithWildcardIndex(t *testing.T) {
 				Value: c.value,
 			}
 			ctx := shared.NewContext()
-			stack := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"]
-			stack.Push("x")
+			ctx.PushFieldName("x")
 			assertion, err := sut.Rego(ctx)
 			require.NoError(t, err)
 			regoCode := fmt.Sprintf(`package main
