@@ -20,7 +20,7 @@ func (g GreaterCondition) Rego(ctx context.Context) (string, error) {
 		return "", err
 	}
 	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
+		fieldName = ReplaceIndex(fieldName)
 	}
 	return strings.Join([]string{fieldName, ">", fmt.Sprint(g.Value)}, " "), nil
 }

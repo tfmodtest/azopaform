@@ -23,7 +23,7 @@ func (e EqualsCondition) Rego(ctx context.Context) (string, error) {
 		return "", err
 	}
 	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
+		fieldName = ReplaceIndex(fieldName)
 	}
 	var v string
 	if reflect.TypeOf(e.Value).Kind() == reflect.String {
@@ -42,7 +42,7 @@ func (e EqualsCondition) GetReverseRego(ctx context.Context) (string, error) {
 		return "", err
 	}
 	if stack, ok := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack); ok && stack.Size() > 0 {
-		fieldName = replaceIndex(fieldName)
+		fieldName = ReplaceIndex(fieldName)
 	}
 	var v string
 	if reflect.TypeOf(e.Value).Kind() == reflect.String {

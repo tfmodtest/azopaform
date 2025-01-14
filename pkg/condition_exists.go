@@ -20,7 +20,7 @@ func (e ExistsCondition) Rego(ctx context.Context) (string, error) {
 		return "", err
 	}
 	if ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"] != nil && ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"].(stacks.Stack).Size() > 0 {
-		fieldName = replaceIndex(fieldName)
+		fieldName = ReplaceIndex(fieldName)
 	}
 	if (reflect.TypeOf(e.Value).Kind() == reflect.Bool && e.Value.(bool)) || (reflect.TypeOf(e.Value).Kind() == reflect.String && e.Value.(string) == "true") {
 		return fieldName, nil
