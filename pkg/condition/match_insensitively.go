@@ -14,5 +14,5 @@ type MatchInsensitivelyCondition struct {
 }
 
 func (m MatchInsensitivelyCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`matchInsensitively` BaseCondition is not supported, yet")
+	return "", fmt.Errorf("`matchInsensitively` condition is not supported, yet")
 }

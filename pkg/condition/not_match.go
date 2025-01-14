@@ -14,5 +14,5 @@ type NotMatch struct {
 }
 
 func (n NotMatch) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`notMatch` BaseCondition is not supported, yet")
+	return "", fmt.Errorf("`notMatch` condition is not supported, yet")
 }
