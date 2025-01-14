@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"context"
-	"fmt"
 	"json-rule-finder/pkg/shared"
 	"reflect"
 )
@@ -158,70 +157,4 @@ var ConditionFactory = map[string]func(shared.Rego, any) shared.Rego{
 			Value:         input,
 		}
 	},
-}
-
-var _ shared.Rego = MatchCondition{}
-
-type MatchCondition struct {
-	BaseCondition
-	Value string
-}
-
-func (m MatchCondition) Rego(ctx context.Context) (string, error) {
-	return "", fmt.Errorf("`match` BaseCondition is not supported, yet")
-}
-
-var _ shared.Rego = MatchInsensitivelyCondition{}
-
-type MatchInsensitivelyCondition struct {
-	BaseCondition
-	Value string
-}
-
-func (m MatchInsensitivelyCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`matchInsensitively` BaseCondition is not supported, yet")
-}
-
-var _ shared.Rego = NotMatchCondition{}
-
-type NotMatchCondition struct {
-	BaseCondition
-	Value string
-}
-
-func (n NotMatchCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`notMatch` BaseCondition is not supported, yet")
-}
-
-var _ shared.Rego = NotMatchInsensitivelyCondition{}
-
-type NotMatchInsensitivelyCondition struct {
-	BaseCondition
-	Value string
-}
-
-func (n NotMatchInsensitivelyCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`notMatchInsensitively` BaseCondition is not supported, yet")
-}
-
-var _ shared.Rego = ContainsKeyCondition{}
-
-type ContainsKeyCondition struct {
-	BaseCondition
-	KeyName string
-}
-
-func (c ContainsKeyCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`containsKey` BaseCondition is not supported, yet")
-}
-
-var _ shared.Rego = NotContainsKeyCondition{}
-
-type NotContainsKeyCondition struct {
-	BaseCondition
-	KeyName string
-}
-
-func (n NotContainsKeyCondition) Rego(context.Context) (string, error) {
-	return "", fmt.Errorf("`notContainsKey` BaseCondition is not supported, yet")
 }

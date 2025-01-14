@@ -9,13 +9,6 @@ import (
 	"testing"
 )
 
-const conditionRegoTemplate = `package main
-
-import rego.v1
-
-default allow := false
-allow if %s`
-
 func TestOperations(t *testing.T) {
 	tests := []struct {
 		name      string

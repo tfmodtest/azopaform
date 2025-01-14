@@ -43,7 +43,7 @@ func TestNotInCondition(t *testing.T) {
 			}
 			actual, err := sut.Rego(ctx)
 			require.NoError(t, err)
-			cfg := fmt.Sprintf(conditionRegoTemplate, actual)
+			cfg := fmt.Sprintf(shared.RegoTestTemplate, actual)
 			shared.AssertRegoAllow(t, cfg, nil, c.allow, ctx)
 		})
 	}

@@ -20,3 +20,10 @@ func AssertRegoAllow(t *testing.T, cfg string, input *rego.EvalOption, allowed b
 	require.NoError(t, err)
 	assert.Equal(t, allowed, result.Allowed())
 }
+
+const RegoTestTemplate = `package main
+
+import rego.v1
+
+default allow := false
+allow if %s`
