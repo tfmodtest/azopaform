@@ -116,7 +116,7 @@ func NewPolicyRuleBody(input map[string]any, ctx context.Context) *PolicyRuleBod
 		}
 		if key == shared.Field {
 			if conditionValue == shared.TypeOfResource {
-				pushResourceType(ctx, conditionValue.(string))
+				shared.PushResourceType(ctx, conditionValue.(string))
 			}
 			subject = OperationField(conditionValue.(string))
 			continue
@@ -308,15 +308,6 @@ func AzurePolicyToRego(policyPath string, dir string, ctx context.Context) error
 	return nil
 }
 
-func NewContext() context.Context {
-	contextMap := make(map[string]stacks.Stack)
-	contextMap["resourceType"] = arraystack.New()
-	contextMap["fieldNameReplacer"] = arraystack.New()
-	contextMap["conditionNameCounter"] = arraystack.New()
-	ctx := context.WithValue(context.Background(), "context", contextMap)
-	return ctx
-}
-
 func LoadRule(path string, ctx context.Context) (*Rule, error) {
 	rule, err := ReadRuleFromFile(path)
 	if err != nil {
@@ -325,11 +316,6 @@ func LoadRule(path string, ctx context.Context) (*Rule, error) {
 
 	err = rule.Parse(ctx)
 	return rule, err
-}
-
-func pushResourceType(ctx context.Context, rt string) {
-	contextMap := ctx.Value("context").(map[string]stacks.Stack)
-	contextMap["resourceType"].Push(rt)
 }
 
 func jsonFiles(dir string) ([]string, error) {

@@ -8,8 +8,8 @@ import (
 )
 
 func TestFieldNameProcessor(t *testing.T) {
-	ctx := NewContext()
-	pushResourceType(ctx, "Microsoft.Web/serverFarms")
+	ctx := shared.NewContext()
+	shared.PushResourceType(ctx, "Microsoft.Web/serverFarms")
 	subject, rules, err := shared.FieldNameProcessor("Microsoft.Web/serverFarms/sku.tier", ctx)
 	require.NoError(t, err)
 	assert.Equal(t, "", rules)

@@ -51,7 +51,7 @@ func TestReplaceIndex_WithWildcardIndex(t *testing.T) {
 				},
 				Value: c.value,
 			}
-			ctx := NewContext()
+			ctx := shared.NewContext()
 			stack := ctx.Value("context").(map[string]stacks.Stack)["fieldNameReplacer"]
 			stack.Push("x")
 			assertion, err := sut.Rego(ctx)

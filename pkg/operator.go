@@ -83,7 +83,7 @@ func init() {
 						continue
 					}
 					if reflect.TypeOf(v).Kind() == reflect.String {
-						pushResourceType(ctx, v.(string))
+						shared.PushResourceType(ctx, v.(string))
 					}
 				}
 			}
@@ -175,7 +175,7 @@ func init() {
 					if k == shared.Field && v == shared.TypeOfResource {
 						continue
 					}
-					pushResourceType(ctx, v.(string))
+					shared.PushResourceType(ctx, v.(string))
 				}
 			}
 			if cf != nil {

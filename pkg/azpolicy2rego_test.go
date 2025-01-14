@@ -8,6 +8,7 @@ import (
 	"github.com/prashantv/gostub"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"json-rule-finder/pkg/shared"
 	"os"
 	"testing"
 
@@ -489,7 +490,7 @@ r.change.after.cors_configuration[0].allowed_origins[0] != "*"
 					policyPath = n
 				}
 			}
-			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, NewContext()))
+			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, shared.NewContext()))
 			for n, expected := range c.expected {
 				content, err := afero.ReadFile(mockFs, n)
 				require.NoError(t, err)
@@ -598,7 +599,7 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 		stub := gostub.Stub(&Fs, fs)
 		defer stub.Reset()
 
-		ctx := NewContext()
+		ctx := shared.NewContext()
 		conditionNameCounter := arraystack.New()
 		for i := 100; i > 0; i-- {
 			conditionNameCounter.Push(i)

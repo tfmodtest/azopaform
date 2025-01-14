@@ -51,7 +51,7 @@ func (i *If) Rego(ctx context.Context) (string, error) {
 				}
 				if key == shared.Field {
 					if conditionValue == shared.TypeOfResource {
-						pushResourceType(ctx, conditionValue.(string))
+						shared.PushResourceType(ctx, conditionValue.(string))
 					}
 					subject = OperationField(conditionValue.(string))
 					continue

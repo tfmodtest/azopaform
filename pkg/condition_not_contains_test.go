@@ -31,7 +31,7 @@ func TestNotContainsCondition(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			ctx := NewContext()
+			ctx := shared.NewContext()
 			if c.setup != nil {
 				c.setup(ctx)
 			}

@@ -269,8 +269,8 @@ func TestOperations(t *testing.T) {
 	t.Skipf("skipping")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := NewContext()
-			pushResourceType(ctx, "Microsoft.Web/serverFarms")
+			ctx := shared.NewContext()
+			shared.PushResourceType(ctx, "Microsoft.Web/serverFarms")
 			actual, err := tt.operation.Rego(ctx)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, actual)
@@ -743,7 +743,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 					return "condition1", nil
 				})
 				defer stub.Reset()
-				result := NewPolicyRuleBody(tt.input, NewContext())
+				result := NewPolicyRuleBody(tt.input, shared.NewContext())
 				assert.Equal(t, tt.expected, result)
 			}
 		})

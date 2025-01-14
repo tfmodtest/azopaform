@@ -112,7 +112,7 @@ func TestNotOperator(t *testing.T) {
 				Body:             c.condition,
 				ConditionSetName: "condition0",
 			}
-			ctx := NewContext()
+			ctx := shared.NewContext()
 			actual, err := sut.Rego(ctx)
 			require.NoError(t, err)
 			regoCfg := fmt.Sprintf(testRegoModuleTemplate, actual)
