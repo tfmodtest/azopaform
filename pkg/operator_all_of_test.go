@@ -105,7 +105,7 @@ func TestAllOfOperator(t *testing.T) {
 			formattedCfg, err := format.Source("test.rego", []byte(regoCfg))
 			require.NoError(t, err)
 			regoCfg = string(formattedCfg)
-			assertRegoAllow(t, regoCfg, func() *rego.EvalOption {
+			shared.AssertRegoAllow(t, regoCfg, func() *rego.EvalOption {
 				input := rego.EvalInput(map[string]any{
 					"resource_changes": []map[string]any{
 						{

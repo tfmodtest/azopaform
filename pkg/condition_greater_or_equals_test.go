@@ -50,7 +50,7 @@ func TestGreaterOrEqualsCondition(t *testing.T) {
 			actual, err := sut.Rego(ctx)
 			require.NoError(t, err)
 			cfg := fmt.Sprintf(conditionRegoTemplate, actual)
-			assertRegoAllow(t, cfg, nil, c.allow, ctx)
+			shared.AssertRegoAllow(t, cfg, nil, c.allow, ctx)
 		})
 	}
 }
