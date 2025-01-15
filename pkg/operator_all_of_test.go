@@ -58,7 +58,9 @@ func TestAllOfOperator(t *testing.T) {
 							Value: 22,
 						},
 					},
-					ConditionSetName: "condition1",
+					baseOperator: baseOperator{
+						conditionSetName: "condition1",
+					},
 				},
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{

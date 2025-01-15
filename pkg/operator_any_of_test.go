@@ -87,7 +87,9 @@ func TestAnyOfOperator(t *testing.T) {
 							Value: "https",
 						},
 					},
-					ConditionSetName: "condition1",
+					baseOperator: baseOperator{
+						conditionSetName: "condition1",
+					},
 				},
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
@@ -122,8 +124,10 @@ func TestAnyOfOperator(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			sut := &AnyOf{
-				Conditions:       c.conditions,
-				ConditionSetName: "condition0",
+				Conditions: c.conditions,
+				baseOperator: baseOperator{
+					conditionSetName: "condition0",
+				},
 			}
 			ctx := shared.NewContext()
 			actual, err := sut.Rego(ctx)

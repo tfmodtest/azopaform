@@ -43,7 +43,9 @@ func TestNotOperator(t *testing.T) {
 		{
 			desc: "nested operator disallow",
 			condition: &AnyOf{
-				ConditionSetName: "condition_any_of_0",
+				baseOperator: baseOperator{
+					conditionSetName: "condition_any_of_0",
+				},
 				Conditions: []shared.Rego{
 					&AnyOf{
 						Conditions: []shared.Rego{
@@ -60,7 +62,9 @@ func TestNotOperator(t *testing.T) {
 								Value: "https",
 							},
 						},
-						ConditionSetName: "condition_any_of_1",
+						baseOperator: baseOperator{
+							conditionSetName: "condition_any_of_1",
+						},
 					},
 					&condition.Equals{
 						BaseCondition: condition.BaseCondition{
@@ -95,7 +99,9 @@ func TestNotOperator(t *testing.T) {
 								Value: "https",
 							},
 						},
-						ConditionSetName: "condition_any_of",
+						baseOperator: baseOperator{
+							conditionSetName: "condition_any_of",
+						},
 					},
 					&condition.Equals{
 						BaseCondition: condition.BaseCondition{

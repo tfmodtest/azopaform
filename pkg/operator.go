@@ -213,8 +213,10 @@ func init() {
 			return nil
 		}
 		return AnyOf{
-			Conditions:       body,
-			ConditionSetName: conditionName,
+			Conditions: body,
+			baseOperator: baseOperator{
+				conditionSetName: conditionName,
+			},
 		}
 	}
 	operatorFactories[shared.Not] = func(input any, ctx *shared.Context) shared.Rego {

@@ -10,20 +10,16 @@ import (
 var _ Operator = &AnyOf{}
 
 type AnyOf struct {
-	Conditions       []shared.Rego
-	ConditionSetName string
-}
-
-func (a AnyOf) GetConditionSetName() string {
-	return a.ConditionSetName
+	baseOperator
+	Conditions []shared.Rego
 }
 
 func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	var subSets []string
-	head := a.ConditionSetName
+	head := a.GetConditionSetName()
 	if _, ok := ctx.FieldNameReplacer(); ok {
-		head = a.ConditionSetName + "(x)"
+		head = a.GetConditionSetName() + "(x)"
 	}
 	for _, item := range a.Conditions {
 		if res != "" {

@@ -102,7 +102,9 @@ func TestOperations(t *testing.T) {
 								Value: "Basic",
 							},
 						},
-						ConditionSetName: "aaaaaaa",
+						baseOperator: baseOperator{
+							conditionSetName: "aaaaaaa",
+						},
 					},
 				},
 				baseOperator: baseOperator{
@@ -130,7 +132,9 @@ func TestOperations(t *testing.T) {
 								Value: "azurerm_app_service_environment",
 							},
 						},
-						ConditionSetName: "aaaaaaa",
+						baseOperator: baseOperator{
+							conditionSetName: "aaaaaaa",
+						},
 					},
 					AnyOf{
 						Conditions: []shared.Rego{
@@ -147,10 +151,14 @@ func TestOperations(t *testing.T) {
 								Value: "Basic",
 							},
 						},
-						ConditionSetName: "aaaaaaa",
+						baseOperator: baseOperator{
+							conditionSetName: "aaaaaaa",
+						},
 					},
 				},
-				ConditionSetName: "aaaaaaa",
+				baseOperator: baseOperator{
+					conditionSetName: "aaaaaaa",
+				},
 			},
 			expected: "aaaaaaa if {\naaaaaaa\naaaaaaa\n}\naaaaaaa if {\nr.type != \"azurerm_app_service_plan\"\nr.type != \"azurerm_app_service_environment\"\n}\naaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nr.change.after.sku[0].tier != \"Basic\"\n}",
 		},
@@ -194,7 +202,9 @@ func TestOperations(t *testing.T) {
 						Values: []string{"Basic", "Premium"},
 					},
 				},
-				ConditionSetName: "aaaaaaa",
+				baseOperator: baseOperator{
+					conditionSetName: "aaaaaaa",
+				},
 			},
 			expected: "aaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nnot r.change.after.sku[0].tier in [\"Basic\",\"Premium\"]\n}",
 		},
@@ -402,7 +412,9 @@ func TestNewPolicyRuleBody(t *testing.T) {
 									Value: "1.2",
 								},
 							},
-							ConditionSetName: "condition1",
+							baseOperator: baseOperator{
+								conditionSetName: "condition1",
+							},
 						},
 						AllOf{
 							Conditions: []shared.Rego{
@@ -428,7 +440,9 @@ func TestNewPolicyRuleBody(t *testing.T) {
 							},
 						},
 					},
-					ConditionSetName: "condition1",
+					baseOperator: baseOperator{
+						conditionSetName: "condition1",
+					},
 				},
 			},
 		},
@@ -466,7 +480,9 @@ func TestNewPolicyRuleBody(t *testing.T) {
 							Value: "1.2",
 						},
 					},
-					ConditionSetName: "condition1",
+					baseOperator: baseOperator{
+						conditionSetName: "condition1",
+					},
 				},
 			},
 		},
