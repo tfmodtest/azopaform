@@ -24,7 +24,9 @@ func (n NotOperator) Rego(ctx *shared.Context) (string, error) {
 			Conditions: []shared.Rego{
 				n.Body,
 			},
-			ConditionSetName: fmt.Sprintf("%s_%s", n.ConditionSetName, "negation"),
+			baseOperator: baseOperator{
+				conditionSetName: fmt.Sprintf("%s_%s", n.ConditionSetName, "negation"),
+			},
 		}
 	}
 	var bodyRes string

@@ -76,7 +76,9 @@ func TestNotOperator(t *testing.T) {
 		{
 			desc: "nested operator allow",
 			condition: &AllOf{
-				ConditionSetName: "condition_all_of",
+				baseOperator: baseOperator{
+					conditionSetName: "condition_all_of",
+				},
 				Conditions: []shared.Rego{
 					&AnyOf{
 						Conditions: []shared.Rego{

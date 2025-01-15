@@ -40,7 +40,9 @@ func TestOperations(t *testing.T) {
 								Value: "P1v3",
 							},
 						},
-						ConditionSetName: "aaaaa",
+						baseOperator: baseOperator{
+							conditionSetName: "aaaaa",
+						},
 					},
 				},
 				ConditionSetName: "aaaaaaaaa",
@@ -81,7 +83,9 @@ func TestOperations(t *testing.T) {
 								Value: true,
 							},
 						},
-						ConditionSetName: "aaaaa",
+						baseOperator: baseOperator{
+							conditionSetName: "aaaaa",
+						},
 					},
 					AnyOf{
 						Conditions: []shared.Rego{
@@ -101,7 +105,9 @@ func TestOperations(t *testing.T) {
 						ConditionSetName: "aaaaaaa",
 					},
 				},
-				ConditionSetName: "aaaaa",
+				baseOperator: baseOperator{
+					conditionSetName: "aaaaa",
+				},
 			},
 			expected: "aaaaa if {\naaaaa\nnot aaaaaaa\n}\naaaaa if {\nr.type == \"azurerm_app_service_plan\"\nr.change.after.sku_name\n}\naaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nr.change.after.sku[0].tier != \"Basic\"\n}",
 		},
@@ -165,7 +171,9 @@ func TestOperations(t *testing.T) {
 						Value: true,
 					},
 				},
-				ConditionSetName: "aaaaa",
+				baseOperator: baseOperator{
+					conditionSetName: "aaaaa",
+				},
 			},
 			expected: "aaaaa if {\nr.type == \"azurerm_app_service_plan\"\nr.change.after.sku_name\n}",
 		},
@@ -415,7 +423,9 @@ func TestNewPolicyRuleBody(t *testing.T) {
 									Value: true,
 								},
 							},
-							ConditionSetName: "condition1",
+							baseOperator: baseOperator{
+								conditionSetName: "condition1",
+							},
 						},
 					},
 					ConditionSetName: "condition1",
@@ -494,7 +504,9 @@ func TestNewPolicyRuleBody(t *testing.T) {
 							Value: false,
 						},
 					},
-					ConditionSetName: "condition1",
+					baseOperator: baseOperator{
+						conditionSetName: "condition1",
+					},
 				},
 			},
 		},

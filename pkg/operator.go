@@ -137,10 +137,10 @@ func init() {
 			return nil
 		}
 		return AllOf{
-			Conditions: body,
 			baseOperator: baseOperator{
-				ConditionSetName: conditionSetName,
+				conditionSetName: conditionSetName,
 			},
+			Conditions: body,
 		}
 	}
 	operatorFactories[shared.AnyOf] = func(input any, ctx *shared.Context) shared.Rego {

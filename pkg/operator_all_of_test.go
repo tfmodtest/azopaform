@@ -96,8 +96,10 @@ func TestAllOfOperator(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			sut := &AllOf{
-				Conditions:       c.conditions,
-				ConditionSetName: "condition0",
+				Conditions: c.conditions,
+				baseOperator: baseOperator{
+					conditionSetName: "condition0",
+				},
 			}
 			ctx := shared.NewContext()
 			actual, err := sut.Rego(ctx)
