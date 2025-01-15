@@ -8,22 +8,17 @@ import (
 var _ Operator = &AllOf{}
 
 type AllOf struct {
-	Conditions       []shared.Rego
-	ConditionSetName string
-}
-
-func (a AllOf) GetConditionSetName() string {
-	return a.ConditionSetName
+	baseOperator
+	Conditions []shared.Rego
 }
 
 func (a AllOf) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	var subSets []string
 
+	res = a.GetConditionSetName() + " " + shared.IfCondition + " {"
 	if _, ok := ctx.FieldNameReplacer(); ok {
-		res = a.ConditionSetName + "(x)" + " " + shared.IfCondition + " {"
-	} else {
-		res = a.ConditionSetName + " " + shared.IfCondition + " {"
+		res = a.GetConditionSetName() + "(x)" + " " + shared.IfCondition + " {"
 	}
 
 	for _, item := range a.Conditions {

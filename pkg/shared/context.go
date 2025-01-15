@@ -14,11 +14,6 @@ type Context struct {
 }
 
 func NewContext() *Context {
-	//contextMap := make(map[string]stacks.Stack)
-	//contextMap["resourceType"] = arraystack.New()
-	//contextMap["fieldNameReplacer"] = arraystack.New()
-	//contextMap["conditionNameCounter"] = arraystack.New()
-	//ctx := context.WithValue(context.Background(), "context", contextMap)
 	return &Context{
 		Context:                context.Background(),
 		resourceTypeStack:      arraystack.New(),
@@ -64,7 +59,5 @@ func (c *Context) FieldNameReplacer() (string, bool) {
 }
 
 func (c *Context) PushResourceType(rt string) {
-	//contextMap := c.Context.Value("context").(map[string]stacks.Stack)
-	//contextMap["resourceType"].Push(rt)
 	c.resourceTypeStack.Push(rt)
 }
