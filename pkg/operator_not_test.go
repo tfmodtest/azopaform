@@ -118,8 +118,10 @@ func TestNotOperator(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			sut := &NotOperator{
-				Body:             c.condition,
-				ConditionSetName: "condition0",
+				Body: c.condition,
+				baseOperator: baseOperator{
+					conditionSetName: "condition0",
+				},
 			}
 			ctx := shared.NewContext()
 			actual, err := sut.Rego(ctx)

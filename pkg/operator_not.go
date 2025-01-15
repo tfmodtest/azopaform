@@ -9,12 +9,8 @@ import (
 var _ Operator = &NotOperator{}
 
 type NotOperator struct {
-	Body             shared.Rego
-	ConditionSetName string
-}
-
-func (n NotOperator) GetConditionSetName() string {
-	return n.ConditionSetName
+	baseOperator
+	Body shared.Rego
 }
 
 func (n NotOperator) Rego(ctx *shared.Context) (string, error) {
@@ -25,7 +21,7 @@ func (n NotOperator) Rego(ctx *shared.Context) (string, error) {
 				n.Body,
 			},
 			baseOperator: baseOperator{
-				conditionSetName: fmt.Sprintf("%s_%s", n.ConditionSetName, "negation"),
+				conditionSetName: fmt.Sprintf("%s_%s", n.GetConditionSetName(), "negation"),
 			},
 		}
 	}
@@ -45,5 +41,5 @@ func (n NotOperator) Rego(ctx *shared.Context) (string, error) {
   not %s
 }
 
-%s`, n.ConditionSetName, bodyRes, subSet), nil
+%s`, n.GetConditionSetName(), bodyRes, subSet), nil
 }

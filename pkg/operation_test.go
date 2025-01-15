@@ -219,7 +219,9 @@ func TestOperations(t *testing.T) {
 					},
 					Value: "Standard",
 				},
-				ConditionSetName: "aaa",
+				baseOperator: baseOperator{
+					conditionSetName: "aaa",
+				},
 			},
 			expected: "aaa if {\nr.change.after.sku[0].tier == \"Standard\"\n}",
 		},
@@ -356,7 +358,9 @@ func TestNewPolicyRuleBody(t *testing.T) {
 						},
 						Value: "*",
 					},
-					ConditionSetName: "condition1",
+					baseOperator: baseOperator{
+						conditionSetName: "condition1",
+					},
 				},
 			},
 		},

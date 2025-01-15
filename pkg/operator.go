@@ -261,8 +261,10 @@ func init() {
 			return nil
 		}
 		return NotOperator{
-			Body:             body,
-			ConditionSetName: conditionName,
+			Body: body,
+			baseOperator: baseOperator{
+				conditionSetName: conditionName,
+			},
 		}
 	}
 	operatorFactories[shared.Where] = func(input any, ctx *shared.Context) shared.Rego {
