@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"context"
 	"fmt"
 	"github.com/prashantv/gostub"
 	"github.com/spf13/afero"
@@ -305,25 +304,37 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 
 	expectedDenyRego := `package main
 
-import rego.v1
+import future.keywords.if
+import future.keywords.in
+tfplan := input if {
+     input.terraform_version
+} else := input.plan if {
+     input.plan.terraform_version
+}
 
 r := tfplan.resource_changes[_]
 
 warn if {
- condition1
+ condition3
 }
-condition1 if {
+condition3 if {
 r.type == "azurerm_service_plan"
-condition1
+condition2
 }
-condition1 if {
+condition2 if {
 not r.change.after.sku[0].tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]
 not r.change.after.sku_name in ["B1","B2","B3","S1","S2","S3","EP1","EP2","EP3","P1","P2","P3","P1V2","P2V2","P3V2","P0V3","P1V3","P2V3","P3V3","P1MV3","P2MV3","P3MV3","P4MV3","P5MV3","I1","I2","I3","I1V2","I2V2","I3V2","I4V2","I5V2","I6V2","WS1","WS2","WS3"]
 }`
 
 	expectedCountRego := `package main
 
-import rego.v1
+import future.keywords.if
+import future.keywords.in
+tfplan := input if {
+     input.terraform_version
+} else := input.plan if {
+     input.plan.terraform_version
+}
 
 r := tfplan.resource_changes[_]
 
@@ -476,8 +487,8 @@ r.change.after.cors_configuration[0].allowed_origins[0] != "*"
 			}
 			mockFs := fakeFs(files)
 			counter := 0
-			stub := gostub.Stub(&NeoConditionNameGenerator, func(ctx context.Context) (string, error) {
-				newName := fmt.Sprintf("BaseCondition%d", counter)
+			stub := gostub.Stub(&NeoConditionNameGenerator, func(ctx *shared.Context) (string, error) {
+				newName := fmt.Sprintf("condition%d", counter)
 				counter++
 				return newName, nil
 			}).Stub(&Fs, mockFs)
