@@ -21,7 +21,7 @@ var subjectFactories = map[string]func(input any, ctx *shared.Context) shared.Re
 		}
 	},
 	"count": func(input any, ctx *shared.Context) shared.Rego {
-		f := operatorFactories[shared.Count]
+		f := otherFactories[shared.Count]
 		countConditionSet := f(input, ctx)
 		//fmt.Printf("countConditionSet: %v\n", countConditionSet)
 		return Count{

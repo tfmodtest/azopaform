@@ -69,48 +69,22 @@ func NewPolicyRuleBody(input map[string]any, ctx *shared.Context) *PolicyRuleBod
 	var cv any
 	for key, conditionValue := range conditionMap {
 		key = strings.ToLower(key)
+		operatorFactory, ok := operators[key]
+		if ok {
+			conditionSet := operatorFactory(conditionValue, ctx)
+			return &PolicyRuleBody{
+				Then:   nil,
+				IfBody: conditionSet,
+			}
+		}
 		if key == shared.Count {
-			operationFactory, ok := operatorFactories[key]
+			operationFactory, ok := otherFactories[key]
 			if !ok {
 				panic(fmt.Sprintf("unknown operation: %s", key))
 			}
-			//fmt.Printf("the BaseCondition value is %v\n", conditionValue)
 			conditionSet := operationFactory(conditionValue, ctx)
 			subject = conditionSet
 			continue
-		}
-		if key == shared.AllOf {
-			operationFactory, ok := operatorFactories[key]
-			if !ok {
-				panic(fmt.Sprintf("unknown operation: %s", key))
-			}
-			conditionSet := operationFactory(conditionValue, ctx)
-			return &PolicyRuleBody{
-				Then:   nil,
-				IfBody: conditionSet,
-			}
-		}
-		if key == shared.AnyOf {
-			operationFactory, ok := operatorFactories[key]
-			if !ok {
-				panic(fmt.Sprintf("unknown operation: %s", key))
-			}
-			conditionSet := operationFactory(conditionValue, ctx)
-			return &PolicyRuleBody{
-				Then:   nil,
-				IfBody: conditionSet,
-			}
-		}
-		if key == shared.Not {
-			operationFactory, ok := operatorFactories[key]
-			if !ok {
-				panic(fmt.Sprintf("unknown operation: %s", key))
-			}
-			conditionSet := operationFactory(conditionValue, ctx)
-			return &PolicyRuleBody{
-				Then:   nil,
-				IfBody: conditionSet,
-			}
 		}
 		if key == shared.Field {
 			if conditionValue == shared.TypeOfResource {
@@ -205,30 +179,10 @@ func (t *ThenBody) Action(result, conditionName string, rule *Rule) (string, err
 
 type PolicyRuleParameterType string
 
-const (
-	PolicyRuleParameterTypeString   PolicyRuleParameterType = "string"
-	PolicyRuleParameterTypeArray    PolicyRuleParameterType = "array"
-	PolicyRuleParameterTypeObject   PolicyRuleParameterType = "object"
-	PolicyRuleParameterTypeBool     PolicyRuleParameterType = "boolean"
-	PolicyRuleParameterTypeInteger  PolicyRuleParameterType = "integer"
-	PolicyRuleParameterTypeFloat    PolicyRuleParameterType = "float"
-	PolicyRuleParameterTypeDateTime PolicyRuleParameterType = "dateTime"
-)
-
 type PolicyRuleParameterMetaData struct {
 	Description string
 	DisplayName string
 	Deprecated  bool
-}
-
-func NewPolicyRuleParameterMetaData(input map[string]any) *PolicyRuleParameterMetaData {
-	if input == nil {
-		return nil
-	}
-	return &PolicyRuleParameterMetaData{
-		Deprecated:  input["deprecated"].(bool),
-		Description: input["description"].(string),
-	}
 }
 
 type PolicyRuleParameter struct {

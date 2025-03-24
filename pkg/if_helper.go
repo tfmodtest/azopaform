@@ -17,41 +17,20 @@ func (i *If) Rego(ctx *shared.Context) (string, error) {
 	var cv any
 	for key, conditionValue := range conditionMap {
 		key = strings.ToLower(key)
+		operatorFactory, ok := operators[key]
+		if ok {
+			conditionSet := operatorFactory(conditionValue, ctx)
+			i.rego = conditionSet
+			return i.rego.Rego(ctx)
+		}
 		if key == shared.Count {
-			operationFactory, ok := operatorFactories[key]
+			operationFactory, ok := otherFactories[key]
 			if !ok {
 				panic(fmt.Sprintf("unknown operation: %s", key))
 			}
 			conditionSet := operationFactory(conditionValue, ctx)
 			subject = conditionSet
 			continue
-		}
-		if key == shared.AllOf {
-			operationFactory, ok := operatorFactories[key]
-			if !ok {
-				panic(fmt.Sprintf("unknown operation: %s", key))
-			}
-			conditionSet := operationFactory(conditionValue, ctx)
-			i.rego = conditionSet
-			return i.rego.Rego(ctx)
-		}
-		if key == shared.AnyOf {
-			operationFactory, ok := operatorFactories[key]
-			if !ok {
-				panic(fmt.Sprintf("unknown operation: %s", key))
-			}
-			conditionSet := operationFactory(conditionValue, ctx)
-			i.rego = conditionSet
-			return i.rego.Rego(ctx)
-		}
-		if key == shared.Not {
-			operationFactory, ok := operatorFactories[key]
-			if !ok {
-				panic(fmt.Sprintf("unknown operation: %s", key))
-			}
-			conditionSet := operationFactory(conditionValue, ctx)
-			i.rego = conditionSet
-			return i.rego.Rego(ctx)
 		}
 		if key == shared.Field {
 			if conditionValue == shared.TypeOfResource {
