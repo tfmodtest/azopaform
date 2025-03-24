@@ -23,7 +23,6 @@ var subjectFactories = map[string]func(input any, ctx *shared.Context) shared.Re
 	"count": func(input any, ctx *shared.Context) shared.Rego {
 		f := otherFactories[shared.Count]
 		countConditionSet := f(input, ctx)
-		//fmt.Printf("countConditionSet: %v\n", countConditionSet)
 		return Count{
 			Count:        countConditionSet.(CountOperator).CountExp,
 			ConditionSet: countConditionSet.(CountOperator).Where,
@@ -51,15 +50,4 @@ type Value struct {
 
 func (v Value) Rego(ctx *shared.Context) (string, error) {
 	return v.Value, nil
-}
-
-var _ shared.Rego = &Count{}
-
-type Count struct {
-	Count        string
-	ConditionSet shared.Rego
-}
-
-func (c Count) Rego(ctx *shared.Context) (string, error) {
-	return c.Count, nil
 }
