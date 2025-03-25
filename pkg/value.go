@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+func NewSubject(subjectKey string, body any, ctx *shared.Context) shared.Rego {
+	return subjectFactories[subjectKey](body, ctx)
+}
+
 var subjectFactories = map[string]func(input any, ctx *shared.Context) shared.Rego{
 	"field": func(input any, ctx *shared.Context) shared.Rego {
 		name := input.(string)
@@ -21,11 +25,10 @@ var subjectFactories = map[string]func(input any, ctx *shared.Context) shared.Re
 		}
 	},
 	"count": func(input any, ctx *shared.Context) shared.Rego {
-		f := otherFactories[shared.Count]
-		countConditionSet := f(input, ctx)
+		countConditionSet := otherFactories[shared.Count](input, ctx).(CountOperator)
 		return Count{
-			Count:        countConditionSet.(CountOperator).CountExp,
-			ConditionSet: countConditionSet.(CountOperator).Where,
+			Count:        countConditionSet.CountExp,
+			ConditionSet: countConditionSet.Where,
 		}
 	},
 }

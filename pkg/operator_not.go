@@ -46,8 +46,7 @@ func NewNot(input any, ctx *shared.Context) shared.Rego {
 			}
 			subjectKey = k
 		}
-		fmt.Printf("subject key is %v\n", subjectKey)
-		subject = subjectFactories[subjectKey](itemMap[subjectKey], ctx)
+		subject = NewSubject(subjectKey, itemMap[subjectKey], ctx)
 		body = cf(subject, itemMap[conditionKey])
 	} else if of != nil {
 		body = of(operatorValue, ctx)

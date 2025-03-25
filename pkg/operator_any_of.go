@@ -65,10 +65,10 @@ func NewAnyOf(input any, ctx *shared.Context) shared.Rego {
 				if err != nil {
 					return nil
 				}
-				body = append(body, cf(subjectFactories[subjectKey](subjectItem, ctx), translatedType))
+				body = append(body, cf(NewSubject(subjectKey, subjectItem, ctx), translatedType))
 				continue
 			}
-			subject := subjectFactories[subjectKey](subjectItem, ctx)
+			subject := NewSubject(subjectKey, subjectItem, ctx)
 			if reflect.TypeOf(subject) == reflect.TypeOf(Count{}) {
 				body = append(body, cf(subject, itemMap[conditionKey]))
 				body = append(body, subject.(Count).ConditionSet)

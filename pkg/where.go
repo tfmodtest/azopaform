@@ -50,7 +50,7 @@ func NewWhere(input any, ctx *shared.Context) shared.Rego {
 			}
 			subjectKey = k
 		}
-		subject := subjectFactories[subjectKey](itemMap[subjectKey], ctx)
+		subject := NewSubject(subjectKey, itemMap[subjectKey], ctx)
 		body = append(body, cf(subject, itemMap[conditionKey]))
 	} else if of != nil {
 		body = append(body, of(operatorValue, ctx))

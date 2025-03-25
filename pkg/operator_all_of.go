@@ -25,32 +25,25 @@ func NewAllOf(input any, ctx *shared.Context) shared.Rego {
 		var subjectKey string
 		var of func(any, *shared.Context) shared.Rego
 		var operatorValue any
-		var containsTypeOfResource bool
-		for k, v := range itemMap {
-			if k == shared.Field && v == shared.TypeOfResource {
-				containsTypeOfResource = true
-			}
+		for k, _ := range itemMap {
 			if f, ok := condition.ConditionFactory[strings.ToLower(k)]; ok {
 				cf = f
 				conditionKey = k
 				continue
 			}
 		}
+		if v, ok := itemMap[shared.Field]; ok && v == shared.TypeOfResource {
+			resourceType, ok := itemMap["equals"].(string)
+			if !ok {
+				panic("resource type without value")
+			}
+			ctx.PushResourceType(resourceType)
+		}
 		for k, v := range itemMap {
 			if f, ok := operators[strings.ToLower(k)]; ok {
 				of = f
 				operatorValue = v
 				continue
-			}
-		}
-		if containsTypeOfResource {
-			for k, v := range itemMap {
-				if k == shared.Field && v == shared.TypeOfResource {
-					continue
-				}
-				if reflect.TypeOf(v).Kind() == reflect.String {
-					ctx.PushResourceType(v.(string))
-				}
 			}
 		}
 		if cf != nil {
@@ -67,10 +60,9 @@ func NewAllOf(input any, ctx *shared.Context) shared.Rego {
 					rawType := itemMap[conditionKey]
 					translatedType, err := ResourceTypeParser(rawType.(string))
 					if err != nil {
-						fmt.Printf("error in resource type parser: %v\n", err)
 						return nil
 					}
-					body = append(body, cf(subjectFactories[subjectKey](subjectItem, ctx), translatedType))
+					body = append(body, cf(NewSubject(subjectKey, subjectItem, ctx), translatedType))
 					continue
 				} else {
 					rawTypes := itemMap[conditionKey]
@@ -83,10 +75,10 @@ func NewAllOf(input any, ctx *shared.Context) shared.Rego {
 						}
 						translatedTypes = append(translatedTypes, translatedType)
 					}
-					body = append(body, cf(subjectFactories[subjectKey](subjectItem, ctx), translatedTypes))
+					body = append(body, cf(NewSubject(subjectKey, subjectItem, ctx), translatedTypes))
 				}
 			}
-			subject := subjectFactories[subjectKey](subjectItem, ctx)
+			subject := NewSubject(subjectKey, subjectItem, ctx)
 			if reflect.TypeOf(subject) == reflect.TypeOf(Count{}) {
 				body = append(body, cf(subject, itemMap[conditionKey]))
 				body = append(body, subject.(Count).ConditionSet)
@@ -97,7 +89,6 @@ func NewAllOf(input any, ctx *shared.Context) shared.Rego {
 			body = append(body, of(operatorValue, ctx))
 		}
 	}
-	//conditionSetName := conditionNameGenerator(andConditionLen, charNum)
 	conditionSetName, err := NeoConditionNameGenerator(ctx)
 	if err != nil {
 		fmt.Printf("error in BaseCondition name generator: %v\n", err)
