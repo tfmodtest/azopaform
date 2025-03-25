@@ -37,7 +37,7 @@ func NewWhere(input any, ctx *shared.Context) shared.Rego {
 			operatorValue = v
 			continue
 		}
-		if f, ok := otherFactories[k]; ok {
+		if f, ok := valueFactories[k]; ok {
 			of = f
 			operatorValue = v
 			continue

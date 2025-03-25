@@ -5,20 +5,18 @@ import (
 	"strings"
 )
 
-var _ shared.Rego = &CountOperator{}
+var _ shared.Rego = CountOperator{}
 
 type CountOperator struct {
 	Where    shared.Rego
 	CountExp string
 }
 
-func NewCountOperator(input any, ctx *shared.Context) shared.Rego {
+func NewCountOperator(input any, ctx *shared.Context) CountOperator {
 	items := input.(map[string]any)
 	var whereBody shared.Rego
-	if items[shared.Where] != nil {
-		whereMap := items[shared.Where].(map[string]any)
-		of := otherFactories[shared.Where]
-		whereBody = of(whereMap, ctx)
+	if where, ok := items[shared.Where]; ok {
+		whereBody = NewWhere(where, ctx)
 	}
 	fieldName := items[shared.Field]
 	if items[shared.Field] == nil {

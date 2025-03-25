@@ -9,28 +9,32 @@ func NewSubject(subjectKey string, body any, ctx *shared.Context) shared.Rego {
 	return subjectFactories[subjectKey](body, ctx)
 }
 
-var subjectFactories = map[string]func(input any, ctx *shared.Context) shared.Rego{
-	"field": func(input any, ctx *shared.Context) shared.Rego {
-		name := input.(string)
-		name = strings.ReplaceAll(name, "[*]", "[x]")
-		return FieldValue{
-			Name: name,
-		}
-	},
-	"value": func(input any, ctx *shared.Context) shared.Rego {
-		value := input.(string)
-		value = strings.ReplaceAll(value, "[*]", "[x]")
-		return Value{
-			Value: value,
-		}
-	},
-	"count": func(input any, ctx *shared.Context) shared.Rego {
-		countConditionSet := otherFactories[shared.Count](input, ctx).(CountOperator)
-		return Count{
-			Count:        countConditionSet.CountExp,
-			ConditionSet: countConditionSet.Where,
-		}
-	},
+var subjectFactories map[string]func(input any, ctx *shared.Context) shared.Rego
+
+func init() {
+	subjectFactories = map[string]func(input any, ctx *shared.Context) shared.Rego{
+		"field": func(input any, ctx *shared.Context) shared.Rego {
+			name := input.(string)
+			name = strings.ReplaceAll(name, "[*]", "[x]")
+			return FieldValue{
+				Name: name,
+			}
+		},
+		"value": func(input any, ctx *shared.Context) shared.Rego {
+			value := input.(string)
+			value = strings.ReplaceAll(value, "[*]", "[x]")
+			return Value{
+				Value: value,
+			}
+		},
+		"count": func(input any, ctx *shared.Context) shared.Rego {
+			countConditionSet := NewCountOperator(input, ctx)
+			return Count{
+				Count:        countConditionSet.CountExp,
+				ConditionSet: countConditionSet.Where,
+			}
+		},
+	}
 }
 
 var _ shared.Rego = &FieldValue{}

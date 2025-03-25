@@ -78,12 +78,7 @@ func NewPolicyRuleBody(input map[string]any, ctx *shared.Context) *PolicyRuleBod
 			}
 		}
 		if key == shared.Count {
-			operationFactory, ok := otherFactories[key]
-			if !ok {
-				panic(fmt.Sprintf("unknown operation: %s", key))
-			}
-			conditionSet := operationFactory(conditionValue, ctx)
-			subject = conditionSet
+			subject = NewCountOperator(conditionValue, ctx)
 			continue
 		}
 		if key == shared.Field {

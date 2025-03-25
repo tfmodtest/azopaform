@@ -10,8 +10,12 @@ type Operator interface {
 	GetConditionSetName() string
 }
 
-var otherFactories map[string]func(input any, ctx *shared.Context) shared.Rego
+var valueFactories map[string]func(input any, ctx *shared.Context) shared.Rego
 var operators map[string]func(input any, ctx *shared.Context) shared.Rego
+
+func NewValue(valueType string, body any, ctx *shared.Context) shared.Rego {
+	return valueFactories[valueType](body, ctx)
+}
 
 func init() {
 	operators = map[string]func(input any, ctx *shared.Context) shared.Rego{
@@ -19,8 +23,10 @@ func init() {
 		shared.AnyOf: NewAnyOf,
 		shared.Not:   NewNot,
 	}
-	otherFactories = map[string]func(input any, ctx *shared.Context) shared.Rego{
-		shared.Count: NewCountOperator,
+	valueFactories = map[string]func(input any, ctx *shared.Context) shared.Rego{
+		shared.Count: func(input any, ctx *shared.Context) shared.Rego {
+			return NewCountOperator(input, ctx)
+		},
 		shared.Where: NewWhere,
 	}
 }

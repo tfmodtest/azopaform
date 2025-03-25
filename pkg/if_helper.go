@@ -24,12 +24,7 @@ func (i *If) Rego(ctx *shared.Context) (string, error) {
 			return i.rego.Rego(ctx)
 		}
 		if key == shared.Count {
-			operationFactory, ok := otherFactories[key]
-			if !ok {
-				panic(fmt.Sprintf("unknown operation: %s", key))
-			}
-			conditionSet := operationFactory(conditionValue, ctx)
-			subject = conditionSet
+			subject = NewWhere(conditionValue, ctx)
 			continue
 		}
 		if key == shared.Field {
