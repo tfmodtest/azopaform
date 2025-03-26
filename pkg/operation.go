@@ -41,3 +41,20 @@ var NeoConditionNameGenerator = func(ctx *shared.Context) (string, error) {
 	conditionName := "condition" + fmt.Sprintf("%d", index)
 	return conditionName, nil
 }
+
+func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, baseOperator, error) {
+	items := input.([]any)
+	var body []shared.Rego
+	for _, item := range items {
+		itemMap := item.(map[string]any)
+		rego := NewOperationOrCondition(itemMap, ctx)
+		body = append(body, rego)
+	}
+	conditionSetName, err := NeoConditionNameGenerator(ctx)
+	if err != nil {
+		return nil, baseOperator{}, err
+	}
+	return body, baseOperator{
+		conditionSetName: conditionSetName,
+	}, nil
+}

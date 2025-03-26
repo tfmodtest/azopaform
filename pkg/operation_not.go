@@ -2,9 +2,7 @@ package pkg
 
 import (
 	"fmt"
-	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
-	"strings"
 )
 
 var _ Operation = &NotOperator{}
@@ -16,43 +14,15 @@ type NotOperator struct {
 
 func NewNot(input any, ctx *shared.Context) shared.Rego {
 	itemMap := input.(map[string]any)
-	fmt.Printf("item map is %v\n", itemMap)
-	var cf func(shared.Rego, any) shared.Rego
-	var conditionKey string
-	var subjectKey string
-	var subject shared.Rego
-	var body shared.Rego
-	for k, _ := range itemMap {
-		if f, ok := condition.ConditionFactory[strings.ToLower(k)]; ok {
-			cf = f
-			conditionKey = k
-			continue
-		}
-	}
-	if cf != nil {
-		for k, _ := range itemMap {
-			if k == conditionKey {
-				continue
-			}
-			subjectKey = k
-		}
-		subject = NewSubject(subjectKey, itemMap[subjectKey], ctx)
-		body = cf(subject, itemMap[conditionKey])
-	}
-	for k, v := range itemMap {
-		if operation := NewOperation(strings.ToLower(k), v, ctx); operation != nil {
-			body = operation
-			break
-		}
-	}
-	conditionName, err := NeoConditionNameGenerator(ctx)
+	body := NewOperationOrCondition(itemMap, ctx)
+	conditionSetName, err := NeoConditionNameGenerator(ctx)
 	if err != nil {
-		return nil
+		panic(err)
 	}
 	return NotOperator{
 		Body: body,
 		baseOperator: baseOperator{
-			conditionSetName: conditionName,
+			conditionSetName: conditionSetName,
 		},
 	}
 }

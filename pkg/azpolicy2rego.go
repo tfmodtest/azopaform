@@ -101,7 +101,9 @@ func extractSubject(conditionMap map[string]any, ctx *shared.Context) shared.Reg
 		}
 		if key == shared.Field {
 			if conditionValue == shared.TypeOfResource {
-				ctx.PushResourceType(conditionValue.(string))
+				if resourceType, ok := conditionMap["equals"].(string); ok {
+					ctx.PushResourceType(resourceType)
+				}
 			}
 			return NewSubject(shared.Field, conditionValue, ctx)
 		}

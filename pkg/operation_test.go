@@ -679,13 +679,13 @@ func TestNewPolicyRuleBody(t *testing.T) {
 		{
 			name: "Less",
 			input: map[string]any{
-				"field": "type",
+				"field": "number",
 				"less":  10,
 			},
 			expected: &PolicyRuleBody{
 				IfBody: condition.Less{
 					BaseCondition: condition.BaseCondition{
-						Subject: &FieldValue{Name: "type"},
+						Subject: &FieldValue{Name: "number"},
 					},
 					Value: 10,
 				},
@@ -694,13 +694,13 @@ func TestNewPolicyRuleBody(t *testing.T) {
 		{
 			name: "LessOrEquals",
 			input: map[string]any{
-				"field":        "type",
+				"field":        "number",
 				"lessOrEquals": 10,
 			},
 			expected: &PolicyRuleBody{
 				IfBody: condition.LessOrEquals{
 					BaseCondition: condition.BaseCondition{
-						Subject: &FieldValue{Name: "type"},
+						Subject: &FieldValue{Name: "number"},
 					},
 					Value: 10,
 				},
@@ -709,13 +709,13 @@ func TestNewPolicyRuleBody(t *testing.T) {
 		{
 			name: "Greater",
 			input: map[string]any{
-				"field":   "type",
+				"field":   "number",
 				"greater": 10,
 			},
 			expected: &PolicyRuleBody{
 				IfBody: condition.Greater{
 					BaseCondition: condition.BaseCondition{
-						Subject: &FieldValue{Name: "type"},
+						Subject: &FieldValue{Name: "number"},
 					},
 					Value: 10,
 				},
@@ -724,13 +724,13 @@ func TestNewPolicyRuleBody(t *testing.T) {
 		{
 			name: "GreaterOrEquals",
 			input: map[string]any{
-				"field":           "type",
+				"field":           "number",
 				"greaterOrEquals": 10,
 			},
 			expected: &PolicyRuleBody{
 				IfBody: condition.GreaterOrEquals{
 					BaseCondition: condition.BaseCondition{
-						Subject: &FieldValue{Name: "type"},
+						Subject: &FieldValue{Name: "number"},
 					},
 					Value: 10,
 				},
