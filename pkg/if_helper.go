@@ -17,25 +17,23 @@ func (i *If) Rego(ctx *shared.Context) (string, error) {
 	var cv any
 	for key, conditionValue := range conditionMap {
 		key = strings.ToLower(key)
-		operatorFactory, ok := operators[key]
-		if ok {
-			conditionSet := operatorFactory(conditionValue, ctx)
-			i.rego = conditionSet
+		operation := NewOperation(key, conditionValue, ctx)
+		if operation != nil {
+			i.rego = operation
 			return i.rego.Rego(ctx)
 		}
 		if key == shared.Count {
-			subject = NewWhere(conditionValue, ctx)
 			continue
 		}
 		if key == shared.Field {
 			if conditionValue == shared.TypeOfResource {
 				ctx.PushResourceType(conditionValue.(string))
 			}
-			subject = OperationField(conditionValue.(string))
+			subject = NewSubject(shared.Field, conditionValue, ctx)
 			continue
 		}
 		if key == shared.Value {
-			subject = OperationValue(conditionValue.(string))
+			subject = NewSubject(shared.Value, conditionValue, ctx)
 			continue
 		}
 		factory, ok := condition.ConditionFactory[key]
@@ -50,7 +48,7 @@ func (i *If) Rego(ctx *shared.Context) (string, error) {
 }
 
 func (i *If) ConditionName(defaultConditionName string) string {
-	if operator, ok := i.rego.(Operator); ok {
+	if operator, ok := i.rego.(Operation); ok {
 		return operator.GetConditionSetName()
 	}
 	return defaultConditionName

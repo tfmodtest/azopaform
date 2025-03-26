@@ -8,30 +8,31 @@ import (
 var _ shared.Rego = CountOperator{}
 
 type CountOperator struct {
-	Where    shared.Rego
+	Where    Operation
 	CountExp string
 }
 
 func NewCountOperator(input any, ctx *shared.Context) CountOperator {
 	items := input.(map[string]any)
-	var whereBody shared.Rego
-	if where, ok := items[shared.Where]; ok {
+
+	var whereBody Operation
+	if where, ok := items[shared.Where].(map[string]any); ok {
 		whereBody = NewWhere(where, ctx)
 	}
 	fieldName := items[shared.Field]
 	if items[shared.Field] == nil {
 		fieldName = items[shared.Value]
 	}
-	countField, _, err := shared.FieldNameProcessor(fieldName.(string), ctx)
+	countField, err := shared.FieldNameProcessor(fieldName.(string), ctx)
 	if err != nil {
 		countField = items[shared.Field].(string)
 	}
 	countFieldConverted := replaceIndex(countField)
 	var countBody string
 	if whereBody != nil {
-		countBody = shared.Count + "(" + "{" + "x" + "|" + countFieldConverted + ";" + whereBody.(WhereOperator).ConditionSetName + "(x)" + "}" + ")"
+		countBody = shared.Count + "({x|x:=" + countFieldConverted + ";" + whereBody.GetConditionSetName() + "(x)})"
 	} else {
-		countBody = shared.Count + "(" + "{" + "x" + "|" + countFieldConverted + "}" + ")"
+		countBody = shared.Count + "({x|x:=" + countFieldConverted + "})"
 	}
 	countBody = strings.Replace(countBody, "*", "x", -1)
 	return CountOperator{

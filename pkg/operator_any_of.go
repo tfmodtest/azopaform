@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var _ Operator = &AnyOf{}
+var _ Operation = &AnyOf{}
 
 type AnyOf struct {
 	baseOperator
@@ -23,8 +23,6 @@ func NewAnyOf(input any, ctx *shared.Context) shared.Rego {
 		var cf func(shared.Rego, any) shared.Rego
 		var conditionKey string
 		var subjectKey string
-		var of func(any, *shared.Context) shared.Rego
-		var operatorValue any
 		var containsTypeOfResource bool
 		for k, v := range itemMap {
 			if k == shared.Field && v == shared.TypeOfResource {
@@ -33,13 +31,6 @@ func NewAnyOf(input any, ctx *shared.Context) shared.Rego {
 			if f, ok := condition.ConditionFactory[strings.ToLower(k)]; ok {
 				cf = f
 				conditionKey = k
-				continue
-			}
-		}
-		for k, v := range itemMap {
-			if f, ok := operators[strings.ToLower(k)]; ok {
-				of = f
-				operatorValue = v
 				continue
 			}
 		}
@@ -61,11 +52,7 @@ func NewAnyOf(input any, ctx *shared.Context) shared.Rego {
 			subjectItem := itemMap[subjectKey]
 			if subjectKey == shared.Field && subjectItem == shared.TypeOfResource {
 				rawType := itemMap[conditionKey]
-				translatedType, err := ResourceTypeParser(rawType.(string))
-				if err != nil {
-					return nil
-				}
-				body = append(body, cf(NewSubject(subjectKey, subjectItem, ctx), translatedType))
+				body = append(body, cf(NewSubject(subjectKey, subjectItem, ctx), rawType))
 				continue
 			}
 			subject := NewSubject(subjectKey, subjectItem, ctx)
@@ -75,11 +62,14 @@ func NewAnyOf(input any, ctx *shared.Context) shared.Rego {
 			} else {
 				body = append(body, cf(subject, itemMap[conditionKey]))
 			}
-		} else if of != nil {
-			body = append(body, of(operatorValue, ctx))
+		}
+		for k, v := range itemMap {
+			if operation := NewOperation(strings.ToLower(k), v, ctx); operation != nil {
+				body = append(body, operation)
+				break
+			}
 		}
 	}
-	//conditionName := conditionNameGenerator(orConditionLen, charNum)
 	conditionName, err := NeoConditionNameGenerator(ctx)
 	if err != nil {
 		return nil
@@ -103,13 +93,11 @@ func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
 		if res != "" {
 			res = res + "\n"
 		}
-		if _, ok := item.(Operator); ok {
-			if reflect.TypeOf(item) != reflect.TypeOf(WhereOperator{}) {
-				if _, ok := ctx.FieldNameReplacer(); ok {
-					res += head + " if {" + item.(Operator).GetConditionSetName() + "(x)}"
-				} else {
-					res += head + " if {" + item.(Operator).GetConditionSetName() + "}"
-				}
+		if _, ok := item.(Operation); ok {
+			if _, ok := ctx.FieldNameReplacer(); ok {
+				res += head + " if {" + item.(Operation).GetConditionSetName() + "(x)}"
+			} else {
+				res += head + " if {" + item.(Operation).GetConditionSetName() + "}"
 			}
 			subSet, err := item.Rego(ctx)
 			if err != nil {

@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
-	"reflect"
 	"strings"
 )
 
-var _ Operator = &NotOperator{}
+var _ Operation = &NotOperator{}
 
 type NotOperator struct {
 	baseOperator
@@ -21,21 +20,12 @@ func NewNot(input any, ctx *shared.Context) shared.Rego {
 	var cf func(shared.Rego, any) shared.Rego
 	var conditionKey string
 	var subjectKey string
-	var of func(any, *shared.Context) shared.Rego
 	var subject shared.Rego
 	var body shared.Rego
-	var operatorValue any
 	for k, _ := range itemMap {
 		if f, ok := condition.ConditionFactory[strings.ToLower(k)]; ok {
 			cf = f
 			conditionKey = k
-			continue
-		}
-	}
-	for k, v := range itemMap {
-		if f, ok := operators[strings.ToLower(k)]; ok {
-			of = f
-			operatorValue = v
 			continue
 		}
 	}
@@ -48,8 +38,12 @@ func NewNot(input any, ctx *shared.Context) shared.Rego {
 		}
 		subject = NewSubject(subjectKey, itemMap[subjectKey], ctx)
 		body = cf(subject, itemMap[conditionKey])
-	} else if of != nil {
-		body = of(operatorValue, ctx)
+	}
+	for k, v := range itemMap {
+		if operation := NewOperation(strings.ToLower(k), v, ctx); operation != nil {
+			body = operation
+			break
+		}
 	}
 	conditionName, err := NeoConditionNameGenerator(ctx)
 	if err != nil {
@@ -64,7 +58,7 @@ func NewNot(input any, ctx *shared.Context) shared.Rego {
 }
 
 func (n NotOperator) Rego(ctx *shared.Context) (string, error) {
-	body, ok := n.Body.(Operator)
+	body, ok := n.Body.(Operation)
 	if !ok {
 		body = &AllOf{
 			Conditions: []shared.Rego{
@@ -76,12 +70,10 @@ func (n NotOperator) Rego(ctx *shared.Context) (string, error) {
 		}
 	}
 	var bodyRes string
-	if reflect.TypeOf(body) != reflect.TypeOf(WhereOperator{}) {
-		if _, ok := ctx.FieldNameReplacer(); ok {
-			bodyRes = body.GetConditionSetName() + "(x)"
-		} else {
-			bodyRes = body.GetConditionSetName()
-		}
+	if _, ok := ctx.FieldNameReplacer(); ok {
+		bodyRes = body.GetConditionSetName() + "(x)"
+	} else {
+		bodyRes = body.GetConditionSetName()
 	}
 	subSet, err := body.Rego(ctx)
 	if err != nil {

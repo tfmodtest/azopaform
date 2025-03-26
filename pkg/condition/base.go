@@ -9,6 +9,13 @@ type BaseCondition struct {
 	Subject shared.Rego
 }
 
+func NewCondition(conditionType string, subject shared.Rego, value any) shared.Rego {
+	if cf, ok := ConditionFactory[conditionType]; ok {
+		return cf(subject, value)
+	}
+	return nil
+}
+
 var ConditionFactory = map[string]func(shared.Rego, any) shared.Rego{
 	"equals": func(s shared.Rego, input any) shared.Rego {
 		return Equals{

@@ -63,46 +63,53 @@ func (r *Rule) SaveToDisk() error {
 }
 
 func NewPolicyRuleBody(input map[string]any, ctx *shared.Context) *PolicyRuleBody {
-	conditionMap := input
-	var subject shared.Rego
-	var creator func(subject shared.Rego, input any) shared.Rego
-	var cv any
+	if ifBody := NewOperationOrCondition(input, ctx); ifBody != nil {
+		return &PolicyRuleBody{
+			IfBody: ifBody,
+		}
+	}
+
+	panic(fmt.Errorf("cannot find any condition nor operation in %+v", input))
+}
+
+func extractCondition(subject shared.Rego, input map[string]any) shared.Rego {
+	for key, conditionValue := range input {
+		key = strings.ToLower(key)
+		if ifBody := condition.NewCondition(key, subject, conditionValue); ifBody != nil {
+			return ifBody
+		}
+	}
+	return nil
+}
+
+func extractOperation(conditionMap map[string]any, ctx *shared.Context) shared.Rego {
 	for key, conditionValue := range conditionMap {
 		key = strings.ToLower(key)
-		operatorFactory, ok := operators[key]
-		if ok {
-			conditionSet := operatorFactory(conditionValue, ctx)
-			return &PolicyRuleBody{
-				Then:   nil,
-				IfBody: conditionSet,
-			}
+		operation := NewOperation(key, conditionValue, ctx)
+		if operation != nil {
+			return operation
 		}
+	}
+	return nil
+}
+
+func extractSubject(conditionMap map[string]any, ctx *shared.Context) shared.Rego {
+	for key, conditionValue := range conditionMap {
+		key = strings.ToLower(key)
 		if key == shared.Count {
-			subject = NewCountOperator(conditionValue, ctx)
-			continue
+			return NewCountOperator(conditionValue, ctx)
 		}
 		if key == shared.Field {
 			if conditionValue == shared.TypeOfResource {
 				ctx.PushResourceType(conditionValue.(string))
 			}
-			subject = OperationField(conditionValue.(string))
-			continue
+			return NewSubject(shared.Field, conditionValue, ctx)
 		}
 		if key == shared.Value {
-			subject = OperationValue(conditionValue.(string))
-			continue
+			return NewSubject(shared.Field, conditionValue, ctx)
 		}
-		factory, ok := condition.ConditionFactory[key]
-		if !ok {
-			panic(fmt.Sprintf("unknown BaseCondition: %s", key))
-		}
-		creator = factory
-		cv = conditionValue
 	}
-	return &PolicyRuleBody{
-		Then:   nil,
-		IfBody: creator(subject, cv),
-	}
+	return nil
 }
 
 type PolicyRuleMetaData struct {
