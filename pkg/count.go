@@ -58,6 +58,13 @@ type Count struct {
 	ConditionSet shared.Rego
 }
 
+func NewCount(input any, ctx *shared.Context) shared.Rego {
+	countConditionSet := NewCountOperator(input, ctx)
+	return &Count{
+		Count: countConditionSet.CountExp,
+	}
+}
+
 func (c Count) Rego(ctx *shared.Context) (string, error) {
 	return c.Count, nil
 }
