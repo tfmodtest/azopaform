@@ -1,0 +1,25 @@
+package value
+
+import (
+	"json-rule-finder/pkg/shared"
+	"strings"
+)
+
+var _ shared.Rego = &LiteralValue{}
+
+type LiteralValue struct {
+	Value        string
+	ConditionSet shared.Rego
+}
+
+func NewLiteralValue(input any, ctx *shared.Context) shared.Rego {
+	v := input.(string)
+	v = strings.ReplaceAll(v, "[*]", "[x]")
+	return &LiteralValue{
+		Value: v,
+	}
+}
+
+func (v LiteralValue) Rego(ctx *shared.Context) (string, error) {
+	return v.Value, nil
+}

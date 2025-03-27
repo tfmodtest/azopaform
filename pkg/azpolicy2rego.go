@@ -3,7 +3,6 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
-	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"path/filepath"
 	"strings"
@@ -70,48 +69,6 @@ func NewPolicyRuleBody(input map[string]any, ctx *shared.Context) *PolicyRuleBod
 	}
 
 	panic(fmt.Errorf("cannot find any condition nor operation in %+v", input))
-}
-
-func extractCondition(subject shared.Rego, input map[string]any) shared.Rego {
-	for key, conditionValue := range input {
-		key = strings.ToLower(key)
-		if ifBody := condition.NewCondition(key, subject, conditionValue); ifBody != nil {
-			return ifBody
-		}
-	}
-	return nil
-}
-
-func extractOperation(conditionMap map[string]any, ctx *shared.Context) shared.Rego {
-	for key, conditionValue := range conditionMap {
-		key = strings.ToLower(key)
-		operation := NewOperation(key, conditionValue, ctx)
-		if operation != nil {
-			return operation
-		}
-	}
-	return nil
-}
-
-func extractSubject(conditionMap map[string]any, ctx *shared.Context) shared.Rego {
-	for key, conditionValue := range conditionMap {
-		key = strings.ToLower(key)
-		if key == shared.Count {
-			return NewCountOperator(conditionValue, ctx)
-		}
-		if key == shared.Field {
-			if conditionValue == shared.TypeOfResource {
-				if resourceType, ok := conditionMap["equals"].(string); ok {
-					ctx.PushResourceType(resourceType)
-				}
-			}
-			return NewSubject(shared.Field, conditionValue, ctx)
-		}
-		if key == shared.Value {
-			return NewSubject(shared.Field, conditionValue, ctx)
-		}
-	}
-	return nil
 }
 
 type PolicyRuleMetaData struct {

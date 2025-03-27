@@ -7,7 +7,7 @@ import (
 var _ Operation = &AllOf{}
 
 type AllOf struct {
-	baseOperator
+	baseOperation
 	Conditions []shared.Rego
 }
 
@@ -17,8 +17,8 @@ func NewAllOf(input any, ctx *shared.Context) shared.Rego {
 		panic(err)
 	}
 	return AllOf{
-		baseOperator: base,
-		Conditions:   body,
+		baseOperation: base,
+		Conditions:    body,
 	}
 }
 

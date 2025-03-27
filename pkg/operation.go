@@ -2,7 +2,10 @@ package pkg
 
 import (
 	"fmt"
+	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
+	"json-rule-finder/pkg/value"
+	"strings"
 )
 
 type Operation interface {
@@ -11,11 +14,11 @@ type Operation interface {
 }
 
 func NewOperationOrCondition(input map[string]any, ctx *shared.Context) shared.Rego {
-	if operation := extractOperation(input, ctx); operation != nil {
+	if operation := tryParseOperation(input, ctx); operation != nil {
 		return operation
 	}
-	subject := extractSubject(input, ctx)
-	if cond := extractCondition(subject, input); cond != nil {
+	subject := tryParseSubject(input, ctx)
+	if cond := tryParseCondition(subject, input); cond != nil {
 		return cond
 	}
 	return nil
@@ -42,7 +45,7 @@ var NeoConditionNameGenerator = func(ctx *shared.Context) (string, error) {
 	return conditionName, nil
 }
 
-func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, baseOperator, error) {
+func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, baseOperation, error) {
 	items := input.([]any)
 	var body []shared.Rego
 	for _, item := range items {
@@ -52,9 +55,50 @@ func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, baseOper
 	}
 	conditionSetName, err := NeoConditionNameGenerator(ctx)
 	if err != nil {
-		return nil, baseOperator{}, err
+		return nil, baseOperation{}, err
 	}
-	return body, baseOperator{
+	return body, baseOperation{
 		conditionSetName: conditionSetName,
 	}, nil
+}
+
+func tryParseCondition(subject shared.Rego, input map[string]any) shared.Rego {
+	for key, conditionValue := range input {
+		key = strings.ToLower(key)
+		if ifBody := condition.NewCondition(key, subject, conditionValue); ifBody != nil {
+			return ifBody
+		}
+	}
+	return nil
+}
+
+func tryParseOperation(conditionMap map[string]any, ctx *shared.Context) shared.Rego {
+	for key, conditionValue := range conditionMap {
+		key = strings.ToLower(key)
+		operation := NewOperation(key, conditionValue, ctx)
+		if operation != nil {
+			return operation
+		}
+	}
+	return nil
+}
+
+func tryParseSubject(conditionMap map[string]any, ctx *shared.Context) shared.Rego {
+	for key, conditionValue := range conditionMap {
+		key = strings.ToLower(key)
+		switch key {
+		case shared.Count:
+			return NewCount(conditionValue, ctx)
+		case shared.Field:
+			if conditionValue == shared.TypeOfResource {
+				if resourceType, ok := conditionMap["equals"].(string); ok {
+					ctx.PushResourceType(resourceType)
+				}
+			}
+			return value.NewFieldValue(conditionValue, ctx)
+		case shared.Value:
+			return value.NewLiteralValue(conditionValue, ctx)
+		}
+	}
+	return nil
 }

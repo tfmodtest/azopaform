@@ -87,7 +87,7 @@ func TestAnyOfOperator(t *testing.T) {
 							Value: "https",
 						},
 					},
-					baseOperator: baseOperator{
+					baseOperation: baseOperation{
 						conditionSetName: "condition1",
 					},
 				},
@@ -125,7 +125,7 @@ func TestAnyOfOperator(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			sut := &AnyOf{
 				Conditions: c.conditions,
-				baseOperator: baseOperator{
+				baseOperation: baseOperation{
 					conditionSetName: "condition0",
 				},
 			}

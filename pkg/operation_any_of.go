@@ -9,7 +9,7 @@ import (
 var _ Operation = &AnyOf{}
 
 type AnyOf struct {
-	baseOperator
+	baseOperation
 	Conditions []shared.Rego
 }
 
@@ -19,8 +19,8 @@ func NewAnyOf(input any, ctx *shared.Context) shared.Rego {
 		panic(err)
 	}
 	return AnyOf{
-		Conditions:   body,
-		baseOperator: base,
+		Conditions:    body,
+		baseOperation: base,
 	}
 }
 

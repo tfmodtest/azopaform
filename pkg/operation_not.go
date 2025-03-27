@@ -5,10 +5,10 @@ import (
 	"json-rule-finder/pkg/shared"
 )
 
-var _ Operation = &NotOperator{}
+var _ Operation = &Not{}
 
-type NotOperator struct {
-	baseOperator
+type Not struct {
+	baseOperation
 	Body shared.Rego
 }
 
@@ -19,22 +19,22 @@ func NewNot(input any, ctx *shared.Context) shared.Rego {
 	if err != nil {
 		panic(err)
 	}
-	return NotOperator{
+	return Not{
 		Body: body,
-		baseOperator: baseOperator{
+		baseOperation: baseOperation{
 			conditionSetName: conditionSetName,
 		},
 	}
 }
 
-func (n NotOperator) Rego(ctx *shared.Context) (string, error) {
+func (n Not) Rego(ctx *shared.Context) (string, error) {
 	body, ok := n.Body.(Operation)
 	if !ok {
 		body = &AllOf{
 			Conditions: []shared.Rego{
 				n.Body,
 			},
-			baseOperator: baseOperator{
+			baseOperation: baseOperation{
 				conditionSetName: fmt.Sprintf("%s_%s", n.GetConditionSetName(), "negation"),
 			},
 		}

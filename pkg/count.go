@@ -5,14 +5,14 @@ import (
 	"strings"
 )
 
-var _ shared.Rego = CountOperator{}
+var _ shared.Rego = Count{}
 
-type CountOperator struct {
+type Count struct {
 	Where    Operation
 	CountExp string
 }
 
-func NewCountOperator(input any, ctx *shared.Context) CountOperator {
+func NewCount(input any, ctx *shared.Context) Count {
 	items := input.(map[string]any)
 
 	var whereBody Operation
@@ -35,13 +35,13 @@ func NewCountOperator(input any, ctx *shared.Context) CountOperator {
 		countBody = shared.Count + "({x|x:=" + countFieldConverted + "})"
 	}
 	countBody = strings.Replace(countBody, "*", "x", -1)
-	return CountOperator{
+	return Count{
 		Where:    whereBody,
 		CountExp: countBody,
 	}
 }
 
-func (c CountOperator) Rego(ctx *shared.Context) (string, error) {
+func (c Count) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	whereSubset, err := c.Where.Rego(ctx)
 	if err != nil {
@@ -49,22 +49,4 @@ func (c CountOperator) Rego(ctx *shared.Context) (string, error) {
 	}
 	res = c.CountExp + "\n" + whereSubset
 	return res, nil
-}
-
-var _ shared.Rego = &Count{}
-
-type Count struct {
-	Count        string
-	ConditionSet shared.Rego
-}
-
-func NewCount(input any, ctx *shared.Context) shared.Rego {
-	countConditionSet := NewCountOperator(input, ctx)
-	return &Count{
-		Count: countConditionSet.CountExp,
-	}
-}
-
-func (c Count) Rego(ctx *shared.Context) (string, error) {
-	return c.Count, nil
 }

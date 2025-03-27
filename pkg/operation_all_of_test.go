@@ -58,7 +58,7 @@ func TestAllOfOperator(t *testing.T) {
 							Value: 22,
 						},
 					},
-					baseOperator: baseOperator{
+					baseOperation: baseOperation{
 						conditionSetName: "condition1",
 					},
 				},
@@ -99,7 +99,7 @@ func TestAllOfOperator(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			sut := &AllOf{
 				Conditions: c.conditions,
-				baseOperator: baseOperator{
+				baseOperation: baseOperation{
 					conditionSetName: "condition0",
 				},
 			}

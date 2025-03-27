@@ -43,7 +43,7 @@ func TestNotOperator(t *testing.T) {
 		{
 			desc: "nested operator disallow",
 			condition: &AnyOf{
-				baseOperator: baseOperator{
+				baseOperation: baseOperation{
 					conditionSetName: "condition_any_of_0",
 				},
 				Conditions: []shared.Rego{
@@ -62,7 +62,7 @@ func TestNotOperator(t *testing.T) {
 								Value: "https",
 							},
 						},
-						baseOperator: baseOperator{
+						baseOperation: baseOperation{
 							conditionSetName: "condition_any_of_1",
 						},
 					},
@@ -80,7 +80,7 @@ func TestNotOperator(t *testing.T) {
 		{
 			desc: "nested operator allow",
 			condition: &AllOf{
-				baseOperator: baseOperator{
+				baseOperation: baseOperation{
 					conditionSetName: "condition_all_of",
 				},
 				Conditions: []shared.Rego{
@@ -99,7 +99,7 @@ func TestNotOperator(t *testing.T) {
 								Value: "https",
 							},
 						},
-						baseOperator: baseOperator{
+						baseOperation: baseOperation{
 							conditionSetName: "condition_any_of",
 						},
 					},
@@ -117,9 +117,9 @@ func TestNotOperator(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			sut := &NotOperator{
+			sut := &Not{
 				Body: c.condition,
-				baseOperator: baseOperator{
+				baseOperation: baseOperation{
 					conditionSetName: "condition0",
 				},
 			}
