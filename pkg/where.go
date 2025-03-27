@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-var _ shared.Rego = &WhereOperator{}
-
 var _ Operation = &WhereOperator{}
 
 type WhereOperator struct {
@@ -38,8 +36,8 @@ func (w WhereOperator) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	var subSets []string
 	item := w.Condition
-	if _, ok := item.(Operation); ok {
-		res += item.(Operation).GetConditionSetName() + "(x)"
+	if operation, ok := item.(Operation); ok {
+		res += operation.GetConditionSetName() + "(x)"
 		ctx.PushFieldName("x")
 		subSet, err := item.Rego(ctx)
 		if err != nil {

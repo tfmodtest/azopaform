@@ -4,6 +4,8 @@ import (
 	"json-rule-finder/pkg/shared"
 )
 
+type IfBody map[string]any
+
 func (i *If) Rego(ctx *shared.Context) (string, error) {
 	if i.rego != nil {
 		return i.rego.Rego(ctx)

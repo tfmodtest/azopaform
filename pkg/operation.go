@@ -8,6 +8,14 @@ import (
 	"strings"
 )
 
+type baseOperation struct {
+	conditionSetName string
+}
+
+func (o baseOperation) GetConditionSetName() string {
+	return o.conditionSetName
+}
+
 type Operation interface {
 	shared.Rego
 	GetConditionSetName() string

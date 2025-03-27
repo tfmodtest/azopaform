@@ -6,22 +6,23 @@ import (
 )
 
 func replaceIndex(str string) string {
-	strArr := strings.Split(str, ".")
-	var result string
-	for _, s := range strArr {
-		if match, err := regexp.Match("[.*[0-9]+]|[*]", []byte(s)); err == nil && match {
-			var newSegment string
-			for _, c := range s {
-				if c == '[' {
-					break
-				}
-				newSegment += string(c)
-			}
-			newSegment += "[x]"
-			result += newSegment + "."
-		} else {
-			result += s + "."
-		}
+	if str == "" {
+		return ""
 	}
-	return strings.TrimSuffix(result, ".")
+
+	strArr := strings.Split(str, ".")
+	var result []string
+
+	for _, s := range strArr {
+		// Check if segment contains any array indexing
+		if match, err := regexp.Match(`\[.*\]`, []byte(s)); err == nil && match {
+			// Replace all array indexing with [_]
+			replaced := regexp.MustCompile(`\[[^\]]*\]`).ReplaceAllString(s, "[_]")
+			result = append(result, replaced)
+			continue
+		}
+		result = append(result, s)
+	}
+
+	return strings.Join(result, ".")
 }
