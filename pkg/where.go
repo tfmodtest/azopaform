@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"json-rule-finder/pkg/shared"
-	"strings"
 )
 
 var _ Operation = &WhereOperator{}
@@ -26,10 +25,6 @@ func NewWhere(input any, ctx *shared.Context) Operation {
 
 func (w WhereOperator) GetConditionSetName() string {
 	return w.ConditionSetName
-}
-
-func (w WhereOperator) GetConditionSetNameRev() string {
-	return strings.Join([]string{"not", w.ConditionSetName}, " ")
 }
 
 func (w WhereOperator) Rego(ctx *shared.Context) (string, error) {
