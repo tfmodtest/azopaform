@@ -22,7 +22,7 @@ type Rule struct {
 }
 
 func (r *Rule) Rego(ctx *shared.Context) (string, error) {
-	ifBody := r.Properties.PolicyRule.GetIf()
+	ifBody := r.Properties.PolicyRule.GetIf(ctx)
 	ifRego, err := ifBody.Rego(ctx)
 	if err != nil {
 		return "", err

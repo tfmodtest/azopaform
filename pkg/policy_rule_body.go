@@ -10,10 +10,8 @@ type PolicyRuleBody struct {
 	IfBody shared.Rego
 }
 
-func (p *PolicyRuleBody) GetIf() *If {
-	return &If{
-		body: p.If,
-	}
+func (p *PolicyRuleBody) GetIf(ctx *shared.Context) *If {
+	return NewIf(p.If, ctx)
 }
 
 func (p *PolicyRuleBody) GetThen() *ThenBody {
@@ -21,17 +19,4 @@ func (p *PolicyRuleBody) GetThen() *ThenBody {
 		return nil
 	}
 	return p.Then
-}
-
-func (p *PolicyRuleBody) BuildIfBody(ctx *shared.Context) *PolicyRuleBody {
-	if p == nil {
-		return nil
-	}
-	return NewPolicyRuleBody(p.If, ctx)
-}
-
-func (p *PolicyRuleBody) GetIfBody() *If {
-	return &If{
-		body: p.If,
-	}
 }

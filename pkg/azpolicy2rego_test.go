@@ -669,7 +669,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 				IfBody: condition.Greater{
 					BaseCondition: condition.BaseCondition{
 						Subject: operation.Count{
-							Where: operation.WhereOperator{
+							Where: operation.Where{
 								Condition: condition.Equals{
 									BaseCondition: condition.BaseCondition{
 										Subject: &value.FieldValue{

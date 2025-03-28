@@ -4,9 +4,9 @@ import (
 	"json-rule-finder/pkg/shared"
 )
 
-var _ Operation = &WhereOperator{}
+var _ Operation = &Where{}
 
-type WhereOperator struct {
+type Where struct {
 	Condition        shared.Rego
 	ConditionSetName string
 }
@@ -17,17 +17,17 @@ func NewWhere(input any, ctx *shared.Context) Operation {
 	if err != nil {
 		return nil
 	}
-	return WhereOperator{
+	return Where{
 		Condition:        whereBody,
 		ConditionSetName: conditionSetName,
 	}
 }
 
-func (w WhereOperator) GetConditionSetName() string {
+func (w Where) GetConditionSetName() string {
 	return w.ConditionSetName
 }
 
-func (w WhereOperator) Rego(ctx *shared.Context) (string, error) {
+func (w Where) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	var subSets []string
 	item := w.Condition

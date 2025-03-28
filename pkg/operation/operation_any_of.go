@@ -23,13 +23,13 @@ func NewAnyOf(conditionSetName string, conditions []shared.Rego) AnyOf {
 }
 
 func ParseAnyOf(input any, ctx *shared.Context) shared.Rego {
-	body, base, err := parseOperationBody(input, ctx)
+	body, conditionSetName, err := parseOperationBody(input, ctx)
 	if err != nil {
 		panic(err)
 	}
 	return AnyOf{
 		Conditions:    body,
-		baseOperation: base,
+		baseOperation: baseOperation{conditionSetName: conditionSetName},
 	}
 }
 

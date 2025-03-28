@@ -53,21 +53,18 @@ var NeoConditionNameGenerator = func(ctx *shared.Context) (string, error) {
 	return conditionName, nil
 }
 
-func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, baseOperation, error) {
+func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, string, error) {
 	items := input.([]any)
 	var body []shared.Rego
 	for _, item := range items {
 		itemMap := item.(map[string]any)
-		rego := NewOperationOrCondition(itemMap, ctx)
-		body = append(body, rego)
+		body = append(body, NewOperationOrCondition(itemMap, ctx))
 	}
 	conditionSetName, err := NeoConditionNameGenerator(ctx)
 	if err != nil {
-		return nil, baseOperation{}, err
+		return nil, "", err
 	}
-	return body, baseOperation{
-		conditionSetName: conditionSetName,
-	}, nil
+	return body, conditionSetName, nil
 }
 
 func tryParseCondition(subject shared.Rego, input map[string]any) shared.Rego {

@@ -17,7 +17,7 @@ func TestOperations(t *testing.T) {
 	}{
 		{
 			name: "NestedWhereOperator",
-			operation: WhereOperator{
+			operation: Where{
 				Condition: AllOf{
 					Conditions: []shared.Rego{
 						condition.Equals{
@@ -48,8 +48,8 @@ func TestOperations(t *testing.T) {
 			expected: "aaaaaaaaa(x) if {\naaaaa(x)\n}\naaaaa(x) if {\nr.change.after.sku[x].tier == \"Standard\"\nr.change.after.sku_name\nr.change.after.sku[x].size == \"P1v3\"\n}",
 		},
 		{
-			name: "WhereOperator",
-			operation: WhereOperator{
+			name: "Where",
+			operation: Where{
 				Condition: condition.Equals{
 					BaseCondition: condition.BaseCondition{
 						Subject: &value.FieldValue{Name: "type"},
