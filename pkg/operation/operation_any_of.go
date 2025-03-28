@@ -1,4 +1,4 @@
-package pkg
+package operation
 
 import (
 	"fmt"
@@ -13,7 +13,16 @@ type AnyOf struct {
 	Conditions []shared.Rego
 }
 
-func NewAnyOf(input any, ctx *shared.Context) shared.Rego {
+func NewAnyOf(conditionSetName string, conditions []shared.Rego) AnyOf {
+	return AnyOf{
+		baseOperation: baseOperation{
+			conditionSetName: conditionSetName,
+		},
+		Conditions: conditions,
+	}
+}
+
+func ParseAnyOf(input any, ctx *shared.Context) shared.Rego {
 	body, base, err := parseOperationBody(input, ctx)
 	if err != nil {
 		panic(err)

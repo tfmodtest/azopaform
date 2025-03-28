@@ -3,6 +3,7 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
+	"json-rule-finder/pkg/operation"
 	"json-rule-finder/pkg/shared"
 	"path/filepath"
 	"strings"
@@ -62,7 +63,7 @@ func (r *Rule) SaveToDisk() error {
 }
 
 func NewPolicyRuleBody(input map[string]any, ctx *shared.Context) *PolicyRuleBody {
-	if ifBody := NewOperationOrCondition(input, ctx); ifBody != nil {
+	if ifBody := operation.NewOperationOrCondition(input, ctx); ifBody != nil {
 		return &PolicyRuleBody{
 			IfBody: ifBody,
 		}

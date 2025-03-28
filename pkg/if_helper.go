@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"json-rule-finder/pkg/operation"
 	"json-rule-finder/pkg/shared"
 )
 
@@ -17,12 +18,12 @@ func (i *If) Rego(ctx *shared.Context) (string, error) {
 	if i.rego != nil {
 		return i.rego.Rego(ctx)
 	}
-	i.rego = NewOperationOrCondition(i.body, ctx)
+	i.rego = operation.NewOperationOrCondition(i.body, ctx)
 	return i.rego.Rego(ctx)
 }
 
 func (i *If) ConditionName(defaultConditionName string) string {
-	if operator, ok := i.rego.(Operation); ok {
+	if operator, ok := i.rego.(operation.Operation); ok {
 		return operator.GetConditionSetName()
 	}
 	return defaultConditionName

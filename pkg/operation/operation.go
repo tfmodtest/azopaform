@@ -1,4 +1,4 @@
-package pkg
+package operation
 
 import (
 	"fmt"
@@ -35,11 +35,11 @@ func NewOperationOrCondition(input map[string]any, ctx *shared.Context) shared.R
 func NewOperation(operationType string, body any, ctx *shared.Context) shared.Rego {
 	switch operationType {
 	case shared.AllOf:
-		return NewAllOf(body, ctx)
+		return ParseAllOf(body, ctx)
 	case shared.AnyOf:
-		return NewAnyOf(body, ctx)
+		return ParseAnyOf(body, ctx)
 	case shared.Not:
-		return NewNot(body, ctx)
+		return ParseNot(body, ctx)
 	}
 	return nil
 }

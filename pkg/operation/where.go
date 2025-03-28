@@ -1,4 +1,4 @@
-package pkg
+package operation
 
 import (
 	"json-rule-finder/pkg/shared"

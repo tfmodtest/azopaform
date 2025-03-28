@@ -5,7 +5,10 @@ import (
 	"github.com/prashantv/gostub"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"json-rule-finder/pkg/condition"
+	"json-rule-finder/pkg/operation"
 	"json-rule-finder/pkg/shared"
+	"json-rule-finder/pkg/value"
 	"os"
 	"testing"
 
@@ -487,7 +490,7 @@ r.change.after.cors_configuration[0].allowed_origins[0] != "*"
 			}
 			mockFs := fakeFs(files)
 			counter := 0
-			stub := gostub.Stub(&NeoConditionNameGenerator, func(ctx *shared.Context) (string, error) {
+			stub := gostub.Stub(&operation.NeoConditionNameGenerator, func(ctx *shared.Context) (string, error) {
 				newName := fmt.Sprintf("condition%d", counter)
 				counter++
 				return newName, nil
@@ -642,6 +645,460 @@ not r.change.after.properties.sku.tier in ["Basic","Standard","ElasticPremium","
 not r.change.after.properties.sku.name in ["B1","B2","B3","S1","S2","S3","EP1","EP2","EP3","P1","P2","P3","P1V2","P2V2","P3V2","P0V3","P1V3","P2V3","P3V3","P1MV3","P2MV3","P3MV3","P4MV3","P5MV3","I1","I2","I3","I1V2","I2V2","I3V2","I4V2","I5V2","I6V2","WS1","WS2","WS3"]
 }`, string(file))
 	})
+}
+
+func TestNewPolicyRuleBody(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    map[string]any
+		expected *PolicyRuleBody
+	}{
+		{
+			name: "CountOperation",
+			input: map[string]any{
+				"count": map[string]any{
+					"field": "Microsoft.Network/networkSecurityGroups/securityRules[*]",
+					"where": map[string]any{
+						"field":  "Microsoft.Network/networkSecurityGroups/securityRules[*].direction",
+						"equals": "Inbound",
+					},
+				},
+				"greater": 0,
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.Greater{
+					BaseCondition: condition.BaseCondition{
+						Subject: operation.Count{
+							Where: operation.WhereOperator{
+								Condition: condition.Equals{
+									BaseCondition: condition.BaseCondition{
+										Subject: &value.FieldValue{
+											Name: "Microsoft.Network/networkSecurityGroups/securityRules[x].direction",
+										},
+									},
+									Value: "Inbound",
+								},
+								ConditionSetName: "condition1",
+							},
+							CountExp: "count({x|x:=r.change.after.properties.securityRules[_];condition1(x)})",
+						},
+					},
+					Value: 0,
+				},
+			},
+		},
+		{
+			name: "NotOperation",
+			input: map[string]any{
+				"not": map[string]any{
+					"field":     "Microsoft.HealthcareApis/services/corsConfiguration.origins[*]",
+					"notEquals": "*",
+				},
+			},
+			expected: &PolicyRuleBody{
+				IfBody: operation.NewNot("condition1", condition.NotEquals{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{
+							Name: "Microsoft.HealthcareApis/services/corsConfiguration.origins[x]",
+						},
+					},
+					Value: "*",
+				}),
+			},
+		},
+		{
+			name: "NestedAnyOfOperation",
+			input: map[string]any{
+				"anyof": []any{
+					map[string]any{
+						"anyof": []any{
+							map[string]any{
+								"field":  "Microsoft.Sql/servers/minimalTlsVersion",
+								"exists": false,
+							},
+							map[string]any{
+								"field": "Microsoft.Sql/servers/minimalTlsVersion",
+								"less":  "1.2",
+							},
+						},
+					},
+					map[string]any{
+						"allof": []any{
+							map[string]any{
+								"field":  "type",
+								"equals": "Microsoft.Sql/servers",
+							},
+							map[string]any{
+								"field":  "Microsoft.Sql/servers/minimalTlsVersion",
+								"exists": true,
+							},
+						},
+					},
+				},
+			},
+			expected: &PolicyRuleBody{
+				IfBody: operation.NewAnyOf("condition1", []shared.Rego{
+					operation.NewAnyOf("condition1", []shared.Rego{
+						condition.Exists{
+							BaseCondition: condition.BaseCondition{
+								Subject: &value.FieldValue{
+									Name: "Microsoft.Sql/servers/minimalTlsVersion",
+								},
+							},
+							Value: false,
+						},
+						condition.Less{
+							BaseCondition: condition.BaseCondition{
+								Subject: &value.FieldValue{
+									Name: "Microsoft.Sql/servers/minimalTlsVersion",
+								},
+							},
+							Value: "1.2",
+						},
+					}),
+					operation.NewAllOf("condition1", []shared.Rego{
+						condition.Equals{
+							BaseCondition: condition.BaseCondition{
+								Subject: &value.FieldValue{
+									Name: "type",
+								},
+							},
+							Value: "Microsoft.Sql/servers",
+						},
+						condition.Exists{
+							BaseCondition: condition.BaseCondition{
+								Subject: &value.FieldValue{
+									Name: "Microsoft.Sql/servers/minimalTlsVersion",
+								},
+							},
+							Value: true,
+						},
+					}),
+				}),
+			},
+		},
+		{
+			name: "AnyOfOperation",
+			input: map[string]any{
+				"anyof": []any{
+					map[string]any{
+						"field":  "Microsoft.Sql/servers/minimalTlsVersion",
+						"exists": false,
+					},
+					map[string]any{
+						"field": "Microsoft.Sql/servers/minimalTlsVersion",
+						"less":  "1.2",
+					},
+				},
+			},
+			expected: &PolicyRuleBody{
+				IfBody: operation.NewAnyOf("condition1", []shared.Rego{
+					condition.Exists{
+						BaseCondition: condition.BaseCondition{
+							Subject: &value.FieldValue{
+								Name: "Microsoft.Sql/servers/minimalTlsVersion",
+							},
+						},
+						Value: false,
+					},
+					condition.Less{
+						BaseCondition: condition.BaseCondition{
+							Subject: &value.FieldValue{
+								Name: "Microsoft.Sql/servers/minimalTlsVersion",
+							},
+						},
+						Value: "1.2",
+					},
+				}),
+			},
+		},
+		{
+			name: "AllOfOperation",
+			input: map[string]any{
+				"allof": []any{
+					map[string]any{
+						"field":  "type",
+						"equals": "Microsoft.HealthcareApis/services",
+					},
+					map[string]any{
+						"field":  "Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri",
+						"exists": false,
+					},
+				},
+			},
+			expected: &PolicyRuleBody{
+				IfBody: operation.NewAllOf("condition1", []shared.Rego{
+					condition.Equals{
+						BaseCondition: condition.BaseCondition{
+							Subject: &value.FieldValue{
+								Name: "type",
+							},
+						},
+						Value: "Microsoft.HealthcareApis/services",
+					},
+					condition.Exists{
+						BaseCondition: condition.BaseCondition{
+							Subject: &value.FieldValue{
+								Name: "Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri",
+							},
+						},
+						Value: false,
+					},
+				}),
+			},
+		},
+		{
+			name: "Equals",
+			input: map[string]any{
+				"field":  "type",
+				"equals": "Microsoft.Web/serverFarms",
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.Equals{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{
+							Name: "type",
+						},
+					},
+					Value: "Microsoft.Web/serverFarms",
+				},
+			},
+		},
+		{
+			name: "NotEquals",
+			input: map[string]any{
+				"field":     "type",
+				"notEquals": "Microsoft.Web/serverFarms",
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.NotEquals{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "type"},
+					},
+					Value: "Microsoft.Web/serverFarms",
+				},
+			},
+		},
+		{
+			name: "Like",
+			input: map[string]any{
+				"field": "type",
+				"like":  "Microsoft.Web/serverFarms",
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.Like{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "type"},
+					},
+					Value: "Microsoft.Web/serverFarms",
+				},
+			},
+		},
+		{
+			name: "NotLike",
+			input: map[string]any{
+				"field":   "type",
+				"notLike": "Microsoft.Web/serverFarms",
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.NotLike{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "type"},
+					},
+					Value: "Microsoft.Web/serverFarms",
+				},
+			},
+		},
+		{
+			name: "In",
+			input: map[string]any{
+				"field": "type",
+				"in":    []any{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.In{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "type"},
+					},
+					Values: []string{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
+				},
+			},
+		},
+		{
+			name: "NotIn",
+			input: map[string]any{
+				"field": "type",
+				"notIn": []any{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.NotIn{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "type"},
+					},
+					Values: []string{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
+				},
+			},
+		},
+		{
+			name: "Contains",
+			input: map[string]any{
+				"field":    "type",
+				"contains": "Microsoft.Web/serverFarms",
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.Contains{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "type"},
+					},
+					Value: "Microsoft.Web/serverFarms",
+				},
+			},
+		},
+		{
+			name: "NotContains",
+			input: map[string]any{
+				"field":       "type",
+				"notContains": "Microsoft.Web/serverFarms",
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.NotContains{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "type"},
+					},
+					Value: "Microsoft.Web/serverFarms",
+				},
+			},
+		},
+		{
+			name: "ContainsKey",
+			input: map[string]any{
+				"field":       "type",
+				"containsKey": "Microsoft.Web/serverFarms",
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.ContainsKey{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "type"},
+					},
+					KeyName: "Microsoft.Web/serverFarms",
+				},
+			},
+		},
+		{
+			name: "NotContainsKey",
+			input: map[string]any{
+				"field":          "type",
+				"notContainsKey": "Microsoft.Web/serverFarms",
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.NotContainsKey{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "type"},
+					},
+					KeyName: "Microsoft.Web/serverFarms",
+				},
+			},
+		},
+		{
+			name: "Less",
+			input: map[string]any{
+				"field": "number",
+				"less":  10,
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.Less{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "number"},
+					},
+					Value: 10,
+				},
+			},
+		},
+		{
+			name: "LessOrEquals",
+			input: map[string]any{
+				"field":        "number",
+				"lessOrEquals": 10,
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.LessOrEquals{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "number"},
+					},
+					Value: 10,
+				},
+			},
+		},
+		{
+			name: "Greater",
+			input: map[string]any{
+				"field":   "number",
+				"greater": 10,
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.Greater{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "number"},
+					},
+					Value: 10,
+				},
+			},
+		},
+		{
+			name: "GreaterOrEquals",
+			input: map[string]any{
+				"field":           "number",
+				"greaterOrEquals": 10,
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.GreaterOrEquals{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "number"},
+					},
+					Value: 10,
+				},
+			},
+		},
+		{
+			name: "Exists",
+			input: map[string]any{
+				"field":  "type",
+				"exists": true,
+			},
+			expected: &PolicyRuleBody{
+				IfBody: condition.Exists{
+					BaseCondition: condition.BaseCondition{
+						Subject: &value.FieldValue{Name: "type"},
+					},
+					Value: true,
+				},
+			},
+		},
+		{
+			name: "Unknown BaseCondition",
+			input: map[string]any{
+				"unknown": "value",
+			},
+			expected: nil, // Expecting a panic
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.expected == nil {
+				assert.Panics(t, func() {
+					NewPolicyRuleBody(tt.input, shared.NewContext())
+				})
+			} else {
+				stub := gostub.Stub(&operation.NeoConditionNameGenerator, func(ctx *shared.Context) (string, error) {
+					return "condition1", nil
+				})
+				defer stub.Reset()
+				result := NewPolicyRuleBody(tt.input, shared.NewContext())
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
 }
 
 func prepareMemFs(t *testing.T) afero.Fs {

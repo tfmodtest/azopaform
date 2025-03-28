@@ -1,4 +1,4 @@
-package pkg
+package operation
 
 import (
 	"fmt"
@@ -12,7 +12,16 @@ type Not struct {
 	Body shared.Rego
 }
 
-func NewNot(input any, ctx *shared.Context) shared.Rego {
+func NewNot(conditionSetName string, body shared.Rego) Not {
+	return Not{
+		Body: body,
+		baseOperation: baseOperation{
+			conditionSetName: conditionSetName,
+		},
+	}
+}
+
+func ParseNot(input any, ctx *shared.Context) shared.Rego {
 	itemMap := input.(map[string]any)
 	body := NewOperationOrCondition(itemMap, ctx)
 	conditionSetName, err := NeoConditionNameGenerator(ctx)

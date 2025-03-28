@@ -1,4 +1,4 @@
-package pkg
+package operation
 
 import (
 	"json-rule-finder/pkg/shared"
@@ -11,7 +11,16 @@ type AllOf struct {
 	Conditions []shared.Rego
 }
 
-func NewAllOf(input any, ctx *shared.Context) shared.Rego {
+func NewAllOf(conditionSetName string, conditions []shared.Rego) AllOf {
+	return AllOf{
+		baseOperation: baseOperation{
+			conditionSetName: conditionSetName,
+		},
+		Conditions: conditions,
+	}
+}
+
+func ParseAllOf(input any, ctx *shared.Context) shared.Rego {
 	body, base, err := parseOperationBody(input, ctx)
 	if err != nil {
 		panic(err)

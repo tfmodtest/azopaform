@@ -1,4 +1,4 @@
-package pkg
+package operation
 
 import (
 	"fmt"
@@ -11,33 +11,62 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAllOfOperator(t *testing.T) {
+const testRegoModuleTemplate = `
+	package main
+	
+	import rego.v1
+	
+	default allow := false
+	r := input.resource_changes[_]
+	
+	allow if condition0
+	
+	%s
+	`
+
+func TestAnyOfOperator(t *testing.T) {
 	cases := []struct {
-		desc             string
-		conditions       []shared.Rego
-		protocol         string
-		port             int
-		publicAccessible bool
-		allowed          bool
+		desc       string
+		conditions []shared.Rego
+		protocol   string
+		allowed    bool
 	}{
 		{
-			desc: "alllow",
+			desc: "alllow left",
 			conditions: []shared.Rego{
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
-					Value: "tcp",
+					Value: "http",
 				},
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: shared.StringRego(`r.change.after.port`),
+						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
-					Value: 22,
+					Value: "ws",
 				},
 			},
-			protocol: "tcp",
-			port:     22,
+			protocol: "http",
+			allowed:  true,
+		},
+		{
+			desc: "alllow right",
+			conditions: []shared.Rego{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
+						Subject: shared.StringRego(`r.change.after.protocols[x]`),
+					},
+					Value: "http",
+				},
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
+						Subject: shared.StringRego(`r.change.after.protocols[x]`),
+					},
+					Value: "ws",
+				},
+			},
+			protocol: "ws",
 			allowed:  true,
 		},
 		{
@@ -49,13 +78,13 @@ func TestAllOfOperator(t *testing.T) {
 							BaseCondition: condition.BaseCondition{
 								Subject: shared.StringRego(`r.change.after.protocols[x]`),
 							},
-							Value: "tcp",
+							Value: "http",
 						},
 						&condition.Equals{
 							BaseCondition: condition.BaseCondition{
-								Subject: shared.StringRego(`r.change.after.port`),
+								Subject: shared.StringRego(`r.change.after.protocols[x]`),
 							},
-							Value: 22,
+							Value: "https",
 						},
 					},
 					baseOperation: baseOperation{
@@ -64,15 +93,13 @@ func TestAllOfOperator(t *testing.T) {
 				},
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: shared.StringRego(`r.change.after.public_accessible`),
+						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
-					Value: false,
+					Value: "ws",
 				},
 			},
-			protocol:         "https",
-			publicAccessible: false,
-			port:             22,
-			allowed:          true,
+			protocol: "https",
+			allowed:  true,
 		},
 		{
 			desc: "disallow",
@@ -81,23 +108,22 @@ func TestAllOfOperator(t *testing.T) {
 					BaseCondition: condition.BaseCondition{
 						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
-					Value: "tcp",
+					Value: "http",
 				},
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: shared.StringRego(`r.change.after.port`),
+						Subject: shared.StringRego(`r.change.after.protocols[x]`),
 					},
-					Value: 22,
+					Value: "ws",
 				},
 			},
-			protocol: "http",
-			port:     22,
+			protocol: "tcp",
 			allowed:  false,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			sut := &AllOf{
+			sut := &AnyOf{
 				Conditions: c.conditions,
 				baseOperation: baseOperation{
 					conditionSetName: "condition0",
@@ -117,9 +143,7 @@ func TestAllOfOperator(t *testing.T) {
 							"type": "azapi_resource",
 							"change": map[string]any{
 								"after": map[string]any{
-									"protocols":         []string{c.protocol},
-									"port":              c.port,
-									"public_accessible": c.publicAccessible,
+									"protocols": []string{c.protocol},
 								},
 							},
 						},
