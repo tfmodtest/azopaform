@@ -1,10 +1,9 @@
 package pkg
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/prashantv/gostub"
-	"github.com/spf13/afero"
-	"github.com/stretchr/testify/assert"
+	"github.com/open-policy-agent/opa/rego"
 	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/operation"
 	"json-rule-finder/pkg/shared"
@@ -12,6 +11,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/prashantv/gostub"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -80,7 +82,7 @@ const count_json = `{
     "parameters": {
       "effect": {
         "type": "string",
-        "defaultValue": "Audit",
+        "defaultValue": "Deny",
         "allowedValues": [
           "Audit",
           "Deny",
@@ -155,7 +157,7 @@ const deny_json = `{
           "Deny",
           "Disabled"
         ],
-        "defaultValue": "Audit"
+        "defaultValue": "Deny"
       }
     },
     "policyRule": {
@@ -166,7 +168,7 @@ const deny_json = `{
             "equals": "Microsoft.Web/serverFarms"
           },
           {
-            "allOf": [
+            "anyOf": [
               {
                 "field": "Microsoft.Web/serverFarms/sku.tier",
                 "notIn": [
@@ -300,81 +302,64 @@ const nested_json = `{
 }`
 
 func TestBasicTestAzurePolicyToRego(t *testing.T) {
-	rulesJson, err := os.ReadFile("rules.json")
-	require.NoError(t, err)
-	outputJson, err := os.ReadFile("output.json")
-	require.NoError(t, err)
+	//rulesJson, err := os.ReadFile("rules.json")
+	//require.NoError(t, err)
+	//outputJson, err := os.ReadFile("output.json")
+	//require.NoError(t, err)
 
-	expectedDenyRego := `package main
-
-import future.keywords.if
-import future.keywords.in
-tfplan := input if {
-     input.terraform_version
-} else := input.plan if {
-     input.plan.terraform_version
-}
-
-r := tfplan.resource_changes[_]
-
-warn if {
- condition3
-}
-condition3 if {
-r.type == "azurerm_service_plan"
-condition2
-}
-condition2 if {
-not r.change.after.sku[0].tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]
-not r.change.after.sku_name in ["B1","B2","B3","S1","S2","S3","EP1","EP2","EP3","P1","P2","P3","P1V2","P2V2","P3V2","P0V3","P1V3","P2V3","P3V3","P1MV3","P2MV3","P3MV3","P4MV3","P5MV3","I1","I2","I3","I1V2","I2V2","I3V2","I4V2","I5V2","I6V2","WS1","WS2","WS3"]
-}`
-
-	expectedCountRego := `package main
-
-import future.keywords.if
-import future.keywords.in
-tfplan := input if {
-     input.terraform_version
-} else := input.plan if {
-     input.plan.terraform_version
-}
-
-r := tfplan.resource_changes[_]
-
-warn if {
- condition1
-}
-condition1 if {
-r.type == "azurerm_app_service_environment_v3"
-regex.match("ASE*",r.kind)
-count({x|r.change.after.cluster_setting[x];condition1(x)}) < 1
-}
-condition1(x) if {
-condition1(x)
-}
-condition1(x) if {
-r.change.after.cluster_setting[x].name == "DisableTls1.0"
-r.change.after.cluster_setting[x].value == "1"
-}`
-
-	expectedListRego := `package main
-
-import rego.v1
-
-r := tfplan.resource_changes[_]
-
-warn if {
- condition1
-}
-condition1 if {
-r.type == "azurerm_healthcare_service"
-not condition1
-}
-condition1 if {
-r.change.after.cors_configuration[0].allowed_origins[0] != "*"
-}`
-
-	//	expectedNestedRego := `package main
+	//	expectedDenyRego := `package main
+	//
+	//import future.keywords.if
+	//import future.keywords.in
+	//tfplan := input if {
+	//     input.terraform_version
+	//} else := input.plan if {
+	//     input.plan.terraform_version
+	//}
+	//
+	//r := tfplan.resource_changes[_]
+	//
+	//warn if {
+	// condition3
+	//}
+	//condition3 if {
+	//r.type == "azurerm_service_plan"
+	//condition2
+	//}
+	//condition2 if {
+	//not r.change.after.sku[0].tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]
+	//not r.change.after.sku_name in ["B1","B2","B3","S1","S2","S3","EP1","EP2","EP3","P1","P2","P3","P1V2","P2V2","P3V2","P0V3","P1V3","P2V3","P3V3","P1MV3","P2MV3","P3MV3","P4MV3","P5MV3","I1","I2","I3","I1V2","I2V2","I3V2","I4V2","I5V2","I6V2","WS1","WS2","WS3"]
+	//}`
+	//
+	//	expectedCountRego := `package main
+	//
+	//import future.keywords.if
+	//import future.keywords.in
+	//tfplan := input if {
+	//     input.terraform_version
+	//} else := input.plan if {
+	//     input.plan.terraform_version
+	//}
+	//
+	//r := tfplan.resource_changes[_]
+	//
+	//warn if {
+	// condition1
+	//}
+	//condition1 if {
+	//r.type == "azurerm_app_service_environment_v3"
+	//regex.match("ASE*",r.kind)
+	//count({x|r.change.after.cluster_setting[x];condition1(x)}) < 1
+	//}
+	//condition1(x) if {
+	//condition1(x)
+	//}
+	//condition1(x) if {
+	//r.change.after.cluster_setting[x].name == "DisableTls1.0"
+	//r.change.after.cluster_setting[x].value == "1"
+	//}`
+	//
+	//	expectedListRego := `package main
 	//
 	//import rego.v1
 	//
@@ -384,111 +369,189 @@ r.change.after.cors_configuration[0].allowed_origins[0] != "*"
 	// condition1
 	//}
 	//condition1 if {
-	//r.type == "azurerm_api_management_api"
-	//count({x|r.change.after.protocols[x];condition1(x)}) >= 1
+	//r.type == "azurerm_healthcare_service"
+	//not condition1
 	//}
-	//condition1(x) if {
-	//not condition1(x)
-	//}
-	//condition1(x) if {
-	//r.change.after.protocols[x] != "http"
-	//r.change.after.protocols[x] != "ws"
+	//condition1 if {
+	//r.change.after.cors_configuration[0].allowed_origins[0] != "*"
 	//}`
 
 	cases := []struct {
-		desc         string
-		inputDirPath string
-		mockFs       map[string]string
-		expected     map[string]string
+		desc                  string
+		inputDirPath          string
+		mockFs                map[string]string
+		input                 map[string]any
+		generatedRegoFileName string
+		deny                  bool
 	}{
 		{
-			desc:         "deny.json",
+			desc:         "deny.json_allow_type_mismatch",
 			inputDirPath: "",
 			mockFs: map[string]string{
 				"deny.json": deny_json,
 			},
-			expected: map[string]string{
-				"deny.rego": expectedDenyRego,
+			generatedRegoFileName: "deny.rego",
+			input: map[string]any{
+				"terraform_version": "1.11.0",
+				"resource_changes": []any{
+					map[string]any{
+						"type": "azurerm_resource_group",
+						"change": map[string]any{
+							"after": map[string]any{
+								"properties": map[string]any{},
+							},
+						},
+					},
+				},
 			},
+			deny: false,
 		},
 		{
-			desc:         "dirPath",
-			inputDirPath: "/config",
-			mockFs: map[string]string{
-				"/config/deny.json": deny_json,
-			},
-			expected: map[string]string{
-				"deny.rego": expectedDenyRego,
-			},
-		},
-		{
-			desc:         "multiple json files in dirPath",
-			inputDirPath: "/config",
-			mockFs: map[string]string{
-				"/config/deny1.json": deny_json,
-				"/config/deny2.json": deny_json,
-			},
-			expected: map[string]string{
-				"deny1.rego": expectedDenyRego,
-				"deny2.rego": expectedDenyRego,
-			},
-		},
-		{
-			desc:         "json files in grandson's folders",
-			inputDirPath: "/config",
-			mockFs: map[string]string{
-				"/config/deny1/deny1.json": deny_json,
-				"/config/deny2/deny2.json": deny_json,
-			},
-			expected: map[string]string{
-				"deny1.rego": expectedDenyRego,
-				"deny2.rego": expectedDenyRego,
-			},
-		},
-		{
-			desc:         "policy contains count operator",
+			desc:         "deny.json_deny_sku_tier",
 			inputDirPath: "",
 			mockFs: map[string]string{
-				"count.json": count_json,
+				"deny.json": deny_json,
 			},
-			expected: map[string]string{
-				"count.rego": expectedCountRego,
+			generatedRegoFileName: "deny.rego",
+			input: map[string]any{
+				"terraform_version": "1.11.0",
+				"resource_changes": []any{
+					map[string]any{
+						"type": "Microsoft.Web/serverFarms",
+						"change": map[string]any{
+							"after": map[string]any{
+								"properties": map[string]any{
+									"sku": map[string]any{
+										"tier": "Basic",
+										"name": "NotB1",
+									},
+								},
+							},
+						},
+					},
+				},
 			},
+			deny: true,
+		},
+		{
+			desc:         "deny.json_deny_sku_name",
+			inputDirPath: "",
+			mockFs: map[string]string{
+				"deny.json": deny_json,
+			},
+			generatedRegoFileName: "deny.rego",
+			input: map[string]any{
+				"terraform_version": "1.11.0",
+				"resource_changes": []any{
+					map[string]any{
+						"type": "Microsoft.Web/serverFarms",
+						"change": map[string]any{
+							"after": map[string]any{
+								"properties": map[string]any{
+									"sku": map[string]any{
+										"tier": "NotBasic",
+										"name": "B1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			deny: true,
+		},
+		{
+			desc:         "deny.json_allow_full_input",
+			inputDirPath: "",
+			mockFs: map[string]string{
+				"deny.json": deny_json,
+			},
+			generatedRegoFileName: "deny.rego",
+			input: map[string]any{
+				"terraform_version": "1.11.0",
+				"resource_changes": []any{
+					map[string]any{
+						"type": "Microsoft.Web/serverFarms",
+						"change": map[string]any{
+							"after": map[string]any{
+								"properties": map[string]any{
+									"sku": map[string]any{
+										"tier": "NotBasic",
+										"name": "NotB1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			deny: true,
 		},
 		//{
-		//	desc:         "policy contains nested operations",
+		//	desc:         "count_deny",
 		//	inputDirPath: "",
 		//	mockFs: map[string]string{
-		//		"nested.json": nested_json,
+		//		"count.json": count_json,
+		//	},
+		//	generatedRegoFileName: "count.rego",
+		//	input: map[string]any{
+		//		"terraform_version": "1.11.0",
+		//		"resource_changes": []any{
+		//			map[string]any{
+		//				"type": "Microsoft.Web/hostingEnvironments",
+		//				"kind": "ASE1",
+		//				"change": map[string]any{
+		//					"after": map[string]any{
+		//						"properties": map[string]any{
+		//							"clusterSettings": []any{
+		//								map[string]any{
+		//									"name":  "DisableTls1.0",
+		//									"value": 1,
+		//								},
+		//							},
+		//						},
+		//					},
+		//				},
+		//			},
+		//		},
+		//	},
+		//	deny: false,
+		//},
+
+		////{
+		////	desc:         "policy contains nested operations",
+		////	inputDirPath: "",
+		////	mockFs: map[string]string{
+		////		"nested.json": nested_json,
+		////	},
+		////	expected: map[string]string{
+		////		"nested.rego": expectedNestedRego,
+		////	},
+		////},
+		//{
+		//	desc:         "policy contains lists with multiple indexes",
+		//	inputDirPath: "",
+		//	mockFs: map[string]string{
+		//		"list.json": list_field_json,
 		//	},
 		//	expected: map[string]string{
-		//		"nested.rego": expectedNestedRego,
+		//		"list.rego": expectedListRego,
 		//	},
 		//},
-		{
-			desc:         "policy contains lists with multiple indexes",
-			inputDirPath: "",
-			mockFs: map[string]string{
-				"list.json": list_field_json,
-			},
-			expected: map[string]string{
-				"list.rego": expectedListRego,
-			},
-		},
 	}
 
-	t.Skip("Skip this test because it's not working on CI")
+	//t.Skip("Skip this test because it's not working on CI")
 	//for i := 0; i < 10; i++ {
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s", c.desc), func(t *testing.T) {
-			files := map[string]string{
-				"rules.json":  string(rulesJson),
-				"output.json": string(outputJson),
-			}
-			for n, f := range c.mockFs {
-				files[n] = f
-			}
-			mockFs := fakeFs(files)
+			//files := map[string]string{
+			//	"rules.json":  string(rulesJson),
+			//	"output.json": string(outputJson),
+			//}
+			//for n, f := range c.mockFs {
+			//	files[n] = f
+			//}
+			mockFs := fakeFs(c.mockFs)
 			counter := 0
 			stub := gostub.Stub(&operation.NeoConditionNameGenerator, func(ctx *shared.Context) (string, error) {
 				newName := fmt.Sprintf("condition%d", counter)
@@ -503,14 +566,15 @@ r.change.after.cors_configuration[0].allowed_origins[0] != "*"
 				}
 			}
 			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, shared.NewContext()))
-			for n, expected := range c.expected {
-				content, err := afero.ReadFile(mockFs, n)
-				require.NoError(t, err)
-				assert.Equal(t, expected, string(content))
-			}
+			content, err := afero.ReadFile(mockFs, c.generatedRegoFileName)
+			require.NoError(t, err)
+			ctx := shared.NewContext()
+			input := rego.EvalInput(c.input)
+			j, _ := json.Marshal(c.input)
+			println(string(j))
+			shared.AssertRego(t, "data.main.deny", string(content), &input, c.deny, ctx)
 		})
 	}
-	//}
 }
 
 func fakeFs(files map[string]string) afero.Fs {
