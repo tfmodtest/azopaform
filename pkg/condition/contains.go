@@ -14,7 +14,7 @@ type Contains struct {
 }
 
 func (c Contains) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := c.Subject.Rego(ctx)
+	fieldName, err := c.GetSubject(ctx).Rego(ctx)
 	if err != nil {
 		return "", err
 	}

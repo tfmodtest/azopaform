@@ -15,12 +15,9 @@ type NotEquals struct {
 }
 
 func (n NotEquals) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := n.Subject.Rego(ctx)
+	fieldName, err := n.GetSubject(ctx).Rego(ctx)
 	if err != nil {
 		return "", err
-	}
-	if _, ok := ctx.FieldNameReplacer(); ok {
-		fieldName = ReplaceIndex(fieldName)
 	}
 	var v string
 	if reflect.TypeOf(n.Value).Kind() == reflect.String {

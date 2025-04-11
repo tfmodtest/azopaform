@@ -13,7 +13,7 @@ type NotIn struct {
 }
 
 func (n NotIn) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := n.Subject.Rego(ctx)
+	fieldName, err := n.GetSubject(ctx).Rego(ctx)
 	if err != nil {
 		return "", err
 	}

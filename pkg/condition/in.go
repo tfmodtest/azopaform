@@ -13,7 +13,7 @@ type In struct {
 }
 
 func (i In) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := i.Subject.Rego(ctx)
+	fieldName, err := i.GetSubject(ctx).Rego(ctx)
 	if err != nil {
 		return "", err
 	}

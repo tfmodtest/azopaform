@@ -51,7 +51,6 @@ func TestReplaceIndex_WithWildcardIndex(t *testing.T) {
 				Value: c.value,
 			}
 			ctx := shared.NewContext()
-			ctx.PushFieldName("x")
 			assertion, err := sut.Rego(ctx)
 			require.NoError(t, err)
 			regoCode := fmt.Sprintf(`package main

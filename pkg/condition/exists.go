@@ -13,12 +13,9 @@ type Exists struct {
 }
 
 func (e Exists) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := e.Subject.Rego(ctx)
+	fieldName, err := e.GetSubject(ctx).Rego(ctx)
 	if err != nil {
 		return "", err
-	}
-	if _, ok := ctx.FieldNameReplacer(); ok {
-		fieldName = ReplaceIndex(fieldName)
 	}
 	assertion := fmt.Sprintf("%s == %s", fieldName, fieldName)
 	var expected, isBool bool

@@ -14,12 +14,9 @@ type LessOrEquals struct {
 }
 
 func (l LessOrEquals) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := l.Subject.Rego(ctx)
+	fieldName, err := l.GetSubject(ctx).Rego(ctx)
 	if err != nil {
 		return "", err
-	}
-	if _, ok := ctx.FieldNameReplacer(); ok {
-		fieldName = ReplaceIndex(fieldName)
 	}
 	return strings.Join([]string{fieldName, "<=", fmt.Sprint(l.Value)}, " "), nil
 }

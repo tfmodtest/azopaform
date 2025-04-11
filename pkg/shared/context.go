@@ -28,6 +28,16 @@ func (c *Context) PushFieldName(name string) {
 	c.fieldNameReplacerStack.Push(name)
 }
 
+func (c *Context) PopFieldName() {
+	c.fieldNameReplacerStack.Pop()
+}
+
+func (c *Context) InHelperFunction(parameterName string, action func() error) error {
+	c.PushFieldName(parameterName)
+	defer c.PopFieldName()
+	return action()
+}
+
 func (c *Context) currentResourceType() (string, bool) {
 	value, ok := c.resourceTypeStack.Peek()
 	if !ok {

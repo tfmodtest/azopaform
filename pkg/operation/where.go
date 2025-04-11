@@ -29,32 +29,34 @@ func (w Where) HelperFunctionName() string {
 
 func (w Where) Rego(ctx *shared.Context) (string, error) {
 	var res string
-	var subSets []string
 	item := w.Condition
 	if operation, ok := item.(Operation); ok {
 		res += operation.HelperFunctionName() + "(x)"
-		ctx.PushFieldName("x")
-		subSet, err := item.Rego(ctx)
-		if err != nil {
+		if err := ctx.InHelperFunction("x", func() error {
+			helperFunctionBody, err := item.Rego(ctx)
+			if err != nil {
+				return err
+			}
+			ctx.EnqueueHelperFunction(helperFunctionBody)
+			return nil
+		}); err != nil {
 			return "", err
 		}
-		subSets = append(subSets, subSet)
 	} else {
-		ctx.PushFieldName("x")
-
-		condition, err := item.Rego(ctx)
-		if err != nil {
+		if err := ctx.InHelperFunction("x", func() error {
+			condition, err := item.Rego(ctx)
+			if err != nil {
+				return err
+			}
+			res += condition
+			return nil
+		}); err != nil {
 			return "", err
 		}
-		res += condition
 	}
 
 	res = w.ConditionSetName + "(x)" + " " + shared.IfCondition + " {\n" + res
 	res = res + "\n" + "}"
-
-	for _, subSet := range subSets {
-		res += "\n" + subSet
-	}
 
 	// add BaseCondition set body at the end
 	return res, nil
