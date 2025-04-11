@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/open-policy-agent/opa/format"
-	"github.com/open-policy-agent/opa/rego"
 	"github.com/stretchr/testify/require"
 )
 
@@ -136,21 +135,18 @@ func TestAnyOfOperator(t *testing.T) {
 			formattedCfg, err := format.Source("test.rego", []byte(regoCfg))
 			require.NoError(t, err)
 			regoCfg = string(formattedCfg)
-			shared.AssertRegoAllow(t, regoCfg, func() *rego.EvalOption {
-				input := rego.EvalInput(map[string]any{
-					"resource_changes": []map[string]any{
-						{
-							"type": "azapi_resource",
-							"change": map[string]any{
-								"after": map[string]any{
-									"protocols": []string{c.protocol},
-								},
+			shared.AssertRegoAllow(t, regoCfg, map[string]any{
+				"resource_changes": []map[string]any{
+					{
+						"type": "azapi_resource",
+						"change": map[string]any{
+							"after": map[string]any{
+								"protocols": []string{c.protocol},
 							},
 						},
 					},
-				})
-				return &input
-			}(), c.allowed, ctx)
+				},
+			}, c.allowed, ctx)
 		})
 	}
 }

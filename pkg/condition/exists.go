@@ -1,9 +1,8 @@
 package condition
 
 import (
+	"fmt"
 	"json-rule-finder/pkg/shared"
-	"reflect"
-	"strings"
 )
 
 var _ Condition = Exists{}
@@ -21,9 +20,18 @@ func (e Exists) Rego(ctx *shared.Context) (string, error) {
 	if _, ok := ctx.FieldNameReplacer(); ok {
 		fieldName = ReplaceIndex(fieldName)
 	}
-	if (reflect.TypeOf(e.Value).Kind() == reflect.Bool && e.Value.(bool)) || (reflect.TypeOf(e.Value).Kind() == reflect.String && e.Value.(string) == "true") {
-		return fieldName, nil
-	} else {
-		return strings.Join([]string{shared.Not, fieldName}, " "), nil
+	assertion := fmt.Sprintf("%s == %s", fieldName, fieldName)
+	var expected, isBool bool
+	expectedStr, isString := e.Value.(string)
+	if isString {
+		expected = expectedStr == "true"
 	}
+	_, isBool = e.Value.(bool)
+	if isBool {
+		expected = e.Value.(bool)
+	}
+	if !expected {
+		assertion = "not " + assertion
+	}
+	return assertion, nil
 }
