@@ -1,9 +1,7 @@
 package pkg
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/open-policy-agent/opa/rego"
 	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/operation"
 	"json-rule-finder/pkg/shared"
@@ -569,10 +567,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 			content, err := afero.ReadFile(mockFs, c.generatedRegoFileName)
 			require.NoError(t, err)
 			ctx := shared.NewContext()
-			input := rego.EvalInput(c.input)
-			j, _ := json.Marshal(c.input)
-			println(string(j))
-			shared.AssertRego(t, "data.main.deny", string(content), &input, c.deny, ctx)
+			shared.AssertRego(t, "data.main.deny", string(content), c.input, c.deny, ctx)
 		})
 	}
 }
