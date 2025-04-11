@@ -87,7 +87,7 @@ func TestAnyOfOperator(t *testing.T) {
 						},
 					},
 					baseOperation: baseOperation{
-						conditionSetName: "condition1",
+						helperFunctionName: "condition1",
 					},
 				},
 				&condition.Equals{
@@ -125,7 +125,7 @@ func TestAnyOfOperator(t *testing.T) {
 			sut := &AnyOf{
 				Conditions: c.conditions,
 				baseOperation: baseOperation{
-					conditionSetName: "condition0",
+					helperFunctionName: "condition0",
 				},
 			}
 			ctx := shared.NewContext()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/emirpasic/gods/stacks"
 	"github.com/emirpasic/gods/stacks/arraystack"
+	"strings"
 )
 
 type Context struct {
@@ -11,6 +12,7 @@ type Context struct {
 	resourceTypeStack      stacks.Stack
 	fieldNameReplacerStack stacks.Stack
 	conditionNameCounter   stacks.Stack
+	helperFuncs            []string
 }
 
 func NewContext() *Context {
@@ -60,4 +62,17 @@ func (c *Context) FieldNameReplacer() (string, bool) {
 
 func (c *Context) PushResourceType(rt string) {
 	c.resourceTypeStack.Push(rt)
+}
+
+func (c *Context) EnqueueHelperFunction(funcDec string) {
+	c.helperFuncs = append(c.helperFuncs, funcDec)
+}
+
+func (c *Context) HelperFunctionsRego() string {
+	sb := new(strings.Builder)
+	for _, helperFunc := range c.helperFuncs {
+		sb.WriteString(helperFunc)
+		sb.WriteString("\n")
+	}
+	return sb.String()
 }

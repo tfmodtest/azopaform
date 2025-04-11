@@ -30,9 +30,9 @@ func NewCount(input any, ctx *shared.Context) Count {
 	countFieldConverted := replaceIndex(countField)
 	var countBody string
 	if whereBody != nil {
-		countBody = shared.Count + "({x|x:=" + countFieldConverted + "[_];" + whereBody.GetConditionSetName() + "(x)})"
+		countBody = shared.Count + "({x|x:=" + countFieldConverted + ";" + whereBody.HelperFunctionName() + "(x)})"
 	} else {
-		countBody = shared.Count + "({x|x:=" + countFieldConverted + "[_]})"
+		countBody = shared.Count + "({x|x:=" + countFieldConverted + "})"
 	}
 	countBody = strings.Replace(countBody, "*", "x", -1)
 	return Count{
@@ -44,11 +44,11 @@ func NewCount(input any, ctx *shared.Context) Count {
 func (c Count) Rego(ctx *shared.Context) (string, error) {
 	res := c.CountExp
 	if c.Where != nil {
-		whereSubset, err := c.Where.Rego(ctx)
+		whereHelperDef, err := c.Where.Rego(ctx)
 		if err != nil {
 			return "", err
 		}
-		res = c.CountExp + "\n" + whereSubset
+		ctx.EnqueueHelperFunction(whereHelperDef)
 	}
 	return res, nil
 }

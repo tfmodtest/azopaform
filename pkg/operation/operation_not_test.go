@@ -43,7 +43,7 @@ func TestNotOperator(t *testing.T) {
 			desc: "nested operator disallow",
 			condition: &AnyOf{
 				baseOperation: baseOperation{
-					conditionSetName: "condition_any_of_0",
+					helperFunctionName: "condition_any_of_0",
 				},
 				Conditions: []shared.Rego{
 					&AnyOf{
@@ -62,7 +62,7 @@ func TestNotOperator(t *testing.T) {
 							},
 						},
 						baseOperation: baseOperation{
-							conditionSetName: "condition_any_of_1",
+							helperFunctionName: "condition_any_of_1",
 						},
 					},
 					&condition.Equals{
@@ -80,7 +80,7 @@ func TestNotOperator(t *testing.T) {
 			desc: "nested operator allow",
 			condition: &AllOf{
 				baseOperation: baseOperation{
-					conditionSetName: "condition_all_of",
+					helperFunctionName: "condition_all_of",
 				},
 				Conditions: []shared.Rego{
 					&AnyOf{
@@ -99,7 +99,7 @@ func TestNotOperator(t *testing.T) {
 							},
 						},
 						baseOperation: baseOperation{
-							conditionSetName: "condition_any_of",
+							helperFunctionName: "condition_any_of",
 						},
 					},
 					&condition.Equals{
@@ -119,7 +119,7 @@ func TestNotOperator(t *testing.T) {
 			sut := &Not{
 				Body: c.condition,
 				baseOperation: baseOperation{
-					conditionSetName: "condition0",
+					helperFunctionName: "condition0",
 				},
 			}
 			ctx := shared.NewContext()

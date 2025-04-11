@@ -14,7 +14,7 @@ type AllOf struct {
 func NewAllOf(conditionSetName string, conditions []shared.Rego) AllOf {
 	return AllOf{
 		baseOperation: baseOperation{
-			conditionSetName: conditionSetName,
+			helperFunctionName: conditionSetName,
 		},
 		Conditions: conditions,
 	}
@@ -26,7 +26,7 @@ func ParseAllOf(input any, ctx *shared.Context) shared.Rego {
 		panic(err)
 	}
 	return AllOf{
-		baseOperation: baseOperation{conditionSetName: conditionSetName},
+		baseOperation: baseOperation{helperFunctionName: conditionSetName},
 		Conditions:    body,
 	}
 }
@@ -35,17 +35,17 @@ func (a AllOf) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	var subSets []string
 
-	res = a.GetConditionSetName() + " " + shared.IfCondition + " {"
+	res = a.HelperFunctionName() + " " + shared.IfCondition + " {"
 	if _, ok := ctx.FieldNameReplacer(); ok {
-		res = a.GetConditionSetName() + "(x)" + " " + shared.IfCondition + " {"
+		res = a.HelperFunctionName() + "(x)" + " " + shared.IfCondition + " {"
 	}
 
 	for _, item := range a.Conditions {
 		if _, ok := item.(Operation); ok {
 			if _, ok := ctx.FieldNameReplacer(); ok {
-				res += "\n" + item.(Operation).GetConditionSetName() + "(x)"
+				res += "\n" + item.(Operation).HelperFunctionName() + "(x)"
 			} else {
-				res += "\n" + item.(Operation).GetConditionSetName()
+				res += "\n" + item.(Operation).HelperFunctionName()
 			}
 			subSet, err := item.Rego(ctx)
 			if err != nil {

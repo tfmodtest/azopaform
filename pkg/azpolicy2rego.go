@@ -45,7 +45,9 @@ tfplan := input if {
 
 r := tfplan.resource_changes[_]
 
-%s`, rego), nil
+%s
+
+%s`, rego, ctx.HelperFunctionsRego()), nil
 }
 
 func (r *Rule) Parse(ctx *shared.Context) error {

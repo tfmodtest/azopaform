@@ -16,7 +16,7 @@ type AnyOf struct {
 func NewAnyOf(conditionSetName string, conditions []shared.Rego) AnyOf {
 	return AnyOf{
 		baseOperation: baseOperation{
-			conditionSetName: conditionSetName,
+			helperFunctionName: conditionSetName,
 		},
 		Conditions: conditions,
 	}
@@ -29,16 +29,16 @@ func ParseAnyOf(input any, ctx *shared.Context) shared.Rego {
 	}
 	return AnyOf{
 		Conditions:    body,
-		baseOperation: baseOperation{conditionSetName: conditionSetName},
+		baseOperation: baseOperation{helperFunctionName: conditionSetName},
 	}
 }
 
 func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	var subSets []string
-	head := a.GetConditionSetName()
+	head := a.HelperFunctionName()
 	if _, ok := ctx.FieldNameReplacer(); ok {
-		head = a.GetConditionSetName() + "(x)"
+		head = a.HelperFunctionName() + "(x)"
 	}
 	for _, item := range a.Conditions {
 		if res != "" {
@@ -46,9 +46,9 @@ func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
 		}
 		if _, ok := item.(Operation); ok {
 			if _, ok := ctx.FieldNameReplacer(); ok {
-				res += head + " if {" + item.(Operation).GetConditionSetName() + "(x)}"
+				res += head + " if {" + item.(Operation).HelperFunctionName() + "(x)}"
 			} else {
-				res += head + " if {" + item.(Operation).GetConditionSetName() + "}"
+				res += head + " if {" + item.(Operation).HelperFunctionName() + "}"
 			}
 			subSet, err := item.Rego(ctx)
 			if err != nil {

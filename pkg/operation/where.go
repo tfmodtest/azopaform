@@ -15,7 +15,7 @@ func NewWhere(input any, ctx *shared.Context) Operation {
 	whereBody := NewOperationOrCondition(input.(map[string]any), ctx)
 	conditionSetName, err := NeoConditionNameGenerator(ctx)
 	if err != nil {
-		return nil
+		panic(err)
 	}
 	return Where{
 		Condition:        whereBody,
@@ -23,7 +23,7 @@ func NewWhere(input any, ctx *shared.Context) Operation {
 	}
 }
 
-func (w Where) GetConditionSetName() string {
+func (w Where) HelperFunctionName() string {
 	return w.ConditionSetName
 }
 
@@ -32,7 +32,7 @@ func (w Where) Rego(ctx *shared.Context) (string, error) {
 	var subSets []string
 	item := w.Condition
 	if operation, ok := item.(Operation); ok {
-		res += operation.GetConditionSetName() + "(x)"
+		res += operation.HelperFunctionName() + "(x)"
 		ctx.PushFieldName("x")
 		subSet, err := item.Rego(ctx)
 		if err != nil {
@@ -41,6 +41,7 @@ func (w Where) Rego(ctx *shared.Context) (string, error) {
 		subSets = append(subSets, subSet)
 	} else {
 		ctx.PushFieldName("x")
+
 		condition, err := item.Rego(ctx)
 		if err != nil {
 			return "", err

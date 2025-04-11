@@ -9,16 +9,16 @@ import (
 )
 
 type baseOperation struct {
-	conditionSetName string
+	helperFunctionName string
 }
 
-func (o baseOperation) GetConditionSetName() string {
-	return o.conditionSetName
+func (o baseOperation) HelperFunctionName() string {
+	return o.helperFunctionName
 }
 
 type Operation interface {
 	shared.Rego
-	GetConditionSetName() string
+	HelperFunctionName() string
 }
 
 func NewOperationOrCondition(input map[string]any, ctx *shared.Context) shared.Rego {

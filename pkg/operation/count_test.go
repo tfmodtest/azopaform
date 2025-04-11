@@ -21,7 +21,7 @@ func TestCount(t *testing.T) {
 		{
 			name: "simple",
 			unparsed: map[string]any{
-				"value": "input.items",
+				"field": "input.items[*]",
 			},
 			input: map[string]any{
 				"items": []any{
@@ -31,10 +31,31 @@ func TestCount(t *testing.T) {
 			query:    "c",
 			expected: 3,
 		},
+		{
+			name: "with where",
+			unparsed: map[string]any{
+				"field": "input.items[*]",
+				"where": map[string]any{
+					"field":           "input.items[*]",
+					"greaterOrEquals": 3,
+				},
+			},
+			input: map[string]any{
+				"items": []any{
+					2, 3, 4,
+				},
+			},
+			query:    "c",
+			expected: 2,
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			ctx := shared.NewContext()
+			ctx.ClearConditionNameCounter()
+			for i := 100; i > 0; i-- {
+				ctx.PushConditionNameCounter(i)
+			}
 			sut := NewCount(c.unparsed, ctx)
 			exp, err := sut.Rego(ctx)
 			require.NoError(t, err)
@@ -44,7 +65,9 @@ func TestCount(t *testing.T) {
 	import rego.v1
 	
 	c := %s
-`, exp), c.input, ctx).(json.Number)
+
+%s
+`, exp, ctx.HelperFunctionsRego()), c.input, ctx).(json.Number)
 			require.True(t, ok)
 			count, err := strconv.Atoi(jsCount.String())
 			require.NoError(t, err)

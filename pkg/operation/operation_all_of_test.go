@@ -58,7 +58,7 @@ func TestAllOfOperator(t *testing.T) {
 						},
 					},
 					baseOperation: baseOperation{
-						conditionSetName: "condition1",
+						helperFunctionName: "condition1",
 					},
 				},
 				&condition.Equals{
@@ -99,7 +99,7 @@ func TestAllOfOperator(t *testing.T) {
 			sut := &AllOf{
 				Conditions: c.conditions,
 				baseOperation: baseOperation{
-					conditionSetName: "condition0",
+					helperFunctionName: "condition0",
 				},
 			}
 			ctx := shared.NewContext()

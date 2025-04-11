@@ -40,7 +40,7 @@ func TestOperations(t *testing.T) {
 						},
 					},
 					baseOperation: baseOperation{
-						conditionSetName: "aaaaa",
+						helperFunctionName: "aaaaa",
 					},
 				},
 				ConditionSetName: "aaaaaaaaa",
@@ -80,7 +80,7 @@ func TestOperations(t *testing.T) {
 							},
 						},
 						baseOperation: baseOperation{
-							conditionSetName: "aaaaa",
+							helperFunctionName: "aaaaa",
 						},
 					},
 					AnyOf{
@@ -99,12 +99,12 @@ func TestOperations(t *testing.T) {
 							},
 						},
 						baseOperation: baseOperation{
-							conditionSetName: "aaaaaaa",
+							helperFunctionName: "aaaaaaa",
 						},
 					},
 				},
 				baseOperation: baseOperation{
-					conditionSetName: "aaaaa",
+					helperFunctionName: "aaaaa",
 				},
 			},
 			expected: "aaaaa if {\naaaaa\nnot aaaaaaa\n}\naaaaa if {\nr.type == \"azurerm_app_service_plan\"\nr.change.after.sku_name\n}\naaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nr.change.after.sku[0].tier != \"Basic\"\n}",
@@ -129,7 +129,7 @@ func TestOperations(t *testing.T) {
 							},
 						},
 						baseOperation: baseOperation{
-							conditionSetName: "aaaaaaa",
+							helperFunctionName: "aaaaaaa",
 						},
 					},
 					AnyOf{
@@ -148,12 +148,12 @@ func TestOperations(t *testing.T) {
 							},
 						},
 						baseOperation: baseOperation{
-							conditionSetName: "aaaaaaa",
+							helperFunctionName: "aaaaaaa",
 						},
 					},
 				},
 				baseOperation: baseOperation{
-					conditionSetName: "aaaaaaa",
+					helperFunctionName: "aaaaaaa",
 				},
 			},
 			expected: "aaaaaaa if {\naaaaaaa\naaaaaaa\n}\naaaaaaa if {\nr.type != \"azurerm_app_service_plan\"\nr.type != \"azurerm_app_service_environment\"\n}\naaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nr.change.after.sku[0].tier != \"Basic\"\n}",
@@ -176,7 +176,7 @@ func TestOperations(t *testing.T) {
 					},
 				},
 				baseOperation: baseOperation{
-					conditionSetName: "aaaaa",
+					helperFunctionName: "aaaaa",
 				},
 			},
 			expected: "aaaaa if {\nr.type == \"azurerm_app_service_plan\"\nr.change.after.sku_name\n}",
@@ -199,7 +199,7 @@ func TestOperations(t *testing.T) {
 					},
 				},
 				baseOperation: baseOperation{
-					conditionSetName: "aaaaaaa",
+					helperFunctionName: "aaaaaaa",
 				},
 			},
 			expected: "aaaaaaa if {\nr.change.after.sku[0].tier != \"Standard\"\nnot r.change.after.sku[0].tier in [\"Basic\",\"Premium\"]\n}",
@@ -216,7 +216,7 @@ func TestOperations(t *testing.T) {
 					Value: "Standard",
 				},
 				baseOperation: baseOperation{
-					conditionSetName: "aaa",
+					helperFunctionName: "aaa",
 				},
 			},
 			expected: "aaa if {\nr.change.after.sku[0].tier == \"Standard\"\n}",

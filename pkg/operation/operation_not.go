@@ -16,7 +16,7 @@ func NewNot(conditionSetName string, body shared.Rego) Not {
 	return Not{
 		Body: body,
 		baseOperation: baseOperation{
-			conditionSetName: conditionSetName,
+			helperFunctionName: conditionSetName,
 		},
 	}
 }
@@ -31,7 +31,7 @@ func ParseNot(input any, ctx *shared.Context) shared.Rego {
 	return Not{
 		Body: body,
 		baseOperation: baseOperation{
-			conditionSetName: conditionSetName,
+			helperFunctionName: conditionSetName,
 		},
 	}
 }
@@ -44,15 +44,15 @@ func (n Not) Rego(ctx *shared.Context) (string, error) {
 				n.Body,
 			},
 			baseOperation: baseOperation{
-				conditionSetName: fmt.Sprintf("%s_%s", n.GetConditionSetName(), "negation"),
+				helperFunctionName: fmt.Sprintf("%s_%s", n.HelperFunctionName(), "negation"),
 			},
 		}
 	}
 	var bodyRes string
 	if _, ok := ctx.FieldNameReplacer(); ok {
-		bodyRes = body.GetConditionSetName() + "(x)"
+		bodyRes = body.HelperFunctionName() + "(x)"
 	} else {
-		bodyRes = body.GetConditionSetName()
+		bodyRes = body.HelperFunctionName()
 	}
 	subSet, err := body.Rego(ctx)
 	if err != nil {
@@ -62,5 +62,5 @@ func (n Not) Rego(ctx *shared.Context) (string, error) {
   not %s
 }
 
-%s`, n.GetConditionSetName(), bodyRes, subSet), nil
+%s`, n.HelperFunctionName(), bodyRes, subSet), nil
 }

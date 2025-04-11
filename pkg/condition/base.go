@@ -9,6 +9,14 @@ type BaseCondition struct {
 	Subject shared.Rego
 }
 
+func (b BaseCondition) GetSubject(ctx *shared.Context) shared.Rego {
+	localName, ok := ctx.FieldNameReplacer()
+	if ok {
+		return shared.StringRego(localName)
+	}
+	return b.Subject
+}
+
 func NewCondition(conditionType string, subject shared.Rego, value any) shared.Rego {
 	if cf, ok := ConditionFactory[conditionType]; ok {
 		return cf(subject, value)
@@ -146,8 +154,4 @@ var ConditionFactory = map[string]func(shared.Rego, any) shared.Rego{
 			Value:         input,
 		}
 	},
-}
-
-type Condition interface {
-	shared.Rego
 }
