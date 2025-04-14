@@ -33,7 +33,6 @@ func ParseAllOf(input any, ctx *shared.Context) shared.Rego {
 
 func (a AllOf) Rego(ctx *shared.Context) (string, error) {
 	var res string
-	var subSets []string
 
 	res = a.HelperFunctionName() + " " + shared.IfCondition + " {"
 	if _, ok := ctx.FieldNameReplacer(); ok {
@@ -47,11 +46,11 @@ func (a AllOf) Rego(ctx *shared.Context) (string, error) {
 			} else {
 				res += "\n" + item.(Operation).HelperFunctionName()
 			}
-			subSet, err := item.Rego(ctx)
+			subFunction, err := item.Rego(ctx)
 			if err != nil {
 				return "", err
 			}
-			subSets = append(subSets, subSet)
+			ctx.EnqueueHelperFunction(subFunction)
 			continue
 		}
 
@@ -63,10 +62,6 @@ func (a AllOf) Rego(ctx *shared.Context) (string, error) {
 	}
 
 	res = res + "\n}"
-
-	for _, subSet := range subSets {
-		res += "\n" + subSet
-	}
 
 	// add BaseCondition set body at the end
 	return res, nil

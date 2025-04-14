@@ -125,7 +125,7 @@ func TestNotOperator(t *testing.T) {
 			ctx := shared.NewContext()
 			actual, err := sut.Rego(ctx)
 			require.NoError(t, err)
-			regoCfg := fmt.Sprintf(testRegoModuleTemplate, actual)
+			regoCfg := fmt.Sprintf(testRegoModuleTemplate, actual, ctx.HelperFunctionsRego())
 			formattedCfg, err := format.Source("test.rego", []byte(regoCfg))
 			require.NoError(t, err)
 			regoCfg = string(formattedCfg)

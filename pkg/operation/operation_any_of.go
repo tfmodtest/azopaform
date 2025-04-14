@@ -35,7 +35,6 @@ func ParseAnyOf(input any, ctx *shared.Context) shared.Rego {
 
 func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
 	var res string
-	var subSets []string
 	head := a.HelperFunctionName()
 	if _, ok := ctx.FieldNameReplacer(); ok {
 		head = a.HelperFunctionName() + "(x)"
@@ -54,7 +53,7 @@ func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			subSets = append(subSets, subSet)
+			ctx.EnqueueHelperFunction(subSet)
 			continue
 		}
 
@@ -65,10 +64,6 @@ func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
 			}
 			res += fmt.Sprintf("%s if {%s}", head, condition)
 		}
-	}
-
-	for _, subSet := range subSets {
-		res += "\n" + subSet
 	}
 	return res, nil
 }

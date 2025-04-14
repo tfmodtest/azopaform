@@ -21,6 +21,8 @@ const testRegoModuleTemplate = `
 	allow if condition0
 	
 	%s
+
+    %s
 	`
 
 func TestAnyOfOperator(t *testing.T) {
@@ -131,7 +133,7 @@ func TestAnyOfOperator(t *testing.T) {
 			ctx := shared.NewContext()
 			actual, err := sut.Rego(ctx)
 			require.NoError(t, err)
-			regoCfg := fmt.Sprintf(testRegoModuleTemplate, actual)
+			regoCfg := fmt.Sprintf(testRegoModuleTemplate, actual, ctx.HelperFunctionsRego())
 			formattedCfg, err := format.Source("test.rego", []byte(regoCfg))
 			require.NoError(t, err)
 			regoCfg = string(formattedCfg)
