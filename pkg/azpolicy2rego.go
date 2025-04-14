@@ -3,6 +3,7 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/open-policy-agent/opa/format"
 	"json-rule-finder/pkg/operation"
 	"json-rule-finder/pkg/shared"
 	"path/filepath"
@@ -55,7 +56,12 @@ func (r *Rule) Parse(ctx *shared.Context) error {
 	if err != nil {
 		return err
 	}
-	r.result = ruleRego
+	formattedSrc, err := format.Source("output.rego", []byte(ruleRego))
+	if err != nil {
+		return fmt.Errorf("invalid rego code: %w", err)
+	}
+	r.result = string(formattedSrc)
+	//r.result = ruleRego
 	return nil
 }
 
