@@ -52,10 +52,6 @@ func TestCount(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			ctx := shared.NewContext()
-			ctx.ClearConditionNameCounter()
-			for i := 100; i > 0; i-- {
-				ctx.PushConditionNameCounter(i)
-			}
 			sut := NewCount(c.unparsed, ctx)
 			exp, err := sut.Rego(ctx)
 			require.NoError(t, err)

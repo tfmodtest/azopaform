@@ -13,10 +13,7 @@ type Where struct {
 
 func NewWhere(input any, ctx *shared.Context) Operation {
 	whereBody := NewOperationOrCondition(input.(map[string]any), ctx)
-	conditionSetName, err := NeoConditionNameGenerator(ctx)
-	if err != nil {
-		panic(err)
-	}
+	conditionSetName := NeoConditionNameGenerator(ctx)
 	return Where{
 		Condition:        whereBody,
 		ConditionSetName: conditionSetName,

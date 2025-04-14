@@ -204,11 +204,6 @@ func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error
 		paths = []string{policyPath}
 	}
 	for _, path := range paths {
-		ctx.ClearConditionNameCounter()
-		for i := 100; i > 0; i-- {
-			ctx.PushConditionNameCounter(i)
-		}
-
 		rule, err := LoadRule(path, ctx)
 		if err != nil {
 			return fmt.Errorf("error when loading rule from path %s, error is %+v", path, err)
@@ -217,7 +212,6 @@ func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error
 		if err != nil {
 			return fmt.Errorf("error when saving parsed rule to disk, error is %+v", err)
 		}
-
 	}
 	return nil
 }

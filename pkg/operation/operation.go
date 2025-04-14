@@ -2,11 +2,16 @@ package operation
 
 import (
 	"fmt"
+	"github.com/emirpasic/gods/sets/hashset"
 	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
 	"json-rule-finder/pkg/value"
 	"strings"
+
+	"github.com/xyproto/randomstring"
 )
+
+var usedRandomString = hashset.New()
 
 type baseOperation struct {
 	helperFunctionName string
@@ -44,13 +49,16 @@ func NewOperation(operationType string, body any, ctx *shared.Context) shared.Re
 	return nil
 }
 
-var NeoConditionNameGenerator = func(ctx *shared.Context) (string, error) {
-	index, ok := ctx.PopConditionNameCounter()
-	if !ok {
-		return "", fmt.Errorf("conditionNameStack is empty")
+var NeoConditionNameGenerator = func(ctx *shared.Context) string {
+	var randomSuffix string
+	for {
+		randomSuffix = randomstring.HumanFriendlyEnglishString(10)
+		if !usedRandomString.Contains(randomSuffix) {
+			usedRandomString.Add(randomSuffix)
+			break
+		}
 	}
-	conditionName := "condition" + fmt.Sprintf("%d", index)
-	return conditionName, nil
+	return fmt.Sprintf("condition%s", randomSuffix)
 }
 
 func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, string, error) {
@@ -60,10 +68,7 @@ func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, string, 
 		itemMap := item.(map[string]any)
 		body = append(body, NewOperationOrCondition(itemMap, ctx))
 	}
-	conditionSetName, err := NeoConditionNameGenerator(ctx)
-	if err != nil {
-		return nil, "", err
-	}
+	conditionSetName := NeoConditionNameGenerator(ctx)
 	return body, conditionSetName, nil
 }
 

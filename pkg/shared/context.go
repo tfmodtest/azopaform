@@ -11,7 +11,6 @@ type Context struct {
 	context.Context
 	resourceTypeStack      stacks.Stack
 	fieldNameReplacerStack stacks.Stack
-	conditionNameCounter   stacks.Stack
 	helperFuncs            []string
 }
 
@@ -20,7 +19,6 @@ func NewContext() *Context {
 		Context:                context.Background(),
 		resourceTypeStack:      arraystack.New(),
 		fieldNameReplacerStack: arraystack.New(),
-		conditionNameCounter:   arraystack.New(),
 	}
 }
 
@@ -44,22 +42,6 @@ func (c *Context) currentResourceType() (string, bool) {
 		return "", false
 	}
 	return value.(string), true
-}
-
-func (c *Context) PopConditionNameCounter() (int, bool) {
-	value, ok := c.conditionNameCounter.Pop()
-	if !ok {
-		return -1, false
-	}
-	return value.(int), true
-}
-
-func (c *Context) ClearConditionNameCounter() {
-	c.conditionNameCounter.Clear()
-}
-
-func (c *Context) PushConditionNameCounter(counter int) {
-	c.conditionNameCounter.Push(counter)
 }
 
 func (c *Context) FieldNameReplacer() (string, bool) {

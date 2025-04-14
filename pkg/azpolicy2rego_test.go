@@ -542,19 +542,12 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 	//for i := 0; i < 10; i++ {
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s", c.desc), func(t *testing.T) {
-			//files := map[string]string{
-			//	"rules.json":  string(rulesJson),
-			//	"output.json": string(outputJson),
-			//}
-			//for n, f := range c.mockFs {
-			//	files[n] = f
-			//}
 			mockFs := fakeFs(c.mockFs)
 			counter := 0
-			stub := gostub.Stub(&operation.NeoConditionNameGenerator, func(ctx *shared.Context) (string, error) {
+			stub := gostub.Stub(&operation.NeoConditionNameGenerator, func(ctx *shared.Context) string {
 				newName := fmt.Sprintf("condition%d", counter)
 				counter++
-				return newName, nil
+				return newName
 			}).Stub(&Fs, mockFs)
 			defer stub.Reset()
 			policyPath := ""
@@ -667,13 +660,16 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 	path := "deny.json"
 	t.Run("LoadRule", func(t *testing.T) {
 		fs := prepareMemFs(t)
-		stub := gostub.Stub(&Fs, fs)
+		counter := 1
+		stub := gostub.Stub(&Fs, fs).Stub(&operation.NeoConditionNameGenerator, func(ctx *shared.Context) string {
+			defer func() {
+				counter++
+			}()
+			return fmt.Sprintf("condition%d", counter)
+		})
 		defer stub.Reset()
 
 		ctx := shared.NewContext()
-		for i := 100; i > 0; i-- {
-			ctx.PushConditionNameCounter(i)
-		}
 		rule, err := LoadRule(path, ctx)
 		require.NoError(t, err)
 		err = rule.SaveToDisk()
@@ -1151,8 +1147,8 @@ func TestNewPolicyRuleBody(t *testing.T) {
 					NewPolicyRuleBody(tt.input, shared.NewContext())
 				})
 			} else {
-				stub := gostub.Stub(&operation.NeoConditionNameGenerator, func(ctx *shared.Context) (string, error) {
-					return "condition1", nil
+				stub := gostub.Stub(&operation.NeoConditionNameGenerator, func(ctx *shared.Context) string {
+					return "condition1"
 				})
 				defer stub.Reset()
 				result := NewPolicyRuleBody(tt.input, shared.NewContext())
