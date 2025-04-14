@@ -7,6 +7,7 @@ import (
 	"json-rule-finder/pkg/shared"
 	"json-rule-finder/pkg/value"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/open-policy-agent/opa/format"
@@ -557,7 +558,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 					policyPath = n
 				}
 			}
-			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, shared.NewContext()))
+			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, Options{}, shared.NewContext()))
 			content, err := afero.ReadFile(mockFs, c.generatedRegoFileName)
 			require.NoError(t, err)
 			ctx := shared.NewContext()
@@ -671,7 +672,7 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 		defer stub.Reset()
 
 		ctx := shared.NewContext()
-		rule, err := LoadRule(path, ctx)
+		rule, err := LoadRule(path, Options{}, ctx)
 		require.NoError(t, err)
 		err = rule.SaveToDisk()
 		require.NoError(t, err)
@@ -707,6 +708,21 @@ condition1 if {
 		require.NoError(t, err)
 		assert.Equal(t, string(formattedExpected), string(file))
 	})
+}
+
+func TestAzPolicy2Rego_customizePackageName(t *testing.T) {
+	path := "deny.json"
+	fs := prepareMemFs(t)
+	stub := gostub.Stub(&Fs, fs)
+	defer stub.Reset()
+	ctx := shared.NewContext()
+	rule, err := LoadRule(path, Options{PackageName: "customized"}, ctx)
+	require.NoError(t, err)
+	regoCode, err := rule.Rego(ctx)
+	require.NoError(t, err)
+	formattedExpected, err := format.Source("temp.rego", []byte(regoCode))
+	require.NoError(t, err)
+	assert.True(t, strings.HasPrefix(string(formattedExpected), "package customized"))
 }
 
 func TestNewPolicyRuleBody(t *testing.T) {

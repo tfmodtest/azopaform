@@ -14,11 +14,12 @@ import (
 var _ shared.Rego = &Rule{}
 
 type Rule struct {
-	Properties *PolicyRuleModel
-	Id         string
-	Name       string
-	path       string
-	result     string
+	Properties  *PolicyRuleModel
+	Id          string
+	Name        string
+	path        string
+	result      string
+	packageName string
 }
 
 func (r *Rule) Rego(ctx *shared.Context) (string, error) {
@@ -36,7 +37,8 @@ func (r *Rule) Rego(ctx *shared.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf(`package main
+	pkgName := getOrDefault(r.packageName, "main")
+	return fmt.Sprintf(`package %s
 
 import future.keywords.if
 import future.keywords.in
@@ -50,7 +52,7 @@ r := tfplan.resource_changes[_]
 
 %s
 
-%s`, rego, ctx.HelperFunctionsRego()), nil
+%s`, pkgName, rego, ctx.HelperFunctionsRego()), nil
 }
 
 func (r *Rule) Parse(ctx *shared.Context) error {
@@ -190,7 +192,7 @@ type OperatorModel struct {
 
 var Fs = afero.NewOsFs()
 
-func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error {
+func AzurePolicyToRego(policyPath string, dir string, options Options, ctx *shared.Context) error {
 	var paths []string
 	var err error
 
@@ -208,7 +210,7 @@ func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error
 		paths = []string{policyPath}
 	}
 	for _, path := range paths {
-		rule, err := LoadRule(path, ctx)
+		rule, err := LoadRule(path, options, ctx)
 		if err != nil {
 			return fmt.Errorf("error when loading rule from path %s, error is %+v", path, err)
 		}
@@ -220,12 +222,12 @@ func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error
 	return nil
 }
 
-func LoadRule(path string, ctx *shared.Context) (*Rule, error) {
+func LoadRule(path string, option Options, ctx *shared.Context) (*Rule, error) {
 	rule, err := ReadRuleFromFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot find rules %+v", err)
 	}
-
+	rule.packageName = option.PackageName
 	err = rule.Parse(ctx)
 	return rule, err
 }
@@ -244,8 +246,7 @@ func readJsonFilePaths(path string) ([]string, error) {
 
 	entries, err := afero.ReadDir(Fs, path)
 	if err != nil {
-		fmt.Printf("cannot find files in directory %+v\n", err)
-		return nil, err
+		return nil, fmt.Errorf("cannot find files in directory %+v\n", err)
 	}
 	for _, entry := range entries {
 		if entry.IsDir() {
@@ -286,4 +287,12 @@ func ReadRuleFromFile(path string) (*Rule, error) {
 	rule.path = path
 
 	return &rule, nil
+}
+
+func getOrDefault[T comparable](value, defaultValue T) T {
+	var defaultTValue T
+	if value == defaultTValue {
+		return defaultValue
+	}
+	return value
 }
