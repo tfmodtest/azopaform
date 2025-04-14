@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/open-policy-agent/opa/format"
-	"json-rule-finder/pkg/operation"
 	"json-rule-finder/pkg/shared"
 	"path/filepath"
 	"strings"
@@ -23,7 +22,10 @@ type Rule struct {
 }
 
 func (r *Rule) Rego(ctx *shared.Context) (string, error) {
-	ifBody := r.Properties.PolicyRule.GetIf(ctx)
+	ifBody, err := r.Properties.PolicyRule.GetIf(ctx)
+	if err != nil {
+		return "", err
+	}
 	ifRego, err := ifBody.Rego(ctx)
 	if err != nil {
 		return "", err
@@ -70,14 +72,10 @@ func (r *Rule) SaveToDisk() error {
 	return afero.WriteFile(Fs, fileName, []byte(r.result), 0644)
 }
 
-func NewPolicyRuleBody(input map[string]any, ctx *shared.Context) *PolicyRuleBody {
-	if ifBody := operation.NewOperationOrCondition(input, ctx); ifBody != nil {
-		return &PolicyRuleBody{
-			IfBody: ifBody,
-		}
+func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
+	return &PolicyRuleBody{
+		If: input,
 	}
-
-	panic(fmt.Errorf("cannot find any condition nor operation in %+v", input))
 }
 
 type PolicyRuleMetaData struct {

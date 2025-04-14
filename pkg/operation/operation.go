@@ -26,27 +26,36 @@ type Operation interface {
 	HelperFunctionName() string
 }
 
-func NewOperationOrCondition(input map[string]any, ctx *shared.Context) shared.Rego {
-	if operation := tryParseOperation(input, ctx); operation != nil {
-		return operation
+func NewOperationOrCondition(input map[string]any, ctx *shared.Context) (shared.Rego, error) {
+	var operation shared.Rego
+	var err error
+	operation, err = tryParseOperation(input, ctx)
+	if err != nil {
+		return nil, err
 	}
-	subject := tryParseSubject(input, ctx)
+	if operation != nil {
+		return operation, nil
+	}
+	subject, err := tryParseSubject(input, ctx)
+	if err != nil {
+		return nil, err
+	}
 	if cond := tryParseCondition(subject, input); cond != nil {
-		return cond
+		return cond, nil
 	}
-	return nil
+	return nil, fmt.Errorf("unknown operation or condition: %v", input)
 }
 
-func NewOperation(operationType string, body any, ctx *shared.Context) shared.Rego {
+func NewOperation(operationType string, body any, ctx *shared.Context) (shared.Rego, error) {
 	switch operationType {
 	case shared.AllOf:
-		return ParseAllOf(body, ctx)
+		return ParseAllOf(body, ctx), nil
 	case shared.AnyOf:
-		return ParseAnyOf(body, ctx)
+		return ParseAnyOf(body, ctx), nil
 	case shared.Not:
 		return ParseNot(body, ctx)
 	}
-	return nil
+	return nil, nil
 }
 
 var NeoConditionNameGenerator = func(ctx *shared.Context) string {
@@ -63,13 +72,17 @@ var NeoConditionNameGenerator = func(ctx *shared.Context) string {
 
 func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, string, error) {
 	items := input.([]any)
-	var body []shared.Rego
+	var bodies []shared.Rego
 	for _, item := range items {
 		itemMap := item.(map[string]any)
-		body = append(body, NewOperationOrCondition(itemMap, ctx))
+		body, err := NewOperationOrCondition(itemMap, ctx)
+		if err != nil {
+			return nil, "", err
+		}
+		bodies = append(bodies, body)
 	}
 	conditionSetName := NeoConditionNameGenerator(ctx)
-	return body, conditionSetName, nil
+	return bodies, conditionSetName, nil
 }
 
 func tryParseCondition(subject shared.Rego, input map[string]any) shared.Rego {
@@ -82,18 +95,21 @@ func tryParseCondition(subject shared.Rego, input map[string]any) shared.Rego {
 	return nil
 }
 
-func tryParseOperation(conditionMap map[string]any, ctx *shared.Context) shared.Rego {
+func tryParseOperation(conditionMap map[string]any, ctx *shared.Context) (shared.Rego, error) {
 	for key, conditionValue := range conditionMap {
 		key = strings.ToLower(key)
-		operation := NewOperation(key, conditionValue, ctx)
+		operation, err := NewOperation(key, conditionValue, ctx)
+		if err != nil {
+			return nil, err
+		}
 		if operation != nil {
-			return operation
+			return operation, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
-func tryParseSubject(conditionMap map[string]any, ctx *shared.Context) shared.Rego {
+func tryParseSubject(conditionMap map[string]any, ctx *shared.Context) (shared.Rego, error) {
 	for key, conditionValue := range conditionMap {
 		key = strings.ToLower(key)
 		switch key {
@@ -105,10 +121,10 @@ func tryParseSubject(conditionMap map[string]any, ctx *shared.Context) shared.Re
 					ctx.PushResourceType(resourceType)
 				}
 			}
-			return value.NewFieldValue(conditionValue, ctx)
+			return value.NewFieldValue(conditionValue, ctx), nil
 		case shared.Value:
-			return value.NewLiteralValue(conditionValue, ctx)
+			return value.NewLiteralValue(conditionValue, ctx), nil
 		}
 	}
-	return nil
+	return nil, nil
 }

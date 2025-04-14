@@ -10,14 +10,16 @@ type IfBody map[string]any
 var _ shared.Rego = &If{}
 
 type If struct {
-	//body IfBody
 	rego shared.Rego
 }
 
-func NewIf(body IfBody, ctx *shared.Context) *If {
+func NewIf(body IfBody, ctx *shared.Context) (*If, error) {
 	i := &If{}
-	i.rego = operation.NewOperationOrCondition(body, ctx)
-	return i
+	var err error
+	if i.rego, err = operation.NewOperationOrCondition(body, ctx); err != nil {
+		return nil, err
+	}
+	return i, nil
 }
 
 func (i *If) Rego(ctx *shared.Context) (string, error) {

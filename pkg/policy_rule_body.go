@@ -5,12 +5,11 @@ import (
 )
 
 type PolicyRuleBody struct {
-	Then   *ThenBody
-	If     IfBody `json:"if,omitempty"`
-	IfBody shared.Rego
+	Then *ThenBody
+	If   IfBody `json:"if,omitempty"`
 }
 
-func (p *PolicyRuleBody) GetIf(ctx *shared.Context) *If {
+func (p *PolicyRuleBody) GetIf(ctx *shared.Context) (*If, error) {
 	return NewIf(p.If, ctx)
 }
 

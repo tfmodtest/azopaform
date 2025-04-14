@@ -52,7 +52,8 @@ func TestCount(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			ctx := shared.NewContext()
-			sut := NewCount(c.unparsed, ctx)
+			sut, err := NewCount(c.unparsed, ctx)
+			require.NoError(t, err)
 			exp, err := sut.Rego(ctx)
 			require.NoError(t, err)
 			jsCount, ok := shared.EvaluateRego(t, fmt.Sprintf("data.main.%s", c.query), fmt.Sprintf(`

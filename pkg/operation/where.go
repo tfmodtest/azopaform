@@ -11,13 +11,16 @@ type Where struct {
 	ConditionSetName string
 }
 
-func NewWhere(input any, ctx *shared.Context) Operation {
-	whereBody := NewOperationOrCondition(input.(map[string]any), ctx)
+func NewWhere(input any, ctx *shared.Context) (Operation, error) {
+	whereBody, err := NewOperationOrCondition(input.(map[string]any), ctx)
+	if err != nil {
+		return nil, err
+	}
 	conditionSetName := NeoConditionNameGenerator(ctx)
 	return Where{
 		Condition:        whereBody,
 		ConditionSetName: conditionSetName,
-	}
+	}, nil
 }
 
 func (w Where) HelperFunctionName() string {

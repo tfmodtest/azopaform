@@ -12,12 +12,16 @@ type Count struct {
 	CountExp string
 }
 
-func NewCount(input any, ctx *shared.Context) Count {
+func NewCount(input any, ctx *shared.Context) (Count, error) {
 	items := input.(map[string]any)
 
 	var whereBody Operation
+	var err error
 	if where, ok := items[shared.Where].(map[string]any); ok {
-		whereBody = NewWhere(where, ctx)
+		whereBody, err = NewWhere(where, ctx)
+		if err != nil {
+			return Count{}, err
+		}
 	}
 	fieldName := items[shared.Field]
 	if items[shared.Field] == nil {
@@ -38,7 +42,7 @@ func NewCount(input any, ctx *shared.Context) Count {
 	return Count{
 		Where:    whereBody,
 		CountExp: countBody,
-	}
+	}, nil
 }
 
 func (c Count) Rego(ctx *shared.Context) (string, error) {
