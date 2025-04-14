@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/open-policy-agent/opa/format"
 	"github.com/prashantv/gostub"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -676,7 +677,7 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 		require.NoError(t, err)
 		file, err := afero.ReadFile(fs, "deny.rego")
 		require.NoError(t, err)
-		assert.Equal(t, `package main
+		expected := `package main
 
 import future.keywords.if
 import future.keywords.in
@@ -701,7 +702,10 @@ condition1 if {
     not r.change.after.properties.sku.name in ["B1","B2","B3","S1","S2","S3","EP1","EP2","EP3","P1","P2","P3","P1V2","P2V2","P3V2","P0V3","P1V3","P2V3","P3V3","P1MV3","P2MV3","P3MV3","P4MV3","P5MV3","I1","I2","I3","I1V2","I2V2","I3V2","I4V2","I5V2","I6V2","WS1","WS2","WS3"]
 }
 
-`, string(file))
+`
+		formattedExpected, err := format.Source("temp.rego", []byte(expected))
+		require.NoError(t, err)
+		assert.Equal(t, string(formattedExpected), string(file))
 	})
 }
 
