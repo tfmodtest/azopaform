@@ -16,10 +16,9 @@ func NewWhere(input any, ctx *shared.Context) (Operation, error) {
 	if err != nil {
 		return nil, err
 	}
-	conditionSetName := NeoConditionNameGenerator(ctx)
 	return Where{
 		Condition:        whereBody,
-		ConditionSetName: conditionSetName,
+		ConditionSetName: NeoConditionNameGenerator(),
 	}, nil
 }
 

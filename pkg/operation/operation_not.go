@@ -21,18 +21,15 @@ func NewNot(conditionSetName string, body shared.Rego) Not {
 	}
 }
 
-func ParseNot(input any, ctx *shared.Context) (shared.Rego, error) {
+func parseNot(input any, ctx *shared.Context) (shared.Rego, error) {
 	itemMap := input.(map[string]any)
 	body, err := NewOperationOrCondition(itemMap, ctx)
 	if err != nil {
 		return nil, err
 	}
-	conditionSetName := NeoConditionNameGenerator(ctx)
 	return Not{
-		Body: body,
-		baseOperation: baseOperation{
-			helperFunctionName: conditionSetName,
-		},
+		Body:          body,
+		baseOperation: newBaseOperation(),
 	}, nil
 }
 

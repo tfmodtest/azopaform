@@ -17,6 +17,12 @@ type baseOperation struct {
 	helperFunctionName string
 }
 
+func newBaseOperation() baseOperation {
+	return baseOperation{
+		helperFunctionName: NeoConditionNameGenerator(),
+	}
+}
+
 func (o baseOperation) HelperFunctionName() string {
 	return o.helperFunctionName
 }
@@ -53,12 +59,12 @@ func NewOperation(operationType string, body any, ctx *shared.Context) (shared.R
 	case shared.AnyOf:
 		return ParseAnyOf(body, ctx), nil
 	case shared.Not:
-		return ParseNot(body, ctx)
+		return parseNot(body, ctx)
 	}
 	return nil, nil
 }
 
-var NeoConditionNameGenerator = func(ctx *shared.Context) string {
+var NeoConditionNameGenerator = func() string {
 	var randomSuffix string
 	for {
 		randomSuffix = randomstring.HumanFriendlyEnglishString(10)
@@ -70,19 +76,18 @@ var NeoConditionNameGenerator = func(ctx *shared.Context) string {
 	return fmt.Sprintf("condition%s", randomSuffix)
 }
 
-func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, string, error) {
+func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, error) {
 	items := input.([]any)
 	var bodies []shared.Rego
 	for _, item := range items {
 		itemMap := item.(map[string]any)
 		body, err := NewOperationOrCondition(itemMap, ctx)
 		if err != nil {
-			return nil, "", err
+			return nil, err
 		}
 		bodies = append(bodies, body)
 	}
-	conditionSetName := NeoConditionNameGenerator(ctx)
-	return bodies, conditionSetName, nil
+	return bodies, nil
 }
 
 func tryParseCondition(subject shared.Rego, input map[string]any) shared.Rego {

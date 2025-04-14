@@ -546,7 +546,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 		t.Run(fmt.Sprintf("%s", c.desc), func(t *testing.T) {
 			mockFs := fakeFs(c.mockFs)
 			counter := 0
-			stub := gostub.Stub(&operation.NeoConditionNameGenerator, func(ctx *shared.Context) string {
+			stub := gostub.Stub(&operation.NeoConditionNameGenerator, func() string {
 				newName := fmt.Sprintf("condition%d", counter)
 				counter++
 				return newName
@@ -663,7 +663,7 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 	t.Run("LoadRule", func(t *testing.T) {
 		fs := prepareMemFs(t)
 		counter := 1
-		stub := gostub.Stub(&Fs, fs).Stub(&operation.NeoConditionNameGenerator, func(ctx *shared.Context) string {
+		stub := gostub.Stub(&Fs, fs).Stub(&operation.NeoConditionNameGenerator, func() string {
 			defer func() {
 				counter++
 			}()
@@ -1127,7 +1127,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 				_, err := NewPolicyRuleBody(tt.input).GetIf(ctx)
 				assert.NotNil(t, err)
 			} else {
-				stub := gostub.Stub(&operation.NeoConditionNameGenerator, func(ctx *shared.Context) string {
+				stub := gostub.Stub(&operation.NeoConditionNameGenerator, func() string {
 					return "condition1"
 				})
 				defer stub.Reset()

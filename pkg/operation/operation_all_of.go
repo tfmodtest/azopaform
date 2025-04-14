@@ -21,12 +21,12 @@ func NewAllOf(conditionSetName string, conditions []shared.Rego) AllOf {
 }
 
 func ParseAllOf(input any, ctx *shared.Context) shared.Rego {
-	body, conditionSetName, err := parseOperationBody(input, ctx)
+	body, err := parseOperationBody(input, ctx)
 	if err != nil {
 		panic(err)
 	}
 	return AllOf{
-		baseOperation: baseOperation{helperFunctionName: conditionSetName},
+		baseOperation: newBaseOperation(),
 		Conditions:    body,
 	}
 }
