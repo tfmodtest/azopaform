@@ -680,8 +680,7 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 		require.NoError(t, err)
 		expected := `package main
 
-import future.keywords.if
-import future.keywords.in
+import rego.v1
 
 tfplan := input if {
     input.terraform_version

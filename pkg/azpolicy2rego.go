@@ -40,8 +40,8 @@ func (r *Rule) Rego(ctx *shared.Context) (string, error) {
 	pkgName := getOrDefault(r.packageName, "main")
 	return fmt.Sprintf(`package %s
 
-import future.keywords.if
-import future.keywords.in
+import rego.v1
+
 tfplan := input if {
      input.terraform_version
 } else := input.plan if {
