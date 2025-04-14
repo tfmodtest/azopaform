@@ -121,6 +121,36 @@ func TestAnyOfOperator(t *testing.T) {
 			protocol: "tcp",
 			allowed:  false,
 		},
+		{
+			desc: "condition mixed with operation",
+			conditions: []shared.Rego{
+				&condition.Equals{
+					BaseCondition: condition.BaseCondition{
+						Subject: shared.StringRego(`r.change.after.protocols[x]`),
+					},
+					Value: "http",
+				},
+				&AllOf{
+					baseOperation: newBaseOperation(),
+					Conditions: []shared.Rego{
+						&condition.Equals{
+							BaseCondition: condition.BaseCondition{
+								Subject: shared.StringRego(`r.change.after.name`),
+							},
+							Value: "test",
+						},
+						&condition.Equals{
+							BaseCondition: condition.BaseCondition{
+								Subject: shared.StringRego(`r.change.after.location`),
+							},
+							Value: "eastus",
+						},
+					},
+				},
+			},
+			protocol: "tcp",
+			allowed:  true,
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
@@ -144,6 +174,8 @@ func TestAnyOfOperator(t *testing.T) {
 						"change": map[string]any{
 							"after": map[string]any{
 								"protocols": []string{c.protocol},
+								"name":      "test",
+								"location":  "eastus",
 							},
 						},
 					},

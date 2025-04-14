@@ -2,6 +2,7 @@ package operation
 
 import (
 	"json-rule-finder/pkg/shared"
+	"strings"
 )
 
 var _ Operation = &AllOf{}
@@ -32,37 +33,29 @@ func ParseAllOf(input any, ctx *shared.Context) shared.Rego {
 }
 
 func (a AllOf) Rego(ctx *shared.Context) (string, error) {
-	var res string
-
-	res = a.HelperFunctionName() + " " + shared.IfCondition + " {"
-	if _, ok := ctx.FieldNameReplacer(); ok {
-		res = a.HelperFunctionName() + "(x)" + " " + shared.IfCondition + " {"
-	}
-
-	for _, item := range a.Conditions {
-		if _, ok := item.(Operation); ok {
-			if _, ok := ctx.FieldNameReplacer(); ok {
-				res += "\n" + item.(Operation).HelperFunctionName() + "(x)"
-			} else {
-				res += "\n" + item.(Operation).HelperFunctionName()
+	return a.WithFunction(func() (string, error) {
+		sb := strings.Builder{}
+		for _, item := range a.Conditions {
+			if _, ok := item.(Operation); ok {
+				if _, ok := ctx.FieldNameReplacer(); ok {
+					sb.WriteString("\n" + item.(Operation).HelperFunctionName() + "(x)")
+				} else {
+					sb.WriteString("\n" + item.(Operation).HelperFunctionName())
+				}
+				subFunction, err := item.Rego(ctx)
+				if err != nil {
+					return "", err
+				}
+				ctx.EnqueueHelperFunction(subFunction)
+				continue
 			}
-			subFunction, err := item.Rego(ctx)
+
+			condition, err := item.Rego(ctx)
 			if err != nil {
 				return "", err
 			}
-			ctx.EnqueueHelperFunction(subFunction)
-			continue
+			sb.WriteString("\n" + condition)
 		}
-
-		condition, err := item.Rego(ctx)
-		if err != nil {
-			return "", err
-		}
-		res += "\n" + condition
-	}
-
-	res = res + "\n}"
-
-	// add BaseCondition set body at the end
-	return res, nil
+		return sb.String(), nil
+	}, ctx)
 }

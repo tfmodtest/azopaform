@@ -1,9 +1,8 @@
 package operation
 
 import (
-	"fmt"
-	"json-rule-finder/pkg/condition"
 	"json-rule-finder/pkg/shared"
+	"strings"
 )
 
 var _ Operation = &AnyOf{}
@@ -34,36 +33,19 @@ func ParseAnyOf(input any, ctx *shared.Context) shared.Rego {
 }
 
 func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
-	var res string
-	head := a.HelperFunctionName()
-	if _, ok := ctx.FieldNameReplacer(); ok {
-		head = a.HelperFunctionName() + "(x)"
-	}
+	sb := strings.Builder{}
 	for _, item := range a.Conditions {
-		if res != "" {
-			res = res + "\n"
+		var funcDef string
+		var err error
+		if operation, ok := item.(Operation); ok {
+			funcDef, err = a.operationToFunction(operation, ctx)
+		} else {
+			funcDef, err = a.conditionToFunction(item, ctx)
 		}
-		if _, ok := item.(Operation); ok {
-			if _, ok := ctx.FieldNameReplacer(); ok {
-				res += head + " if {" + item.(Operation).HelperFunctionName() + "(x)}"
-			} else {
-				res += head + " if {" + item.(Operation).HelperFunctionName() + "}"
-			}
-			subSet, err := item.Rego(ctx)
-			if err != nil {
-				return "", err
-			}
-			ctx.EnqueueHelperFunction(subSet)
-			continue
+		if err != nil {
+			return "", err
 		}
-
-		if _, ok := item.(condition.Condition); ok {
-			condition, err := item.(condition.Condition).Rego(ctx)
-			if err != nil {
-				return "", err
-			}
-			res += fmt.Sprintf("%s if {%s}", head, condition)
-		}
+		sb.WriteString(funcDef)
 	}
-	return res, nil
+	return sb.String(), nil
 }

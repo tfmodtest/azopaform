@@ -23,6 +23,56 @@ func newBaseOperation() baseOperation {
 	}
 }
 
+func (o baseOperation) WithFunction(body func() (string, error), ctx *shared.Context) (string, error) {
+	bodyContent, err := body()
+	if err != nil {
+		return "", err
+	}
+
+	res := o.HelperFunctionName() + " " + shared.IfCondition + " {"
+	if _, ok := ctx.FieldNameReplacer(); ok {
+		res = o.HelperFunctionName() + "(x)" + " " + shared.IfCondition + " {"
+	}
+	sb := strings.Builder{}
+	sb.WriteString(res)
+	sb.WriteString("\n")
+	sb.WriteString(bodyContent)
+	sb.WriteString("\n}")
+	return sb.String(), nil
+}
+
+func (o baseOperation) operationToFunction(operation Operation, ctx *shared.Context) (string, error) {
+	sb := strings.Builder{}
+	subSet, err := operation.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	funcDef, _ := o.WithFunction(func() (string, error) {
+		if _, ok := ctx.FieldNameReplacer(); ok {
+			return operation.HelperFunctionName() + "(x)", nil
+		}
+		return operation.HelperFunctionName(), nil
+	}, ctx)
+	sb.WriteString(funcDef)
+	sb.WriteString("\n")
+	ctx.EnqueueHelperFunction(subSet)
+	return sb.String(), nil
+}
+
+func (o baseOperation) conditionToFunction(cond shared.Rego, ctx *shared.Context) (string, error) {
+	sb := strings.Builder{}
+	condStr, err := cond.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	funcDef, _ := o.WithFunction(func() (string, error) {
+		return condStr, nil
+	}, ctx)
+	sb.WriteString(funcDef)
+	sb.WriteString("\n")
+	return sb.String(), nil
+}
+
 func (o baseOperation) HelperFunctionName() string {
 	return o.helperFunctionName
 }
