@@ -23,7 +23,7 @@ func newBaseOperation() baseOperation {
 	}
 }
 
-func (o baseOperation) WithFunction(body func() (string, error), ctx *shared.Context) (string, error) {
+func (o baseOperation) wrapToFunction(body func() (string, error), ctx *shared.Context) (string, error) {
 	bodyContent, err := body()
 	if err != nil {
 		return "", err
@@ -41,13 +41,29 @@ func (o baseOperation) WithFunction(body func() (string, error), ctx *shared.Con
 	return sb.String(), nil
 }
 
-func (o baseOperation) operationToFunction(operation Operation, ctx *shared.Context) (string, error) {
+func (o baseOperation) asFunctionForOperation(operation Operation, ctx *shared.Context) (string, error) {
+	sb := strings.Builder{}
+	call := operation.HelperFunctionName()
+	if _, ok := ctx.FieldNameReplacer(); ok {
+		call += "(x)"
+	}
+	operationDecl, err := operation.Rego(ctx)
+	if err != nil {
+		return "", err
+	}
+	sb.WriteString(call)
+	sb.WriteString("\n")
+	ctx.EnqueueHelperFunction(operationDecl)
+	return sb.String(), nil
+}
+
+func (o baseOperation) forkFunctionForOperation(operation Operation, ctx *shared.Context) (string, error) {
 	sb := strings.Builder{}
 	subSet, err := operation.Rego(ctx)
 	if err != nil {
 		return "", err
 	}
-	funcDef, _ := o.WithFunction(func() (string, error) {
+	funcDef, _ := o.wrapToFunction(func() (string, error) {
 		if _, ok := ctx.FieldNameReplacer(); ok {
 			return operation.HelperFunctionName() + "(x)", nil
 		}
@@ -59,13 +75,13 @@ func (o baseOperation) operationToFunction(operation Operation, ctx *shared.Cont
 	return sb.String(), nil
 }
 
-func (o baseOperation) conditionToFunction(cond shared.Rego, ctx *shared.Context) (string, error) {
+func (o baseOperation) forkFunctionForCondition(cond shared.Rego, ctx *shared.Context) (string, error) {
 	sb := strings.Builder{}
 	condStr, err := cond.Rego(ctx)
 	if err != nil {
 		return "", err
 	}
-	funcDef, _ := o.WithFunction(func() (string, error) {
+	funcDef, _ := o.wrapToFunction(func() (string, error) {
 		return condStr, nil
 	}, ctx)
 	sb.WriteString(funcDef)

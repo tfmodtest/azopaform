@@ -38,9 +38,9 @@ func (a AnyOf) Rego(ctx *shared.Context) (string, error) {
 		var funcDef string
 		var err error
 		if operation, ok := item.(Operation); ok {
-			funcDef, err = a.operationToFunction(operation, ctx)
+			funcDef, err = a.forkFunctionForOperation(operation, ctx)
 		} else {
-			funcDef, err = a.conditionToFunction(item, ctx)
+			funcDef, err = a.forkFunctionForCondition(item, ctx)
 		}
 		if err != nil {
 			return "", err

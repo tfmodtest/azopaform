@@ -33,20 +33,15 @@ func ParseAllOf(input any, ctx *shared.Context) shared.Rego {
 }
 
 func (a AllOf) Rego(ctx *shared.Context) (string, error) {
-	return a.WithFunction(func() (string, error) {
+	return a.wrapToFunction(func() (string, error) {
 		sb := strings.Builder{}
 		for _, item := range a.Conditions {
-			if _, ok := item.(Operation); ok {
-				if _, ok := ctx.FieldNameReplacer(); ok {
-					sb.WriteString("\n" + item.(Operation).HelperFunctionName() + "(x)")
-				} else {
-					sb.WriteString("\n" + item.(Operation).HelperFunctionName())
-				}
-				subFunction, err := item.Rego(ctx)
+			if operation, ok := item.(Operation); ok {
+				funcDecl, err := a.asFunctionForOperation(operation, ctx)
 				if err != nil {
 					return "", err
 				}
-				ctx.EnqueueHelperFunction(subFunction)
+				sb.WriteString("\n" + funcDecl)
 				continue
 			}
 
