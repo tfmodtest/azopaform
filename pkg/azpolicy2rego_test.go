@@ -573,7 +573,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, Options{}, shared.NewContext()))
 			content, err := afero.ReadFile(mockFs, c.generatedRegoFileName)
 			require.NoError(t, err)
-			generated := string(content) + "\n" + shared.UTILS_REGO
+			generated := string(content) + "\n" + shared.UtilsRego
 			ctx := shared.NewContext()
 			shared.AssertRego(t, "data.main.deny", generated, c.input, c.deny, ctx)
 		})

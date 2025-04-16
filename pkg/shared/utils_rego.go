@@ -1,6 +1,7 @@
 package shared
 
-var UTILS_REGO = `
+const ResourcePathPrefix = "r.values"
+const UtilsRego = `
 is_azure_type(resource, azure_type) if {
 	regex.match(sprintf("^%s@", [azure_type]), resource.type)
 }

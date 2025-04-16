@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -12,5 +13,5 @@ func TestFieldNameProcessor(t *testing.T) {
 
 	rego, err := FieldNameProcessor("Microsoft.Network/networkSecurityGroups/securityRules[*].direction", ctx)
 	require.NoError(t, err)
-	assert.Equal(t, "r.values.properties.securityRules[_].direction", rego)
+	assert.Equal(t, fmt.Sprintf("%s.properties.securityRules[_].direction", ResourcePathPrefix), rego)
 }

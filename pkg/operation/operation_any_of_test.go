@@ -164,7 +164,7 @@ func TestAnyOfOperator(t *testing.T) {
 			ctx := shared.NewContext()
 			actual, err := sut.Rego(ctx)
 			require.NoError(t, err)
-			regoCfg := fmt.Sprintf(testRegoModuleTemplate, shared.UTILS_REGO, actual, ctx.HelperFunctionsRego())
+			regoCfg := fmt.Sprintf(testRegoModuleTemplate, shared.UtilsRego, actual, ctx.HelperFunctionsRego())
 			formattedCfg, err := format.Source("test.rego", []byte(regoCfg))
 			require.NoError(t, err)
 			regoCfg = string(formattedCfg)

@@ -74,7 +74,7 @@ func (r *Rule) SaveToDisk() error {
 
 import rego.v1
 
-%s`, r.PackageName(), shared.UTILS_REGO)), 0644)
+%s`, r.PackageName(), shared.UtilsRego)), 0644)
 	if err != nil {
 		return fmt.Errorf("cannot save file utils.rego, error is %+v", err)
 	}
