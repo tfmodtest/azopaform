@@ -7,8 +7,8 @@ import (
 var _ Operation = &Where{}
 
 type Where struct {
-	Condition        shared.Rego
-	ConditionSetName string
+	Condition          shared.Rego
+	helperFunctionName string
 }
 
 func NewWhere(input any, ctx *shared.Context) (Operation, error) {
@@ -17,13 +17,13 @@ func NewWhere(input any, ctx *shared.Context) (Operation, error) {
 		return nil, err
 	}
 	return Where{
-		Condition:        whereBody,
-		ConditionSetName: NeoConditionNameGenerator(),
+		Condition:          whereBody,
+		helperFunctionName: NeoConditionNameGenerator(),
 	}, nil
 }
 
 func (w Where) HelperFunctionName() string {
-	return w.ConditionSetName
+	return w.helperFunctionName
 }
 
 func (w Where) Rego(ctx *shared.Context) (string, error) {
@@ -54,7 +54,7 @@ func (w Where) Rego(ctx *shared.Context) (string, error) {
 		}
 	}
 
-	res = w.ConditionSetName + "(x)" + " " + shared.IfCondition + " {\n" + res
+	res = w.helperFunctionName + "(x)" + " " + shared.IfCondition + " {\n" + res
 	res = res + "\n" + "}"
 
 	// add BaseCondition set body at the end

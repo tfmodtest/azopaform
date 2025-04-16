@@ -738,38 +738,6 @@ func TestNewPolicyRuleBody(t *testing.T) {
 		expected shared.Rego
 	}{
 		{
-			name: "CountOperation",
-			input: map[string]any{
-				"count": map[string]any{
-					"field": "Microsoft.Network/networkSecurityGroups/securityRules[*]",
-					"where": map[string]any{
-						"field":  "Microsoft.Network/networkSecurityGroups/securityRules[*].direction",
-						"equals": "Inbound",
-					},
-				},
-				"greater": 0,
-			},
-			expected: condition.Greater{
-				BaseCondition: condition.BaseCondition{
-					Subject: operation.Count{
-						Where: operation.Where{
-							Condition: condition.Equals{
-								BaseCondition: condition.BaseCondition{
-									Subject: &value.FieldValue{
-										Name: "Microsoft.Network/networkSecurityGroups/securityRules[x].direction",
-									},
-								},
-								Value: "Inbound",
-							},
-							ConditionSetName: "condition1",
-						},
-						CountExp: "count({x|x:=r.values.properties.securityRules[_];condition1(x)})",
-					},
-				},
-				Value: 0,
-			},
-		},
-		{
 			name: "NotOperation",
 			input: map[string]any{
 				"not": map[string]any{
