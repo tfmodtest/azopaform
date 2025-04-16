@@ -14,9 +14,10 @@ const testRegoModuleTemplate = `
 	package main
 	
 	import rego.v1
+
+    %s
 	
 	default allow := false
-	r := input.resource_changes[_]
 	
 	allow if condition0
 	
@@ -37,13 +38,13 @@ func TestAnyOfOperator(t *testing.T) {
 			conditions: []shared.Rego{
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: shared.StringRego(`r.change.after.protocols[x]`),
+						Subject: shared.StringRego(`r.values.protocols[x]`),
 					},
 					Value: "http",
 				},
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: shared.StringRego(`r.change.after.protocols[x]`),
+						Subject: shared.StringRego(`r.values.protocols[x]`),
 					},
 					Value: "ws",
 				},
@@ -56,13 +57,13 @@ func TestAnyOfOperator(t *testing.T) {
 			conditions: []shared.Rego{
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: shared.StringRego(`r.change.after.protocols[x]`),
+						Subject: shared.StringRego(`r.values.protocols[x]`),
 					},
 					Value: "http",
 				},
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: shared.StringRego(`r.change.after.protocols[x]`),
+						Subject: shared.StringRego(`r.values.protocols[x]`),
 					},
 					Value: "ws",
 				},
@@ -77,13 +78,13 @@ func TestAnyOfOperator(t *testing.T) {
 					Conditions: []shared.Rego{
 						&condition.Equals{
 							BaseCondition: condition.BaseCondition{
-								Subject: shared.StringRego(`r.change.after.protocols[x]`),
+								Subject: shared.StringRego(`r.values.protocols[x]`),
 							},
 							Value: "http",
 						},
 						&condition.Equals{
 							BaseCondition: condition.BaseCondition{
-								Subject: shared.StringRego(`r.change.after.protocols[x]`),
+								Subject: shared.StringRego(`r.values.protocols[x]`),
 							},
 							Value: "https",
 						},
@@ -94,7 +95,7 @@ func TestAnyOfOperator(t *testing.T) {
 				},
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: shared.StringRego(`r.change.after.protocols[x]`),
+						Subject: shared.StringRego(`r.values.protocols[x]`),
 					},
 					Value: "ws",
 				},
@@ -107,13 +108,13 @@ func TestAnyOfOperator(t *testing.T) {
 			conditions: []shared.Rego{
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: shared.StringRego(`r.change.after.protocols[x]`),
+						Subject: shared.StringRego(`r.values.protocols[x]`),
 					},
 					Value: "http",
 				},
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: shared.StringRego(`r.change.after.protocols[x]`),
+						Subject: shared.StringRego(`r.values.protocols[x]`),
 					},
 					Value: "ws",
 				},
@@ -126,7 +127,7 @@ func TestAnyOfOperator(t *testing.T) {
 			conditions: []shared.Rego{
 				&condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: shared.StringRego(`r.change.after.protocols[x]`),
+						Subject: shared.StringRego(`r.values.protocols[x]`),
 					},
 					Value: "http",
 				},
@@ -135,13 +136,13 @@ func TestAnyOfOperator(t *testing.T) {
 					Conditions: []shared.Rego{
 						&condition.Equals{
 							BaseCondition: condition.BaseCondition{
-								Subject: shared.StringRego(`r.change.after.name`),
+								Subject: shared.StringRego(`r.values.name`),
 							},
 							Value: "test",
 						},
 						&condition.Equals{
 							BaseCondition: condition.BaseCondition{
-								Subject: shared.StringRego(`r.change.after.location`),
+								Subject: shared.StringRego(`r.values.location`),
 							},
 							Value: "eastus",
 						},
@@ -163,14 +164,16 @@ func TestAnyOfOperator(t *testing.T) {
 			ctx := shared.NewContext()
 			actual, err := sut.Rego(ctx)
 			require.NoError(t, err)
-			regoCfg := fmt.Sprintf(testRegoModuleTemplate, actual, ctx.HelperFunctionsRego())
+			regoCfg := fmt.Sprintf(testRegoModuleTemplate, shared.UTILS_REGO, actual, ctx.HelperFunctionsRego())
 			formattedCfg, err := format.Source("test.rego", []byte(regoCfg))
 			require.NoError(t, err)
 			regoCfg = string(formattedCfg)
 			shared.AssertRegoAllow(t, regoCfg, map[string]any{
 				"resource_changes": []map[string]any{
 					{
-						"type": "azapi_resource",
+						"address": "azapi_resource.this",
+						"mode":    "managed",
+						"type":    "azapi_resource",
 						"change": map[string]any{
 							"after": map[string]any{
 								"protocols": []string{c.protocol},

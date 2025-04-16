@@ -36,6 +36,8 @@ func (o baseOperation) wrapToFunction(body func() (string, error), ctx *shared.C
 	sb := strings.Builder{}
 	sb.WriteString(res)
 	sb.WriteString("\n")
+	sb.WriteString(`r := resource(input, "azapi_resource")[_]`)
+	sb.WriteString("\n")
 	sb.WriteString(bodyContent)
 	sb.WriteString("\n}")
 	return sb.String(), nil

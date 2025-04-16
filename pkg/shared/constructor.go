@@ -9,7 +9,7 @@ import (
 func FieldNameProcessor(fieldName string, ctx *Context) (string, error) {
 	var result string
 	if fieldName == TypeOfResource || fieldName == KindOfResource {
-		return strings.Join([]string{"r.", fieldName}, ""), nil
+		return fmt.Sprintf("r.values.%s", fieldName), nil
 	}
 	if strings.Contains(fieldName, "count") {
 		return fieldName, nil
@@ -34,7 +34,7 @@ func processedFieldName(name string) (string, error) {
 	split := strings.Split(name, "/")
 	propertyPath := split[len(split)-1]
 	propertyPath = strings.ReplaceAll(propertyPath, "[*]", "[_]")
-	return fmt.Sprintf("r.change.after.properties.%s", propertyPath), nil
+	return fmt.Sprintf("r.values.properties.%s", propertyPath), nil
 }
 
 func SliceConstructor(input any) string {
@@ -95,7 +95,7 @@ func TFNameMapping(fieldName string) string {
 		}
 		result = next
 	}
-	result = "r.change.after" + result
+	result = "r.values" + result
 
 	return result
 }

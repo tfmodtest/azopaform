@@ -12,5 +12,5 @@ func TestFieldNameProcessor(t *testing.T) {
 
 	rego, err := FieldNameProcessor("Microsoft.Network/networkSecurityGroups/securityRules[*].direction", ctx)
 	require.NoError(t, err)
-	assert.Equal(t, "r.change.after.properties.securityRules[_].direction", rego)
+	assert.Equal(t, "r.values.properties.securityRules[_].direction", rego)
 }

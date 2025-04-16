@@ -417,9 +417,12 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 				"terraform_version": "1.11.0",
 				"resource_changes": []any{
 					map[string]any{
-						"type": "Microsoft.Web/serverFarms",
+						"address": "azapi_resource.this",
+						"mode":    "managed",
+						"type":    "azapi_resource",
 						"change": map[string]any{
 							"after": map[string]any{
+								"type": "Microsoft.Web/serverFarms",
 								"properties": map[string]any{
 									"sku": map[string]any{
 										"tier": "Basic",
@@ -444,9 +447,12 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 				"terraform_version": "1.11.0",
 				"resource_changes": []any{
 					map[string]any{
-						"type": "Microsoft.Web/serverFarms",
+						"address": "azapi_resource.this",
+						"mode":    "managed",
+						"type":    "azapi_resource",
 						"change": map[string]any{
 							"after": map[string]any{
+								"type": "Microsoft.Web/serverFarms",
 								"properties": map[string]any{
 									"sku": map[string]any{
 										"tier": "NotBasic",
@@ -471,9 +477,12 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 				"terraform_version": "1.11.0",
 				"resource_changes": []any{
 					map[string]any{
-						"type": "Microsoft.Web/serverFarms",
+						"address": "azapi_resource.this",
+						"mode":    "managed",
+						"type":    "azapi_resource",
 						"change": map[string]any{
 							"after": map[string]any{
+								"type": "Microsoft.Web/serverFarms",
 								"properties": map[string]any{
 									"sku": map[string]any{
 										"tier": "NotBasic",
@@ -498,10 +507,13 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 				"terraform_version": "1.11.0",
 				"resource_changes": []any{
 					map[string]any{
-						"type": "Microsoft.Web/hostingEnvironments",
-						"kind": "ASE1",
+						"address": "azapi_resource.this",
+						"mode":    "managed",
+						"type":    "azapi_resource",
+						"kind":    "ASE1",
 						"change": map[string]any{
 							"after": map[string]any{
+								"type": "Microsoft.Web/hostingEnvironments",
 								"properties": map[string]any{
 									"clusterSettings": []any{
 										map[string]any{
@@ -561,8 +573,9 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, Options{}, shared.NewContext()))
 			content, err := afero.ReadFile(mockFs, c.generatedRegoFileName)
 			require.NoError(t, err)
+			generated := string(content) + "\n" + shared.UTILS_REGO
 			ctx := shared.NewContext()
-			shared.AssertRego(t, "data.main.deny", string(content), c.input, c.deny, ctx)
+			shared.AssertRego(t, "data.main.deny", generated, c.input, c.deny, ctx)
 		})
 	}
 }
@@ -679,29 +692,23 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 		file, err := afero.ReadFile(fs, "deny.rego")
 		require.NoError(t, err)
 		expected := `package main
-
 import rego.v1
-
-tfplan := input if {
-    input.terraform_version
-} else := input.plan if {
-    input.plan.terraform_version
-}
-
-r := tfplan.resource_changes[_]
 
 warn if {
     condition2
 }
 condition2 if {
-    r.type == "Microsoft.Web/serverFarms"
+    r := resource(input, "azapi_resource")[_]
+
+    r.values.type == "Microsoft.Web/serverFarms"
     condition1
 }
 condition1 if {
-    not r.change.after.properties.sku.tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]
-    not r.change.after.properties.sku.name in ["B1","B2","B3","S1","S2","S3","EP1","EP2","EP3","P1","P2","P3","P1V2","P2V2","P3V2","P0V3","P1V3","P2V3","P3V3","P1MV3","P2MV3","P3MV3","P4MV3","P5MV3","I1","I2","I3","I1V2","I2V2","I3V2","I4V2","I5V2","I6V2","WS1","WS2","WS3"]
-}
+    r := resource(input, "azapi_resource")[_]
 
+    not r.values.properties.sku.tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]
+    not r.values.properties.sku.name in ["B1","B2","B3","S1","S2","S3","EP1","EP2","EP3","P1","P2","P3","P1V2","P2V2","P3V2","P0V3","P1V3","P2V3","P3V3","P1MV3","P2MV3","P3MV3","P4MV3","P5MV3","I1","I2","I3","I1V2","I2V2","I3V2","I4V2","I5V2","I6V2","WS1","WS2","WS3"]
+}
 `
 		formattedExpected, err := format.Source("temp.rego", []byte(expected))
 		require.NoError(t, err)
@@ -756,7 +763,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 							},
 							ConditionSetName: "condition1",
 						},
-						CountExp: "count({x|x:=r.change.after.properties.securityRules[_];condition1(x)})",
+						CountExp: "count({x|x:=r.values.properties.securityRules[_];condition1(x)})",
 					},
 				},
 				Value: 0,

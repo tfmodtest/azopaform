@@ -37,22 +37,17 @@ func (r *Rule) Rego(ctx *shared.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	pkgName := getOrDefault(r.packageName, "main")
 	return fmt.Sprintf(`package %s
 
 import rego.v1
 
-tfplan := input if {
-     input.terraform_version
-} else := input.plan if {
-     input.plan.terraform_version
-}
-
-r := tfplan.resource_changes[_]
-
 %s
 
-%s`, pkgName, rego, ctx.HelperFunctionsRego()), nil
+%s`, r.PackageName(), rego, ctx.HelperFunctionsRego()), nil
+}
+
+func (r *Rule) PackageName() string {
+	return getOrDefault(r.packageName, "main")
 }
 
 func (r *Rule) Parse(ctx *shared.Context) error {
@@ -71,7 +66,19 @@ func (r *Rule) Parse(ctx *shared.Context) error {
 
 func (r *Rule) SaveToDisk() error {
 	fileName := strings.TrimSuffix(filepath.Base(r.path), filepath.Ext(r.path)) + ".rego"
-	return afero.WriteFile(Fs, fileName, []byte(r.result), 0644)
+	err := afero.WriteFile(Fs, fileName, []byte(r.result), 0644)
+	if err != nil {
+		return fmt.Errorf("cannot save file %s, error is %+v", fileName, err)
+	}
+	err = afero.WriteFile(Fs, "utils.rego", []byte(fmt.Sprintf(`package %s
+
+import rego.v1
+
+%s`, r.PackageName(), shared.UTILS_REGO)), 0644)
+	if err != nil {
+		return fmt.Errorf("cannot save file utils.rego, error is %+v", err)
+	}
+	return nil
 }
 
 func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
@@ -205,7 +212,6 @@ func AzurePolicyToRego(policyPath string, dir string, options Options, ctx *shar
 	}
 
 	//Override for hard cases
-	//paths := []string{"/Users/jiaweitao/workZone/azure-policy/built-in-policies/policyDefinitions/Key Vault/KeyVault_SoftDeleteMustBeEnabled_Audit.json"}
 	if policyPath != "" {
 		paths = []string{policyPath}
 	}
