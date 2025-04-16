@@ -2,6 +2,7 @@ package condition
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"json-rule-finder/pkg/shared"
 	"testing"
 
@@ -67,4 +68,17 @@ func TestEqualsCondition(t *testing.T) {
 			shared.AssertRegoAllow(t, cfg, nil, c.allow, ctx)
 		})
 	}
+}
+
+func TestEqualsCondition_SpecialCase_type(t *testing.T) {
+	ctx := shared.NewContext()
+	sut := Equals{
+		BaseCondition: BaseCondition{
+			Subject: shared.StringRego("type"),
+		},
+		Value: "Microsoft.Network/networkSecurityGroups",
+	}
+	actual, err := sut.Rego(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, `is_azure_type(r.values, "Microsoft.Network/networkSecurityGroups")`, actual)
 }
