@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const list_field_json = `{
+const listFieldJson = `{
   "properties": {
     "displayName": "CORS should not allow every domain to access your API for FHIR",
     "policyType": "BuiltIn",
@@ -39,9 +39,10 @@ const list_field_json = `{
           "audit",
           "Audit",
           "disabled",
-          "Disabled"
+          "Disabled",
+		  "Deny"
         ],
-        "defaultValue": "Audit"
+        "defaultValue": "Deny"
       }
     },
     "policyRule": {
@@ -68,7 +69,7 @@ const list_field_json = `{
   "name": "0fea8f8a-4169-495d-8307-30ec335f387d"
 }`
 
-const count_json = `{
+const countJson = `{
   "properties": {
     "displayName": "App Service Environment should have TLS 1.0 and 1.1 disabled",
     "policyType": "BuiltIn",
@@ -134,7 +135,7 @@ const count_json = `{
   "name": "d6545c6b-dd9d-4265-91e6-0b451e2f1c50"
 }`
 
-const deny_json = `{
+const denyJson = `{
   "properties": {
     "displayName": "App Service apps should use a SKU that supports private link",
     "policyType": "BuiltIn",
@@ -239,7 +240,7 @@ const deny_json = `{
   "name": "546fe8d2-368d-4029-a418-6af48a7f61e5"
 }`
 
-const nested_json = `{
+const nestedJson = `{
   "properties": {
     "displayName": "API Management APIs should use only encrypted protocols",
     "policyType": "BuiltIn",
@@ -293,7 +294,7 @@ const nested_json = `{
           "Disabled",
           "Deny"
         ],
-        "defaultValue": "Audit"
+        "defaultValue": "Deny"
       }
     }
   },
@@ -302,80 +303,6 @@ const nested_json = `{
 }`
 
 func TestBasicTestAzurePolicyToRego(t *testing.T) {
-	//rulesJson, err := os.ReadFile("rules.json")
-	//require.NoError(t, err)
-	//outputJson, err := os.ReadFile("output.json")
-	//require.NoError(t, err)
-
-	//	expectedDenyRego := `package main
-	//
-	//import future.keywords.if
-	//import future.keywords.in
-	//tfplan := input if {
-	//     input.terraform_version
-	//} else := input.plan if {
-	//     input.plan.terraform_version
-	//}
-	//
-	//r := tfplan.resource_changes[_]
-	//
-	//warn if {
-	// condition3
-	//}
-	//condition3 if {
-	//r.type == "azurerm_service_plan"
-	//condition2
-	//}
-	//condition2 if {
-	//not r.change.after.sku[0].tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]
-	//not r.change.after.sku_name in ["B1","B2","B3","S1","S2","S3","EP1","EP2","EP3","P1","P2","P3","P1V2","P2V2","P3V2","P0V3","P1V3","P2V3","P3V3","P1MV3","P2MV3","P3MV3","P4MV3","P5MV3","I1","I2","I3","I1V2","I2V2","I3V2","I4V2","I5V2","I6V2","WS1","WS2","WS3"]
-	//}`
-	//
-	//	expectedCountRego := `package main
-	//
-	//import future.keywords.if
-	//import future.keywords.in
-	//tfplan := input if {
-	//     input.terraform_version
-	//} else := input.plan if {
-	//     input.plan.terraform_version
-	//}
-	//
-	//r := tfplan.resource_changes[_]
-	//
-	//warn if {
-	// condition1
-	//}
-	//condition1 if {
-	//r.type == "azurerm_app_service_environment_v3"
-	//regex.match("ASE*",r.kind)
-	//count({x|r.change.after.cluster_setting[x];condition1(x)}) < 1
-	//}
-	//condition1(x) if {
-	//condition1(x)
-	//}
-	//condition1(x) if {
-	//r.change.after.cluster_setting[x].name == "DisableTls1.0"
-	//r.change.after.cluster_setting[x].value == "1"
-	//}`
-	//
-	//	expectedListRego := `package main
-	//
-	//import rego.v1
-	//
-	//r := tfplan.resource_changes[_]
-	//
-	//warn if {
-	// condition1
-	//}
-	//condition1 if {
-	//r.type == "azurerm_healthcare_service"
-	//not condition1
-	//}
-	//condition1 if {
-	//r.change.after.cors_configuration[0].allowed_origins[0] != "*"
-	//}`
-
 	cases := []struct {
 		desc                  string
 		inputDirPath          string
@@ -388,7 +315,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 			desc:         "deny.json_allow_type_mismatch",
 			inputDirPath: "",
 			mockFs: map[string]string{
-				"deny.json": deny_json,
+				"deny.json": denyJson,
 			},
 			generatedRegoFileName: "deny.rego",
 			input: map[string]any{
@@ -410,7 +337,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 			desc:         "deny.json_deny_sku_tier",
 			inputDirPath: "",
 			mockFs: map[string]string{
-				"deny.json": deny_json,
+				"deny.json": denyJson,
 			},
 			generatedRegoFileName: "deny.rego",
 			input: map[string]any{
@@ -440,7 +367,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 			desc:         "deny.json_deny_sku_name",
 			inputDirPath: "",
 			mockFs: map[string]string{
-				"deny.json": deny_json,
+				"deny.json": denyJson,
 			},
 			generatedRegoFileName: "deny.rego",
 			input: map[string]any{
@@ -470,7 +397,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 			desc:         "deny.json_allow_full_input",
 			inputDirPath: "",
 			mockFs: map[string]string{
-				"deny.json": deny_json,
+				"deny.json": denyJson,
 			},
 			generatedRegoFileName: "deny.rego",
 			input: map[string]any{
@@ -500,7 +427,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 			desc:         "count_deny",
 			inputDirPath: "",
 			mockFs: map[string]string{
-				"count.json": count_json,
+				"count.json": countJson,
 			},
 			generatedRegoFileName: "count.rego",
 			input: map[string]any{
@@ -529,30 +456,131 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 			},
 			deny: false,
 		},
-
-		////{
-		////	desc:         "policy contains nested operations",
-		////	inputDirPath: "",
-		////	mockFs: map[string]string{
-		////		"nested.json": nested_json,
-		////	},
-		////	expected: map[string]string{
-		////		"nested.rego": expectedNestedRego,
-		////	},
-		////},
-		//{
-		//	desc:         "policy contains lists with multiple indexes",
-		//	inputDirPath: "",
-		//	mockFs: map[string]string{
-		//		"list.json": list_field_json,
-		//	},
-		//	expected: map[string]string{
-		//		"list.rego": expectedListRego,
-		//	},
-		//},
+		{
+			desc:         "policy contains nested operations",
+			inputDirPath: "",
+			mockFs: map[string]string{
+				"nested.json": nestedJson,
+			},
+			generatedRegoFileName: "nested.rego",
+			input: map[string]any{
+				"terraform_version": "1.11.0",
+				"resource_changes": []any{
+					map[string]any{
+						"address": "azapi_resource.this",
+						"mode":    "managed",
+						"type":    "azapi_resource",
+						"change": map[string]any{
+							"after": map[string]any{
+								"type": "Microsoft.ApiManagement/service/apis@2024-04-01",
+								"properties": map[string]any{
+									"protocols": []string{
+										"http",
+										"tcp",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			deny: true,
+		},
+		{
+			desc:         "policy contains nested operations negative",
+			inputDirPath: "",
+			mockFs: map[string]string{
+				"nested.json": nestedJson,
+			},
+			generatedRegoFileName: "nested.rego",
+			input: map[string]any{
+				"terraform_version": "1.11.0",
+				"resource_changes": []any{
+					map[string]any{
+						"address": "azapi_resource.this",
+						"mode":    "managed",
+						"type":    "azapi_resource",
+						"change": map[string]any{
+							"after": map[string]any{
+								"type": "Microsoft.ApiManagement/service/apis@2024-04-01",
+								"properties": map[string]any{
+									"protocols": []string{
+										"https",
+										"tcp",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			deny: false,
+		},
+		{
+			desc:         "policy contains lists with multiple indexes",
+			inputDirPath: "",
+			mockFs: map[string]string{
+				"list.json": listFieldJson,
+			},
+			generatedRegoFileName: "list.rego",
+			input: map[string]any{
+				"terraform_version": "1.11.0",
+				"resource_changes": []any{
+					map[string]any{
+						"address": "azapi_resource.this",
+						"mode":    "managed",
+						"type":    "azapi_resource",
+						"change": map[string]any{
+							"after": map[string]any{
+								"type": "Microsoft.HealthcareApis/services@2024-04-01",
+								"properties": map[string]any{
+									"corsConfiguration": map[string]any{
+										"origins": []string{
+											"*",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			deny: true,
+		},
+		{
+			desc:         "policy contains lists with multiple indexes negative",
+			inputDirPath: "",
+			mockFs: map[string]string{
+				"list.json": listFieldJson,
+			},
+			generatedRegoFileName: "list.rego",
+			input: map[string]any{
+				"terraform_version": "1.11.0",
+				"resource_changes": []any{
+					map[string]any{
+						"address": "azapi_resource.this",
+						"mode":    "managed",
+						"type":    "azapi_resource",
+						"change": map[string]any{
+							"after": map[string]any{
+								"type": "Microsoft.HealthcareApis/services@2024-04-01",
+								"properties": map[string]any{
+									"corsConfiguration": map[string]any{
+										"origins": []string{
+											"http://*.example.com",
+											"http://*.example2.com",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			deny: false,
+		},
 	}
 
-	//t.Skip("Skip this test because it's not working on CI")
 	//for i := 0; i < 10; i++ {
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s", c.desc), func(t *testing.T) {
