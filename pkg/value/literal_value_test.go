@@ -42,8 +42,8 @@ func TestNewLiteralValue(t *testing.T) {
 			// Test creation of LiteralValue
 			result := NewLiteralValue(tt.input, ctx)
 
-			literalValue, ok := result.(*LiteralValue)
-			assert.True(t, ok, "Result should be a *LiteralValue")
+			literalValue, ok := result.(LiteralValue)
+			assert.True(t, ok, "Result should be a LiteralValue")
 			assert.Equal(t, tt.expectedValue, literalValue.Value)
 
 			// Test Rego() method

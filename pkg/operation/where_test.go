@@ -23,7 +23,7 @@ func TestNewWhere(t *testing.T) {
 	expected := Where{
 		Condition: condition.Equals{
 			BaseCondition: condition.BaseCondition{
-				Subject: &value.FieldValue{
+				Subject: value.FieldValue{
 					Name: "Microsoft.Network/networkSecurityGroups/securityRules[x].direction",
 				},
 			},

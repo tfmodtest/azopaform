@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-var _ shared.Rego = &FieldValue{}
+var _ shared.Rego = FieldValue{}
 
 type FieldValue struct {
 	Name string
@@ -14,7 +14,7 @@ type FieldValue struct {
 func NewFieldValue(input any, ctx *shared.Context) shared.Rego {
 	name := input.(string)
 	name = strings.ReplaceAll(name, "[*]", "[x]")
-	return &FieldValue{
+	return FieldValue{
 		Name: name,
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"json-rule-finder/pkg/shared"
+	"json-rule-finder/pkg/value"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -74,7 +75,7 @@ func TestEqualsCondition_SpecialCase_type(t *testing.T) {
 	ctx := shared.NewContext()
 	sut := Equals{
 		BaseCondition: BaseCondition{
-			Subject: shared.StringRego("type"),
+			Subject: value.FieldValue{Name: "type"},
 		},
 		Value: "Microsoft.Network/networkSecurityGroups",
 	}

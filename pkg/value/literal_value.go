@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-var _ shared.Rego = &LiteralValue{}
+var _ shared.Rego = LiteralValue{}
 
 type LiteralValue struct {
 	Value        string
@@ -15,7 +15,7 @@ type LiteralValue struct {
 func NewLiteralValue(input any, ctx *shared.Context) shared.Rego {
 	v := input.(string)
 	v = strings.ReplaceAll(v, "[*]", "[x]")
-	return &LiteralValue{
+	return LiteralValue{
 		Value: v,
 	}
 }

@@ -422,7 +422,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 						"type":    "azapi_resource",
 						"change": map[string]any{
 							"after": map[string]any{
-								"type": "Microsoft.Web/serverFarms",
+								"type": "Microsoft.Web/serverFarms@2024-04-01",
 								"properties": map[string]any{
 									"sku": map[string]any{
 										"tier": "Basic",
@@ -452,7 +452,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 						"type":    "azapi_resource",
 						"change": map[string]any{
 							"after": map[string]any{
-								"type": "Microsoft.Web/serverFarms",
+								"type": "Microsoft.Web/serverFarms@2024-04-01",
 								"properties": map[string]any{
 									"sku": map[string]any{
 										"tier": "NotBasic",
@@ -482,7 +482,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 						"type":    "azapi_resource",
 						"change": map[string]any{
 							"after": map[string]any{
-								"type": "Microsoft.Web/serverFarms",
+								"type": "Microsoft.Web/serverFarms@2024-04-01",
 								"properties": map[string]any{
 									"sku": map[string]any{
 										"tier": "NotBasic",
@@ -513,7 +513,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 						"kind":    "ASE1",
 						"change": map[string]any{
 							"after": map[string]any{
-								"type": "Microsoft.Web/hostingEnvironments",
+								"type": "Microsoft.Web/hostingEnvironments@2024-04-01",
 								"properties": map[string]any{
 									"clusterSettings": []any{
 										map[string]any{
@@ -700,7 +700,7 @@ warn if {
 condition2 if {
     r := resource(input, "azapi_resource")[_]
 
-    r.values.type == "Microsoft.Web/serverFarms"
+    is_azure_type(r.values, "Microsoft.Web/serverFarms")
     condition1
 }
 condition1 if {
@@ -747,7 +747,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: operation.NewNot("condition1", condition.NotEquals{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{
+					Subject: value.FieldValue{
 						Name: "Microsoft.HealthcareApis/services/corsConfiguration.origins[x]",
 					},
 				},
@@ -788,7 +788,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 				operation.NewAnyOf("condition1", []shared.Rego{
 					condition.Exists{
 						BaseCondition: condition.BaseCondition{
-							Subject: &value.FieldValue{
+							Subject: value.FieldValue{
 								Name: "Microsoft.Sql/servers/minimalTlsVersion",
 							},
 						},
@@ -796,7 +796,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 					},
 					condition.Less{
 						BaseCondition: condition.BaseCondition{
-							Subject: &value.FieldValue{
+							Subject: value.FieldValue{
 								Name: "Microsoft.Sql/servers/minimalTlsVersion",
 							},
 						},
@@ -806,7 +806,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 				operation.NewAllOf("condition1", []shared.Rego{
 					condition.Equals{
 						BaseCondition: condition.BaseCondition{
-							Subject: &value.FieldValue{
+							Subject: value.FieldValue{
 								Name: "type",
 							},
 						},
@@ -814,7 +814,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 					},
 					condition.Exists{
 						BaseCondition: condition.BaseCondition{
-							Subject: &value.FieldValue{
+							Subject: value.FieldValue{
 								Name: "Microsoft.Sql/servers/minimalTlsVersion",
 							},
 						},
@@ -840,7 +840,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			expected: operation.NewAnyOf("condition1", []shared.Rego{
 				condition.Exists{
 					BaseCondition: condition.BaseCondition{
-						Subject: &value.FieldValue{
+						Subject: value.FieldValue{
 							Name: "Microsoft.Sql/servers/minimalTlsVersion",
 						},
 					},
@@ -848,7 +848,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 				},
 				condition.Less{
 					BaseCondition: condition.BaseCondition{
-						Subject: &value.FieldValue{
+						Subject: value.FieldValue{
 							Name: "Microsoft.Sql/servers/minimalTlsVersion",
 						},
 					},
@@ -873,7 +873,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			expected: operation.NewAllOf("condition1", []shared.Rego{
 				condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: &value.FieldValue{
+						Subject: value.FieldValue{
 							Name: "type",
 						},
 					},
@@ -881,7 +881,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 				},
 				condition.Exists{
 					BaseCondition: condition.BaseCondition{
-						Subject: &value.FieldValue{
+						Subject: value.FieldValue{
 							Name: "Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri",
 						},
 					},
@@ -897,7 +897,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.Equals{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{
+					Subject: value.FieldValue{
 						Name: "type",
 					},
 				},
@@ -912,7 +912,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.NotEquals{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "type"},
+					Subject: value.FieldValue{Name: "type"},
 				},
 				Value: "Microsoft.Web/serverFarms",
 			},
@@ -925,7 +925,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.Like{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "type"},
+					Subject: value.FieldValue{Name: "type"},
 				},
 				Value: "Microsoft.Web/serverFarms",
 			},
@@ -938,7 +938,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.NotLike{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "type"},
+					Subject: value.FieldValue{Name: "type"},
 				},
 				Value: "Microsoft.Web/serverFarms",
 			},
@@ -951,7 +951,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.In{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "type"},
+					Subject: value.FieldValue{Name: "type"},
 				},
 				Values: []string{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
 			},
@@ -964,7 +964,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.NotIn{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "type"},
+					Subject: value.FieldValue{Name: "type"},
 				},
 				Values: []string{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
 			},
@@ -977,7 +977,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.Contains{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "type"},
+					Subject: value.FieldValue{Name: "type"},
 				},
 				Value: "Microsoft.Web/serverFarms",
 			},
@@ -990,7 +990,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.NotContains{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "type"},
+					Subject: value.FieldValue{Name: "type"},
 				},
 				Value: "Microsoft.Web/serverFarms",
 			},
@@ -1003,7 +1003,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.ContainsKey{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "type"},
+					Subject: value.FieldValue{Name: "type"},
 				},
 				KeyName: "Microsoft.Web/serverFarms",
 			},
@@ -1016,7 +1016,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.NotContainsKey{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "type"},
+					Subject: value.FieldValue{Name: "type"},
 				},
 				KeyName: "Microsoft.Web/serverFarms",
 			},
@@ -1029,7 +1029,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.Less{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "number"},
+					Subject: value.FieldValue{Name: "number"},
 				},
 				Value: 10,
 			},
@@ -1042,7 +1042,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.LessOrEquals{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "number"},
+					Subject: value.FieldValue{Name: "number"},
 				},
 				Value: 10,
 			},
@@ -1055,7 +1055,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.Greater{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "number"},
+					Subject: value.FieldValue{Name: "number"},
 				},
 				Value: 10,
 			},
@@ -1068,7 +1068,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.GreaterOrEquals{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "number"},
+					Subject: value.FieldValue{Name: "number"},
 				},
 				Value: 10,
 			},
@@ -1081,7 +1081,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			},
 			expected: condition.Exists{
 				BaseCondition: condition.BaseCondition{
-					Subject: &value.FieldValue{Name: "type"},
+					Subject: value.FieldValue{Name: "type"},
 				},
 				Value: true,
 			},

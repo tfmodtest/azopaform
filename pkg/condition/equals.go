@@ -3,6 +3,7 @@ package condition
 import (
 	"fmt"
 	"json-rule-finder/pkg/shared"
+	"json-rule-finder/pkg/value"
 	"reflect"
 	"strings"
 )
@@ -28,7 +29,7 @@ func (e Equals) Rego(ctx *shared.Context) (string, error) {
 	} else {
 		v = fmt.Sprint(e.Value)
 	}
-	if str, ok := e.Subject.(shared.StringRego); ok && string(str) == shared.TypeOfResource {
+	if field, ok := e.Subject.(value.FieldValue); ok && field.Name == shared.TypeOfResource {
 		return fmt.Sprintf(`is_azure_type(%s, %s)`, shared.ResourcePathPrefix, v), nil
 	}
 	return strings.Join([]string{fieldName, "==", v}, " "), nil

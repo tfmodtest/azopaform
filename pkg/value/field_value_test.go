@@ -74,8 +74,8 @@ func TestNewFieldValue(t *testing.T) {
 
 			// Test that NewFieldValue correctly sets the Name field
 			result := NewFieldValue(tt.input, ctx)
-			fieldValue, ok := result.(*FieldValue)
-			assert.True(t, ok, "Result should be a *FieldValue")
+			fieldValue, ok := result.(FieldValue)
+			assert.True(t, ok, "Result should be a FieldValue")
 			assert.Equal(t, tt.expectedName, fieldValue.Name)
 
 			// Also test the Rego() method to ensure proper field name processing
