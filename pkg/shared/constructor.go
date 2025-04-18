@@ -11,9 +11,6 @@ func FieldNameProcessor(fieldName string, ctx *Context) (string, error) {
 	if fieldName == TypeOfResource || fieldName == KindOfResource {
 		return fmt.Sprintf("%s.%s", ResourcePathPrefix, fieldName), nil
 	}
-	if strings.Contains(fieldName, "count") {
-		return fieldName, nil
-	}
 	rt, err := currentResourceType(ctx)
 	if err != nil {
 		return processedFieldName(fieldName)

@@ -776,7 +776,7 @@ func TestNewPolicyRuleBody(t *testing.T) {
 			expected: operation.NewNot("condition1", condition.NotEquals{
 				BaseCondition: condition.BaseCondition{
 					Subject: value.FieldValue{
-						Name: "Microsoft.HealthcareApis/services/corsConfiguration.origins[x]",
+						Name: "Microsoft.HealthcareApis/services/corsConfiguration.origins[*]",
 					},
 				},
 				Value: "*",

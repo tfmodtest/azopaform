@@ -24,7 +24,7 @@ func TestNewWhere(t *testing.T) {
 		Condition: condition.Equals{
 			BaseCondition: condition.BaseCondition{
 				Subject: value.FieldValue{
-					Name: "Microsoft.Network/networkSecurityGroups/securityRules[x].direction",
+					Name: "Microsoft.Network/networkSecurityGroups/securityRules[*].direction",
 				},
 			},
 			Value: "Inbound",

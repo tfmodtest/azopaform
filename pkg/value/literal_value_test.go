@@ -21,12 +21,12 @@ func TestNewLiteralValue(t *testing.T) {
 		{
 			name:          "String with wildcards",
 			input:         "array[*].value",
-			expectedValue: "array[x].value",
+			expectedValue: "array[_].value",
 		},
 		{
 			name:          "String with multiple wildcards",
 			input:         "array[*].items[*].name",
-			expectedValue: "array[x].items[x].name",
+			expectedValue: "array[_].items[_].name",
 		},
 		{
 			name:          "Empty string",
