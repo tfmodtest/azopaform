@@ -1,5 +1,6 @@
 package pkg
 
 type Options struct {
-	PackageName string
+	PackageName      string
+	UtilRegoFileName string
 }

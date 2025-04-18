@@ -759,6 +759,19 @@ func TestAzPolicy2Rego_customizePackageName(t *testing.T) {
 	assert.True(t, strings.HasPrefix(string(formattedExpected), "package customized"))
 }
 
+func TestAzPolicy2Rego_customizeUtilRegoFileName(t *testing.T) {
+	path := "deny.json"
+	fs := prepareMemFs(t)
+	stub := gostub.Stub(&Fs, fs)
+	defer stub.Reset()
+	customizedRegoFileName := "customized.rego"
+	err := AzurePolicyToRego(path, "", Options{UtilRegoFileName: customizedRegoFileName}, shared.NewContext())
+	require.NoError(t, err)
+	readfile, err := afero.ReadFile(fs, customizedRegoFileName)
+	require.NoError(t, err)
+	assert.Contains(t, string(readfile), shared.UtilsRego)
+}
+
 func TestNewPolicyRuleBody(t *testing.T) {
 	tests := []struct {
 		name     string

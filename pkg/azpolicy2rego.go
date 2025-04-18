@@ -70,11 +70,15 @@ func (r *Rule) SaveToDisk() error {
 	if err != nil {
 		return fmt.Errorf("cannot save file %s, error is %+v", fileName, err)
 	}
-	err = afero.WriteFile(Fs, "utils.rego", []byte(fmt.Sprintf(`package %s
+	return nil
+}
+
+func saveUtilRegoFile(option Options) error {
+	err := afero.WriteFile(Fs, option.UtilRegoFileName, []byte(fmt.Sprintf(`package %s
 
 import rego.v1
 
-%s`, r.PackageName(), shared.UtilsRego)), 0644)
+%s`, option.PackageName, shared.UtilsRego)), 0644)
 	if err != nil {
 		return fmt.Errorf("cannot save file utils.rego, error is %+v", err)
 	}
@@ -203,7 +207,7 @@ func AzurePolicyToRego(policyPath string, dir string, options Options, ctx *shar
 	var paths []string
 	var err error
 
-	////For batch translation
+	//For batch translation
 	if dir != "" {
 		paths, err = jsonFiles(dir)
 		if err != nil {
@@ -224,6 +228,10 @@ func AzurePolicyToRego(policyPath string, dir string, options Options, ctx *shar
 		if err != nil {
 			return fmt.Errorf("error when saving parsed rule to disk, error is %+v", err)
 		}
+	}
+	err = saveUtilRegoFile(options)
+	if err != nil {
+		return err
 	}
 	return nil
 }
