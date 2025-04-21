@@ -598,7 +598,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 					policyPath = n
 				}
 			}
-			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, Options{}, shared.NewContext()))
+			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, shared.NewContext()))
 			content, err := afero.ReadFile(mockFs, c.generatedRegoFileName)
 			require.NoError(t, err)
 			generated := string(content) + "\n" + shared.UtilsRego
@@ -713,7 +713,7 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 		defer stub.Reset()
 
 		ctx := shared.NewContext()
-		rule, err := LoadRule(path, Options{}, ctx)
+		rule, err := LoadRule(path, ctx)
 		require.NoError(t, err)
 		err = rule.SaveToDisk()
 		require.NoError(t, err)
@@ -749,8 +749,8 @@ func TestAzPolicy2Rego_customizePackageName(t *testing.T) {
 	fs := prepareMemFs(t)
 	stub := gostub.Stub(&Fs, fs)
 	defer stub.Reset()
-	ctx := shared.NewContext()
-	rule, err := LoadRule(path, Options{PackageName: "customized"}, ctx)
+	ctx := shared.NewContextWithOptions(shared.Options{PackageName: "customized"})
+	rule, err := LoadRule(path, ctx)
 	require.NoError(t, err)
 	regoCode, err := rule.Rego(ctx)
 	require.NoError(t, err)
@@ -765,11 +765,32 @@ func TestAzPolicy2Rego_customizeUtilRegoFileName(t *testing.T) {
 	stub := gostub.Stub(&Fs, fs)
 	defer stub.Reset()
 	customizedRegoFileName := "customized.rego"
-	err := AzurePolicyToRego(path, "", Options{UtilRegoFileName: customizedRegoFileName}, shared.NewContext())
+	err := AzurePolicyToRego(path, "", shared.NewContextWithOptions(shared.Options{
+		UtilRegoFileName: customizedRegoFileName,
+	}))
 	require.NoError(t, err)
 	readfile, err := afero.ReadFile(fs, customizedRegoFileName)
 	require.NoError(t, err)
 	assert.Contains(t, string(readfile), shared.UtilsRego)
+}
+
+func TestAzPolicy2Rego_WithUtilLibraryPackageName_NoUtilFileGenerated(t *testing.T) {
+	fs := prepareMemFs(t)
+	stub := gostub.Stub(&Fs, fs)
+	defer stub.Reset()
+
+	ctx := shared.NewContextWithOptions(shared.Options{
+		UtilLibraryPackageName: "util",
+	})
+
+	err := AzurePolicyToRego("deny.json", "", ctx)
+	require.NoError(t, err)
+
+	matches, err := afero.Glob(fs, "*.rego")
+	require.NoError(t, err)
+	// Only deny.json exist
+	assert.Len(t, matches, 1)
+	assert.Equal(t, "deny.rego", matches[0])
 }
 
 func TestNewPolicyRuleBody(t *testing.T) {

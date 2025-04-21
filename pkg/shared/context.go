@@ -9,6 +9,7 @@ import (
 
 type Context struct {
 	context.Context
+	option                 Options
 	resourceTypeStack      stacks.Stack
 	fieldNameReplacerStack stacks.Stack
 	helperFuncs            []string
@@ -20,6 +21,12 @@ func NewContext() *Context {
 		resourceTypeStack:      arraystack.New(),
 		fieldNameReplacerStack: arraystack.New(),
 	}
+}
+
+func NewContextWithOptions(option Options) *Context {
+	ctx := NewContext()
+	ctx.option = option
+	return ctx
 }
 
 func (c *Context) PushFieldName(name string) {
@@ -67,4 +74,24 @@ func (c *Context) HelperFunctionsRego() string {
 		sb.WriteString("\n")
 	}
 	return sb.String()
+}
+
+func (c *Context) PackageName() string {
+	return getOrDefault(c.option.PackageName, "main")
+}
+
+func (c *Context) UtilRegoFileName() string {
+	return getOrDefault(c.option.UtilRegoFileName, "util.rego")
+}
+
+func (c *Context) UtilLibraryPackageName() string {
+	return c.option.UtilLibraryPackageName
+}
+
+func getOrDefault[T comparable](value, defaultValue T) T {
+	var defaultTValue T
+	if value == defaultTValue {
+		return defaultValue
+	}
+	return value
 }

@@ -29,8 +29,13 @@ func (e Equals) Rego(ctx *shared.Context) (string, error) {
 	} else {
 		v = fmt.Sprint(e.Value)
 	}
-	if field, ok := e.Subject.(value.FieldValue); ok && field.Name == shared.TypeOfResource {
-		return fmt.Sprintf(`is_azure_type(%s, %s)`, shared.ResourcePathPrefix, v), nil
+	equals := strings.Join([]string{fieldName, "==", v}, " ")
+	prefix := ""
+	if utilLibraryName := ctx.UtilLibraryPackageName(); utilLibraryName != "" {
+		prefix = fmt.Sprintf("data.%s.", utilLibraryName)
 	}
-	return strings.Join([]string{fieldName, "==", v}, " "), nil
+	if field, ok := e.Subject.(value.FieldValue); ok && field.Name == shared.TypeOfResource {
+		equals = fmt.Sprintf(`%sis_azure_type(%s, %s)`, prefix, shared.ResourcePathPrefix, v)
+	}
+	return equals, nil
 }

@@ -83,3 +83,19 @@ func TestEqualsCondition_SpecialCase_type(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, `is_azure_type(r.values, "Microsoft.Network/networkSecurityGroups")`, actual)
 }
+
+func TestEqualsCondition_WithUtilLibraryPackageName(t *testing.T) {
+	ctx := shared.NewContextWithOptions(shared.Options{UtilLibraryPackageName: "util"})
+
+	sut := Equals{
+		BaseCondition: BaseCondition{
+			Subject: value.FieldValue{Name: "type"},
+		},
+		Value: "Microsoft.Network/networkSecurityGroups",
+	}
+
+	actual, err := sut.Rego(ctx)
+	require.NoError(t, err)
+	expected := `data.util.is_azure_type(r.values, "Microsoft.Network/networkSecurityGroups")`
+	assert.Equal(t, expected, actual)
+}
