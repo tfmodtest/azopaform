@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewWhere(t *testing.T) {
-	stub := gostub.Stub(&NeoConditionNameGenerator, func() string {
+	stub := gostub.Stub(&RandomHelperFunctionNameGenerator, func() string {
 		return "condition1"
 	})
 	defer stub.Reset()

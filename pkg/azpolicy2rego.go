@@ -128,8 +128,8 @@ func (t *ThenBody) MapEffectToAction(defaultEffect string) (string, error) {
 	if defaultEffect == shared.Audit {
 		return shared.Warn, nil
 	}
-	if defaultEffect == shared.Deny || defaultEffect == shared.Disabled {
-		return defaultEffect, nil
+	if defaultEffect == shared.Modify || defaultEffect == shared.Deny || defaultEffect == shared.Disabled {
+		return shared.Deny, nil
 	}
 	return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
 }
@@ -140,16 +140,16 @@ func (t *ThenBody) Action(result, conditionName string, rule *Rule) (string, err
 		fmt.Printf("cannot map effect to action %+v\n", err)
 		return "", err
 	}
-	if action == shared.Disabled {
-		result = "default allow := true\n\n" + result
-	} else if action == shared.Deny {
-		top := "deny if {\n" + " " + conditionName + "\n}\n"
-		result = top + result
-	} else if action == shared.Warn {
-		top := "warn if {\n" + " " + conditionName + "\n}\n"
-		result = top + result
+	var top string
+	switch action {
+	case shared.Deny:
+		fallthrough
+	case shared.Disabled:
+		top = "deny if {\n" + " " + conditionName + "\n}\n"
+	case shared.Warn:
+		top = "warn if {\n" + " " + conditionName + "\n}\n"
 	}
-	return result, nil
+	return top + result, nil
 }
 
 type PolicyRuleParameterType string

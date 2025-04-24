@@ -1,6 +1,8 @@
 package condition
 
-import "json-rule-finder/pkg/shared"
+import (
+	"json-rule-finder/pkg/shared"
+)
 
 type Condition interface {
 	shared.Rego

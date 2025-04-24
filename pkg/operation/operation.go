@@ -19,7 +19,7 @@ type baseOperation struct {
 
 func newBaseOperation() baseOperation {
 	return baseOperation{
-		helperFunctionName: NeoConditionNameGenerator(),
+		helperFunctionName: RandomHelperFunctionNameGenerator(),
 	}
 }
 
@@ -132,7 +132,7 @@ func NewOperation(operationType string, body any, ctx *shared.Context) (shared.R
 	return nil, nil
 }
 
-var NeoConditionNameGenerator = func() string {
+var RandomHelperFunctionNameGenerator = func() string {
 	var randomSuffix string
 	for {
 		randomSuffix = randomstring.HumanFriendlyEnglishString(10)
@@ -161,8 +161,8 @@ func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, error) {
 func tryParseCondition(subject shared.Rego, input map[string]any) shared.Rego {
 	for key, conditionValue := range input {
 		key = strings.ToLower(key)
-		if ifBody := condition.NewCondition(key, subject, conditionValue); ifBody != nil {
-			return ifBody
+		if cond := condition.NewCondition(key, subject, conditionValue); cond != nil {
+			return cond
 		}
 	}
 	return nil

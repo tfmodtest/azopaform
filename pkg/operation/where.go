@@ -18,7 +18,7 @@ func NewWhere(input any, ctx *shared.Context) (Operation, error) {
 	}
 	return Where{
 		Condition:          whereBody,
-		helperFunctionName: NeoConditionNameGenerator(),
+		helperFunctionName: RandomHelperFunctionNameGenerator(),
 	}, nil
 }
 

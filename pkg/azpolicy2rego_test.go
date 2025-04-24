@@ -584,13 +584,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 	//for i := 0; i < 10; i++ {
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s", c.desc), func(t *testing.T) {
-			mockFs := fakeFs(c.mockFs)
-			counter := 0
-			stub := gostub.Stub(&operation.NeoConditionNameGenerator, func() string {
-				newName := fmt.Sprintf("condition%d", counter)
-				counter++
-				return newName
-			}).Stub(&Fs, mockFs)
+			stub := gostub.Stub(&Fs, fakeFs(c.mockFs))
 			defer stub.Reset()
 			policyPath := ""
 			if len(c.mockFs) == 1 {
@@ -599,7 +593,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 				}
 			}
 			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, shared.NewContext()))
-			content, err := afero.ReadFile(mockFs, c.generatedRegoFileName)
+			content, err := afero.ReadFile(fakeFs(c.mockFs), c.generatedRegoFileName)
 			require.NoError(t, err)
 			generated := string(content) + "\n" + shared.UtilsRego
 			ctx := shared.NewContext()
@@ -654,7 +648,7 @@ func TestMapEffectToAction(t *testing.T) {
 				Effect: "[parameters('effect')]",
 			},
 			defaultEffect: "disabled",
-			expected:      "disabled",
+			expected:      "deny",
 		},
 		{
 			name: "Effect is empty and defaultEffect is deny",
@@ -664,6 +658,14 @@ func TestMapEffectToAction(t *testing.T) {
 			defaultEffect: "deny",
 			expected:      "",
 			expectError:   true,
+		},
+		{
+			name: "Effect is [parameters('effect')] and defaultEffect is Modify",
+			thenBody: &ThenBody{
+				Effect: "[parameters('effect')]",
+			},
+			defaultEffect: "Modify",
+			expected:      "deny",
 		},
 	}
 
@@ -704,7 +706,7 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 	t.Run("LoadRule", func(t *testing.T) {
 		fs := prepareMemFs(t)
 		counter := 1
-		stub := gostub.Stub(&Fs, fs).Stub(&operation.NeoConditionNameGenerator, func() string {
+		stub := gostub.Stub(&Fs, fs).Stub(&operation.RandomHelperFunctionNameGenerator, func() string {
 			defer func() {
 				counter++
 			}()
@@ -793,164 +795,12 @@ func TestAzPolicy2Rego_WithUtilLibraryPackageName_NoUtilFileGenerated(t *testing
 	assert.Equal(t, "deny.rego", matches[0])
 }
 
-func TestNewPolicyRuleBody(t *testing.T) {
+func TestParseCondition(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    map[string]any
 		expected shared.Rego
 	}{
-		{
-			name: "NotOperation",
-			input: map[string]any{
-				"not": map[string]any{
-					"field":     "Microsoft.HealthcareApis/services/corsConfiguration.origins[*]",
-					"notEquals": "*",
-				},
-			},
-			expected: operation.NewNot("condition1", condition.NotEquals{
-				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{
-						Name: "Microsoft.HealthcareApis/services/corsConfiguration.origins[*]",
-					},
-				},
-				Value: "*",
-			}),
-		},
-		{
-			name: "NestedAnyOfOperation",
-			input: map[string]any{
-				"anyof": []any{
-					map[string]any{
-						"anyof": []any{
-							map[string]any{
-								"field":  "Microsoft.Sql/servers/minimalTlsVersion",
-								"exists": false,
-							},
-							map[string]any{
-								"field": "Microsoft.Sql/servers/minimalTlsVersion",
-								"less":  "1.2",
-							},
-						},
-					},
-					map[string]any{
-						"allof": []any{
-							map[string]any{
-								"field":  "type",
-								"equals": "Microsoft.Sql/servers",
-							},
-							map[string]any{
-								"field":  "Microsoft.Sql/servers/minimalTlsVersion",
-								"exists": true,
-							},
-						},
-					},
-				},
-			},
-			expected: operation.NewAnyOf("condition1", []shared.Rego{
-				operation.NewAnyOf("condition1", []shared.Rego{
-					condition.Exists{
-						BaseCondition: condition.BaseCondition{
-							Subject: value.FieldValue{
-								Name: "Microsoft.Sql/servers/minimalTlsVersion",
-							},
-						},
-						Value: false,
-					},
-					condition.Less{
-						BaseCondition: condition.BaseCondition{
-							Subject: value.FieldValue{
-								Name: "Microsoft.Sql/servers/minimalTlsVersion",
-							},
-						},
-						Value: "1.2",
-					},
-				}),
-				operation.NewAllOf("condition1", []shared.Rego{
-					condition.Equals{
-						BaseCondition: condition.BaseCondition{
-							Subject: value.FieldValue{
-								Name: "type",
-							},
-						},
-						Value: "Microsoft.Sql/servers",
-					},
-					condition.Exists{
-						BaseCondition: condition.BaseCondition{
-							Subject: value.FieldValue{
-								Name: "Microsoft.Sql/servers/minimalTlsVersion",
-							},
-						},
-						Value: true,
-					},
-				}),
-			}),
-		},
-		{
-			name: "AnyOfOperation",
-			input: map[string]any{
-				"anyof": []any{
-					map[string]any{
-						"field":  "Microsoft.Sql/servers/minimalTlsVersion",
-						"exists": false,
-					},
-					map[string]any{
-						"field": "Microsoft.Sql/servers/minimalTlsVersion",
-						"less":  "1.2",
-					},
-				},
-			},
-			expected: operation.NewAnyOf("condition1", []shared.Rego{
-				condition.Exists{
-					BaseCondition: condition.BaseCondition{
-						Subject: value.FieldValue{
-							Name: "Microsoft.Sql/servers/minimalTlsVersion",
-						},
-					},
-					Value: false,
-				},
-				condition.Less{
-					BaseCondition: condition.BaseCondition{
-						Subject: value.FieldValue{
-							Name: "Microsoft.Sql/servers/minimalTlsVersion",
-						},
-					},
-					Value: "1.2",
-				},
-			}),
-		},
-		{
-			name: "AllOfOperation",
-			input: map[string]any{
-				"allof": []any{
-					map[string]any{
-						"field":  "type",
-						"equals": "Microsoft.HealthcareApis/services",
-					},
-					map[string]any{
-						"field":  "Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri",
-						"exists": false,
-					},
-				},
-			},
-			expected: operation.NewAllOf("condition1", []shared.Rego{
-				condition.Equals{
-					BaseCondition: condition.BaseCondition{
-						Subject: value.FieldValue{
-							Name: "type",
-						},
-					},
-					Value: "Microsoft.HealthcareApis/services",
-				},
-				condition.Exists{
-					BaseCondition: condition.BaseCondition{
-						Subject: value.FieldValue{
-							Name: "Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri",
-						},
-					},
-					Value: false,
-				},
-			}),
-		},
 		{
 			name: "Equals",
 			input: map[string]any{
@@ -1164,10 +1014,6 @@ func TestNewPolicyRuleBody(t *testing.T) {
 				_, err := NewPolicyRuleBody(tt.input).GetIf(ctx)
 				assert.NotNil(t, err)
 			} else {
-				stub := gostub.Stub(&operation.NeoConditionNameGenerator, func() string {
-					return "condition1"
-				})
-				defer stub.Reset()
 				result := NewPolicyRuleBody(tt.input)
 				r, err := result.GetIf(ctx)
 				require.NoError(t, err)

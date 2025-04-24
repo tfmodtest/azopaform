@@ -12,7 +12,7 @@ type Context struct {
 	option                 Options
 	resourceTypeStack      stacks.Stack
 	fieldNameReplacerStack stacks.Stack
-	helperFuncs            []string
+	helperFunctions        []string
 }
 
 func NewContext() *Context {
@@ -64,12 +64,12 @@ func (c *Context) PushResourceType(rt string) {
 }
 
 func (c *Context) EnqueueHelperFunction(funcDec string) {
-	c.helperFuncs = append(c.helperFuncs, funcDec)
+	c.helperFunctions = append(c.helperFunctions, funcDec)
 }
 
 func (c *Context) HelperFunctionsRego() string {
 	sb := new(strings.Builder)
-	for _, helperFunc := range c.helperFuncs {
+	for _, helperFunc := range c.helperFunctions {
 		sb.WriteString(helperFunc)
 		sb.WriteString("\n")
 	}
