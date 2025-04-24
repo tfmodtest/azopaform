@@ -141,7 +141,7 @@ var NeoConditionNameGenerator = func() string {
 			break
 		}
 	}
-	return fmt.Sprintf("condition%s", randomSuffix)
+	return fmt.Sprintf("condition_%s", randomSuffix)
 }
 
 func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, error) {
