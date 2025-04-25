@@ -26,9 +26,9 @@ func (i *If) Rego(ctx *shared.Context) (string, error) {
 	return i.rego.Rego(ctx)
 }
 
-func (i *If) ConditionName(defaultConditionName string) string {
+func (i *If) ConditionName() string {
 	if operator, ok := i.rego.(operation.Operation); ok {
 		return operator.HelperFunctionName()
 	}
-	return defaultConditionName
+	return ""
 }

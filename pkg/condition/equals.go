@@ -23,6 +23,7 @@ func (e Equals) Rego(ctx *shared.Context) (string, error) {
 		return "", err
 	}
 	var v string
+	//TODO:refactor this
 	if reflect.TypeOf(e.Value).Kind() == reflect.String {
 		v = strings.Join([]string{"\"", fmt.Sprint(e.Value), "\""}, "")
 	} else if reflect.TypeOf(e.Value).Kind() == reflect.Bool {

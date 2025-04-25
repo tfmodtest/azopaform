@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/iancoleman/strcase"
 	"path/filepath"
 	"strings"
 
@@ -30,7 +31,7 @@ func (r *Rule) Rego(ctx *shared.Context) (string, error) {
 		return "", err
 	}
 	then := r.Properties.PolicyRule.GetThen()
-	conditionName := ifBody.ConditionName(ifRego)
+	conditionName := ifBody.ConditionName()
 	rego, err := then.Action(ifRego, conditionName, r)
 	if err != nil {
 		return "", err
@@ -54,6 +55,7 @@ func (r *Rule) Parse(ctx *shared.Context) error {
 		return fmt.Errorf("invalid rego code: %w", err)
 	}
 	r.result = string(formattedSrc)
+	r.Name = strcase.ToSnake(r.Properties.DisplayName)
 	return nil
 }
 
