@@ -584,7 +584,8 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 	//for i := 0; i < 10; i++ {
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s", c.desc), func(t *testing.T) {
-			stub := gostub.Stub(&Fs, fakeFs(c.mockFs))
+			fs := fakeFs(c.mockFs)
+			stub := gostub.Stub(&Fs, fs)
 			defer stub.Reset()
 			policyPath := ""
 			if len(c.mockFs) == 1 {
@@ -593,7 +594,7 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 				}
 			}
 			require.NoError(t, AzurePolicyToRego(policyPath, c.inputDirPath, shared.NewContext()))
-			content, err := afero.ReadFile(fakeFs(c.mockFs), c.generatedRegoFileName)
+			content, err := afero.ReadFile(fs, c.generatedRegoFileName)
 			require.NoError(t, err)
 			generated := string(content) + "\n" + shared.UtilsRego
 			ctx := shared.NewContext()
@@ -703,7 +704,7 @@ func TestRule_SaveToDisk(t *testing.T) {
 
 func TestNeoAzPolicy2Rego(t *testing.T) {
 	path := "deny.json"
-	t.Run("LoadRule", func(t *testing.T) {
+	t.Run("loadRule", func(t *testing.T) {
 		fs := prepareMemFs(t)
 		counter := 1
 		stub := gostub.Stub(&Fs, fs).Stub(&operation.RandomHelperFunctionNameGenerator, func() string {
@@ -715,7 +716,7 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 		defer stub.Reset()
 
 		ctx := shared.NewContext()
-		rule, err := LoadRule(path, ctx)
+		rule, err := loadRule(path, ctx)
 		require.NoError(t, err)
 		err = rule.SaveToDisk()
 		require.NoError(t, err)
@@ -752,7 +753,7 @@ func TestAzPolicy2Rego_customizePackageName(t *testing.T) {
 	stub := gostub.Stub(&Fs, fs)
 	defer stub.Reset()
 	ctx := shared.NewContextWithOptions(shared.Options{PackageName: "customized"})
-	rule, err := LoadRule(path, ctx)
+	rule, err := loadRule(path, ctx)
 	require.NoError(t, err)
 	regoCode, err := rule.Rego(ctx)
 	require.NoError(t, err)

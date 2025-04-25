@@ -3,81 +3,12 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/open-policy-agent/opa/format"
+	"github.com/spf13/afero"
 	"json-rule-finder/pkg/shared"
 	"path/filepath"
-	"strings"
-
-	"github.com/spf13/afero"
 )
 
-var _ shared.Rego = &Rule{}
-
-type Rule struct {
-	Properties *PolicyRuleModel
-	Id         string
-	Name       string
-	path       string
-	result     string
-}
-
-func (r *Rule) Rego(ctx *shared.Context) (string, error) {
-	ifBody, err := r.Properties.PolicyRule.GetIf(ctx)
-	if err != nil {
-		return "", err
-	}
-	ifRego, err := ifBody.Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	then := r.Properties.PolicyRule.GetThen()
-	conditionName := ifBody.ConditionName(ifRego)
-	rego, err := then.Action(ifRego, conditionName, r)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf(`package %s
-
-import rego.v1
-
-%s
-
-%s`, ctx.PackageName(), rego, ctx.HelperFunctionsRego()), nil
-}
-
-func (r *Rule) Parse(ctx *shared.Context) error {
-	ruleRego, err := r.Rego(ctx)
-	if err != nil {
-		return err
-	}
-	formattedSrc, err := format.Source("output.rego", []byte(ruleRego))
-	if err != nil {
-		return fmt.Errorf("invalid rego code: %w", err)
-	}
-	r.result = string(formattedSrc)
-	return nil
-}
-
-func (r *Rule) SaveToDisk() error {
-	fileName := strings.TrimSuffix(filepath.Base(r.path), filepath.Ext(r.path)) + ".rego"
-	err := afero.WriteFile(Fs, fileName, []byte(r.result), 0644)
-	if err != nil {
-		return fmt.Errorf("cannot save file %s, error is %+v", fileName, err)
-	}
-	return nil
-}
-
-func saveUtilRegoFile(ctx *shared.Context) error {
-	err := afero.WriteFile(Fs, ctx.UtilRegoFileName(), []byte(fmt.Sprintf(`package %s
-
-import rego.v1
-
-%s`, ctx.PackageName(), shared.UtilsRego)), 0644)
-	if err != nil {
-		return fmt.Errorf("cannot save file utils.rego, error is %+v", err)
-	}
-	return nil
-}
+var Fs = afero.NewOsFs()
 
 func NewPolicyRuleBody(input map[string]any) *PolicyRuleBody {
 	return &PolicyRuleBody{
@@ -99,57 +30,6 @@ type PolicyRuleModel struct {
 	Description string
 	Version     string
 	Metadata    *PolicyRuleMetaData
-}
-
-type ThenBody struct {
-	Effect string `json:"effect,omitempty"`
-}
-
-func (t *ThenBody) GetEffect() string {
-	if t == nil {
-		return ""
-	}
-	return t.Effect
-}
-
-func (t *ThenBody) MapEffectToAction(defaultEffect string) (string, error) {
-	effect := t.GetEffect()
-	if effect == "" {
-		return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
-	}
-	effect = strings.ToLower(effect)
-	if effect == shared.Deny {
-		return shared.Deny, nil
-	}
-	if effect != "[parameters('effect')]" {
-		return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
-	}
-	defaultEffect = strings.ToLower(defaultEffect)
-	if defaultEffect == shared.Audit {
-		return shared.Warn, nil
-	}
-	if defaultEffect == shared.Modify || defaultEffect == shared.Deny || defaultEffect == shared.Disabled {
-		return shared.Deny, nil
-	}
-	return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
-}
-
-func (t *ThenBody) Action(result, conditionName string, rule *Rule) (string, error) {
-	action, err := t.MapEffectToAction(rule.Properties.Parameters.GetEffect().GetDefaultValue())
-	if err != nil {
-		fmt.Printf("cannot map effect to action %+v\n", err)
-		return "", err
-	}
-	var top string
-	switch action {
-	case shared.Deny:
-		fallthrough
-	case shared.Disabled:
-		top = "deny if {\n" + " " + conditionName + "\n}\n"
-	case shared.Warn:
-		top = "warn if {\n" + " " + conditionName + "\n}\n"
-	}
-	return top + result, nil
 }
 
 type PolicyRuleParameterType string
@@ -179,24 +59,6 @@ func (p *PolicyRuleParameters) GetEffect() *EffectBody {
 	return p.Effect
 }
 
-type EffectBody struct {
-	DefaultValue string `json:"defaultValue"`
-}
-
-func (e *EffectBody) GetDefaultValue() string {
-	if e == nil {
-		return ""
-	}
-	return e.DefaultValue
-}
-
-type OperatorModel struct {
-	Name  string
-	Value any
-}
-
-var Fs = afero.NewOsFs()
-
 func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error {
 	var paths []string
 	var err error
@@ -214,7 +76,7 @@ func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error
 		paths = []string{policyPath}
 	}
 	for _, path := range paths {
-		rule, err := LoadRule(path, ctx)
+		rule, err := loadRule(path, ctx)
 		if err != nil {
 			return fmt.Errorf("error when loading rule from path %s, error is %+v", path, err)
 		}
@@ -229,8 +91,8 @@ func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error
 	return nil
 }
 
-func LoadRule(path string, ctx *shared.Context) (*Rule, error) {
-	rule, err := ReadRuleFromFile(path)
+func loadRule(path string, ctx *shared.Context) (*Rule, error) {
+	rule, err := readRuleFromFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot find rules %+v", err)
 	}
@@ -273,7 +135,7 @@ func readJsonFilePaths(path string) ([]string, error) {
 	return filePaths, nil
 }
 
-func ReadRuleFromFile(path string) (*Rule, error) {
+func readRuleFromFile(path string) (*Rule, error) {
 	data, err := afero.ReadFile(Fs, path)
 	if err != nil {
 		return nil, err
@@ -293,4 +155,16 @@ func ReadRuleFromFile(path string) (*Rule, error) {
 	rule.path = path
 
 	return &rule, nil
+}
+
+func saveUtilRegoFile(ctx *shared.Context) error {
+	err := afero.WriteFile(Fs, ctx.UtilRegoFileName(), []byte(fmt.Sprintf(`package %s
+
+import rego.v1
+
+%s`, ctx.PackageName(), shared.UtilsRego)), 0644)
+	if err != nil {
+		return fmt.Errorf("cannot save file utils.rego, error is %+v", err)
+	}
+	return nil
 }
