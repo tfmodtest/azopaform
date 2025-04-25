@@ -2,12 +2,12 @@ package condition
 
 import (
 	"fmt"
-	"github.com/tfmodtest/azopaform/pkg/shared"
 	"testing"
 
 	"github.com/open-policy-agent/opa/v1/rego"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 func TestReplaceIndex_WithWildcardIndex(t *testing.T) {

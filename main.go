@@ -3,9 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+
 	"github.com/tfmodtest/azopaform/pkg"
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"os"
 )
 
 func main() {
@@ -17,7 +18,7 @@ func main() {
 	flag.Parse()
 
 	if *utilLibraryPackageName != "" && *utilRegoFileName != "util.rego" {
-		fmt.Fprintln(os.Stderr, "Cannot set both `util-file-name` and `util-library-package-name` flags simultaneously.")
+		_, _ = fmt.Fprintln(os.Stderr, "Cannot set both `util-file-name` and `util-library-package-name` flags simultaneously.")
 		os.Exit(1)
 	}
 
@@ -30,7 +31,7 @@ func main() {
 	ctx := shared.NewContextWithOptions(options)
 
 	if err := pkg.AzurePolicyToRego(*singlePath, *dir, ctx); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }

@@ -2,12 +2,12 @@ package operation
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/emirpasic/gods/sets/hashset"
 	"github.com/tfmodtest/azopaform/pkg/condition"
 	"github.com/tfmodtest/azopaform/pkg/shared"
 	"github.com/tfmodtest/azopaform/pkg/value"
-	"strings"
-
 	"github.com/xyproto/randomstring"
 )
 

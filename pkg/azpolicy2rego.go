@@ -3,9 +3,10 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
+
 	"github.com/spf13/afero"
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"path/filepath"
 )
 
 var Fs = afero.NewOsFs()

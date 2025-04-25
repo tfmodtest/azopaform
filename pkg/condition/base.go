@@ -1,8 +1,9 @@
 package condition
 
 import (
-	"github.com/tfmodtest/azopaform/pkg/shared"
 	"reflect"
+
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 type BaseCondition struct {

@@ -2,8 +2,9 @@ package condition
 
 import (
 	"fmt"
-	"github.com/tfmodtest/azopaform/pkg/shared"
 	"strings"
+
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 var _ Condition = GreaterOrEquals{}

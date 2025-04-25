@@ -2,10 +2,10 @@ package condition
 
 import (
 	"fmt"
-	"github.com/tfmodtest/azopaform/pkg/shared"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 func TestNotEqualsCondition(t *testing.T) {

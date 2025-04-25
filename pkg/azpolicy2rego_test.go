@@ -2,10 +2,6 @@ package pkg
 
 import (
 	"fmt"
-	"github.com/tfmodtest/azopaform/pkg/condition"
-	"github.com/tfmodtest/azopaform/pkg/operation"
-	"github.com/tfmodtest/azopaform/pkg/shared"
-	"github.com/tfmodtest/azopaform/pkg/value"
 	"os"
 	"strings"
 	"testing"
@@ -15,6 +11,10 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tfmodtest/azopaform/pkg/condition"
+	"github.com/tfmodtest/azopaform/pkg/operation"
+	"github.com/tfmodtest/azopaform/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/value"
 )
 
 const listFieldJson = `{

@@ -1,8 +1,9 @@
 package condition
 
 import (
-	"github.com/tfmodtest/azopaform/pkg/shared"
 	"strings"
+
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 var _ Condition = In{}

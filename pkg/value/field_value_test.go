@@ -1,11 +1,11 @@
 package value
 
 import (
-	"github.com/tfmodtest/azopaform/pkg/shared"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 func TestNewFieldValue(t *testing.T) {

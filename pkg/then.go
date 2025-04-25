@@ -2,8 +2,9 @@ package pkg
 
 import (
 	"fmt"
-	"github.com/tfmodtest/azopaform/pkg/shared"
 	"strings"
+
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 type ThenBody struct {

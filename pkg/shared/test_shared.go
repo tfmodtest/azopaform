@@ -1,10 +1,11 @@
 package shared
 
 import (
+	"testing"
+
 	"github.com/open-policy-agent/opa/v1/rego"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func AssertRego(t *testing.T, query, cfg string, input map[string]any, expected bool, ctx *Context) {

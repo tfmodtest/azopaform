@@ -1,8 +1,9 @@
 package operation
 
 import (
-	"github.com/tfmodtest/azopaform/pkg/shared"
 	"strings"
+
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 var _ Operation = &AllOf{}

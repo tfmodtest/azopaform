@@ -2,10 +2,11 @@ package condition
 
 import (
 	"fmt"
-	"github.com/tfmodtest/azopaform/pkg/shared"
-	"github.com/tfmodtest/azopaform/pkg/value"
 	"reflect"
 	"strings"
+
+	"github.com/tfmodtest/azopaform/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/value"
 )
 
 var _ Condition = Equals{}

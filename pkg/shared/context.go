@@ -2,9 +2,10 @@ package shared
 
 import (
 	"context"
+	"strings"
+
 	"github.com/emirpasic/gods/stacks"
 	"github.com/emirpasic/gods/stacks/arraystack"
-	"strings"
 )
 
 type Context struct {

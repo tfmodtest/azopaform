@@ -2,9 +2,10 @@ package condition
 
 import (
 	"fmt"
-	"github.com/tfmodtest/azopaform/pkg/shared"
 	"reflect"
 	"strings"
+
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 var _ Condition = NotEquals{}

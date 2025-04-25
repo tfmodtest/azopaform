@@ -1,13 +1,14 @@
 package operation
 
 import (
+	"testing"
+
 	"github.com/prashantv/gostub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tfmodtest/azopaform/pkg/condition"
 	"github.com/tfmodtest/azopaform/pkg/shared"
 	"github.com/tfmodtest/azopaform/pkg/value"
-	"testing"
 )
 
 func TestParseOperation(t *testing.T) {

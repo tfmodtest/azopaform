@@ -2,9 +2,10 @@ package condition
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"testing"
 )
 
 func TestContainsCondition(t *testing.T) {

@@ -1,10 +1,10 @@
 package value
 
 import (
-	"github.com/tfmodtest/azopaform/pkg/shared"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 func TestNewLiteralValue(t *testing.T) {

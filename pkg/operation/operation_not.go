@@ -2,6 +2,7 @@ package operation
 
 import (
 	"fmt"
+
 	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 

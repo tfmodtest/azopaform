@@ -2,12 +2,12 @@ package condition
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/tfmodtest/azopaform/pkg/shared"
-	"github.com/tfmodtest/azopaform/pkg/value"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tfmodtest/azopaform/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/value"
 )
 
 func TestEqualsCondition(t *testing.T) {

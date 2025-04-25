@@ -2,11 +2,12 @@ package pkg
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/open-policy-agent/opa/v1/format"
 	"github.com/spf13/afero"
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"path/filepath"
-	"strings"
 )
 
 var _ shared.Rego = &Rule{}
