@@ -2,12 +2,12 @@ package operation
 
 import (
 	"fmt"
-	"json-rule-finder/pkg/condition"
-	"json-rule-finder/pkg/shared"
 	"testing"
 
-	"github.com/open-policy-agent/opa/format"
+	"github.com/open-policy-agent/opa/v1/format"
 	"github.com/stretchr/testify/require"
+	"github.com/tfmodtest/azopaform/pkg/condition"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 func TestAllOfOperator(t *testing.T) {

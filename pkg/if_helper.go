@@ -1,8 +1,8 @@
 package pkg
 
 import (
-	"json-rule-finder/pkg/operation"
-	"json-rule-finder/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/operation"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 type IfBody map[string]any

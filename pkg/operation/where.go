@@ -1,7 +1,7 @@
 package operation
 
 import (
-	"json-rule-finder/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 var _ Operation = &Where{}

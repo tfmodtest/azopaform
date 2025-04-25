@@ -2,15 +2,15 @@ package pkg
 
 import (
 	"fmt"
-	"json-rule-finder/pkg/condition"
-	"json-rule-finder/pkg/operation"
-	"json-rule-finder/pkg/shared"
-	"json-rule-finder/pkg/value"
+	"github.com/tfmodtest/azopaform/pkg/condition"
+	"github.com/tfmodtest/azopaform/pkg/operation"
+	"github.com/tfmodtest/azopaform/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/value"
 	"os"
 	"strings"
 	"testing"
 
-	"github.com/open-policy-agent/opa/format"
+	"github.com/open-policy-agent/opa/v1/format"
 	"github.com/prashantv/gostub"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -583,13 +583,13 @@ func TestBasicTestAzurePolicyToRego(t *testing.T) {
 
 	//for i := 0; i < 10; i++ {
 	for _, c := range cases {
-		t.Run(fmt.Sprintf("%s", c.desc), func(t *testing.T) {
+		t.Run(c.desc, func(t *testing.T) {
 			fs := fakeFs(c.mockFs)
 			stub := gostub.Stub(&Fs, fs)
 			defer stub.Reset()
 			policyPath := ""
 			if len(c.mockFs) == 1 {
-				for n, _ := range c.mockFs {
+				for n := range c.mockFs {
 					policyPath = n
 				}
 			}

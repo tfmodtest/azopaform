@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/afero"
-	"json-rule-finder/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 	"path/filepath"
 )
 

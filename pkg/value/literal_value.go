@@ -1,7 +1,7 @@
 package value
 
 import (
-	"json-rule-finder/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 	"strings"
 )
 

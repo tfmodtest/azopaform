@@ -37,17 +37,17 @@ func processedFieldName(name string) (string, error) {
 func SliceConstructor(input any) string {
 	var array []string
 	var res string
-	switch input.(type) {
-	case []interface{}:
-		for _, v := range input.([]interface{}) {
+	switch typedInput := input.(type) {
+	case []any:
+		for _, v := range typedInput {
 			array = append(array, "\""+fmt.Sprint(v)+"\"")
 		}
 	case []string:
-		for _, v := range input.([]string) {
+		for _, v := range typedInput {
 			array = append(array, "\""+fmt.Sprint(v)+"\"")
 		}
 	case string:
-		array = append(array, fmt.Sprint(input))
+		array = append(array, fmt.Sprint(typedInput))
 	}
 
 	res = strings.Join(array, ",")

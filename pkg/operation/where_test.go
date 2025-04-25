@@ -4,9 +4,9 @@ import (
 	"github.com/prashantv/gostub"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"json-rule-finder/pkg/condition"
-	"json-rule-finder/pkg/shared"
-	"json-rule-finder/pkg/value"
+	"github.com/tfmodtest/azopaform/pkg/condition"
+	"github.com/tfmodtest/azopaform/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/value"
 	"testing"
 )
 

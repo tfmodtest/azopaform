@@ -2,7 +2,7 @@ package condition
 
 import (
 	"fmt"
-	"json-rule-finder/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 	"strings"
 )
 

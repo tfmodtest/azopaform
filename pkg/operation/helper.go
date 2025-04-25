@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-var pattern = regexp.MustCompile(`\[[^\]]*\]`)
+var matchPattern = regexp.MustCompile(`\[.*\]`)
+var replacePattern = regexp.MustCompile(`\[[^\]]*\]`)
 
 func replaceIndex(str string) string {
 	if str == "" {
@@ -17,9 +18,9 @@ func replaceIndex(str string) string {
 
 	for _, s := range strArr {
 		// Check if segment contains any array indexing
-		if match, err := regexp.MatchString(`\[.*\]`, s); err == nil && match {
+		if match := matchPattern.MatchString(s); match {
 			// Replace all array indexing with [_]
-			replaced := pattern.ReplaceAllString(s, "[_]")
+			replaced := replacePattern.ReplaceAllString(s, "[_]")
 			result = append(result, replaced)
 			continue
 		}

@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"json-rule-finder/pkg"
-	"json-rule-finder/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 	"os"
 )
 

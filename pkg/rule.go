@@ -2,9 +2,9 @@ package pkg
 
 import (
 	"fmt"
-	"github.com/open-policy-agent/opa/format"
+	"github.com/open-policy-agent/opa/v1/format"
 	"github.com/spf13/afero"
-	"json-rule-finder/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 	"path/filepath"
 	"strings"
 )

@@ -2,8 +2,8 @@ package condition
 
 import (
 	"fmt"
-	"json-rule-finder/pkg/shared"
-	"json-rule-finder/pkg/value"
+	"github.com/tfmodtest/azopaform/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/value"
 	"reflect"
 	"strings"
 )

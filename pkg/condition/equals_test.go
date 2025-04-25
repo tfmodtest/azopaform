@@ -3,8 +3,8 @@ package condition
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"json-rule-finder/pkg/shared"
-	"json-rule-finder/pkg/value"
+	"github.com/tfmodtest/azopaform/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/value"
 	"testing"
 
 	"github.com/stretchr/testify/require"

@@ -2,10 +2,10 @@ package condition
 
 import (
 	"fmt"
-	"json-rule-finder/pkg/shared"
+	"github.com/tfmodtest/azopaform/pkg/shared"
 	"testing"
 
-	"github.com/open-policy-agent/opa/rego"
+	"github.com/open-policy-agent/opa/v1/rego"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -81,8 +81,4 @@ allow if %s`, assertion)
 			assert.Equal(t, c.allowed, result.Allowed())
 		})
 	}
-}
-
-func p[T any](v T) *T {
-	return &v
 }

@@ -1,4 +1,4 @@
-module json-rule-finder
+module github.com/tfmodtest/azopaform
 
 go 1.23.6
 
