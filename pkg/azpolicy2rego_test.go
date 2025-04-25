@@ -1028,11 +1028,9 @@ func prepareMemFs(t *testing.T) afero.Fs {
 	fs := afero.NewMemMapFs()
 	files := []string{
 		"deny.json",
-		"output.json",
-		"rules.json",
 	}
 	for _, file := range files {
-		content, err := os.ReadFile(file)
+		content, err := os.ReadFile(fmt.Sprintf("test-fixtures/%s", file))
 		require.NoError(t, err)
 		err = afero.WriteFile(fs, file, content, os.ModePerm)
 		require.NoError(t, err)
