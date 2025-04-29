@@ -85,6 +85,10 @@ func (c *Context) UtilRegoFileName() string {
 	return getOrDefault(c.option.UtilRegoFileName, "util.rego")
 }
 
+func (c *Context) GenerateRuleName() bool {
+	return c.option.GenerateRuleName
+}
+
 func (c *Context) UtilLibraryPackageName() string {
 	return c.option.UtilLibraryPackageName
 }

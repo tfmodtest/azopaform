@@ -40,7 +40,7 @@ func (t *ThenBody) MapEffectToAction(defaultEffect string) (string, error) {
 	return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
 }
 
-func (t *ThenBody) Action(result, helperFunctionName string, rule *Rule) (string, error) {
+func (t *ThenBody) Action(ruleName, result, helperFunctionName string, rule *Rule) (string, error) {
 	action, err := t.MapEffectToAction(rule.Properties.Parameters.GetEffect().GetDefaultValue())
 	if err != nil {
 		fmt.Printf("cannot map effect to action %+v\n", err)
@@ -54,6 +54,9 @@ func (t *ThenBody) Action(result, helperFunctionName string, rule *Rule) (string
 		collection = shared.Deny
 	case shared.Warn:
 		collection = shared.Warn
+	}
+	if ruleName != "" {
+		collection = collection + "_" + ruleName
 	}
 	if helperFunctionName != "" {
 		return collection + " if {\n " + helperFunctionName + "\n}\n" + result, nil

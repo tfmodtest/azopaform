@@ -16,9 +16,10 @@ var _ shared.Rego = &Rule{}
 type Rule struct {
 	Properties *PolicyRuleModel
 	Id         string
-	Name       string
-	path       string
-	result     string
+	// have to ignore this field, because all built-in policy rules' names are uuids
+	Name   string `json:"-"`
+	path   string
+	result string
 }
 
 func (r *Rule) Rego(ctx *shared.Context) (string, error) {
@@ -32,7 +33,7 @@ func (r *Rule) Rego(ctx *shared.Context) (string, error) {
 	}
 	then := r.Properties.PolicyRule.GetThen()
 	conditionName := ifBody.ConditionName()
-	rego, err := then.Action(ifRego, conditionName, r)
+	rego, err := then.Action(r.Name, ifRego, conditionName, r)
 	if err != nil {
 		return "", err
 	}
@@ -46,6 +47,9 @@ import rego.v1
 }
 
 func (r *Rule) Parse(ctx *shared.Context) error {
+	if ctx.GenerateRuleName() {
+		r.Name = strcase.ToSnake(r.Properties.DisplayName)
+	}
 	ruleRego, err := r.Rego(ctx)
 	if err != nil {
 		return err
@@ -55,7 +59,6 @@ func (r *Rule) Parse(ctx *shared.Context) error {
 		return fmt.Errorf("invalid rego code: %w", err)
 	}
 	r.result = string(formattedSrc)
-	r.Name = strcase.ToSnake(r.Properties.DisplayName)
 	return nil
 }
 

@@ -15,6 +15,7 @@ func main() {
 	packageName := flag.String("package", "main", "The package name for the generated Rego files")
 	utilRegoFileName := flag.String("util-file-name", "util.rego", "The name of the util Rego file (cannot be set together with util-library-package-name)")
 	utilLibraryPackageName := flag.String("util-library-package-name", "", "The name of the util library package (if set, util file won't be generated; cannot be set together with util-file-name)")
+	generateRuleName := flag.Bool("generate-rule-name", true, "Use rule's display name as rule name in generated Rego, defaults to true")
 	flag.Parse()
 
 	if *utilLibraryPackageName != "" && *utilRegoFileName != "util.rego" {
@@ -26,6 +27,7 @@ func main() {
 		PackageName:            *packageName,
 		UtilRegoFileName:       *utilRegoFileName,
 		UtilLibraryPackageName: *utilLibraryPackageName,
+		GenerateRuleName:       *generateRuleName,
 	}
 
 	ctx := shared.NewContextWithOptions(options)
