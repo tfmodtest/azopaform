@@ -22,6 +22,21 @@ type Rule struct {
 	result string
 }
 
+func newRule() *Rule {
+	return &Rule{
+		Properties: &PolicyRuleModel{
+			PolicyRule: &PolicyRuleBody{
+				Then: nil,
+				If:   nil,
+			},
+			Parameters: &PolicyRuleParameters{
+				Effect:     nil,
+				Parameters: make(map[string]*PolicyRuleParameter),
+			},
+		},
+	}
+}
+
 func (r *Rule) Rego(ctx *shared.Context) (string, error) {
 	ifBody, err := r.Properties.PolicyRule.GetIf(ctx)
 	if err != nil {
@@ -69,4 +84,60 @@ func (r *Rule) SaveToDisk() error {
 		return fmt.Errorf("cannot save file %s, error is %+v", fileName, err)
 	}
 	return nil
+}
+
+func (r *Rule) ParseParameters(m map[string]any) {
+	// Check if we have properties.parameters in the input map
+	properties, ok := m["properties"].(map[string]any)
+	if !ok {
+		return
+	}
+
+	parametersMap, ok := properties["parameters"].(map[string]any)
+	if !ok {
+		return
+	}
+
+	// Process each parameter
+	for paramName, paramValue := range parametersMap {
+		paramMap, ok := paramValue.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		// Create a new parameter entry
+		param := &PolicyRuleParameter{
+			Name: paramName,
+		}
+
+		// Extract type
+		if typeVal, ok := paramMap["type"].(string); ok {
+			param.Type = PolicyRuleParameterType(typeVal)
+		}
+
+		// Extract default value
+		if defaultVal, ok := paramMap["defaultValue"]; ok {
+			param.DefaultValue = defaultVal
+		}
+
+		// Process metadata
+		if metadataMap, ok := paramMap["metadata"].(map[string]any); ok {
+			param.MetaData = &PolicyRuleParameterMetaData{}
+
+			if displayName, ok := metadataMap["displayName"].(string); ok {
+				param.MetaData.DisplayName = displayName
+			}
+
+			if description, ok := metadataMap["description"].(string); ok {
+				param.MetaData.Description = description
+			}
+
+			if deprecated, ok := metadataMap["deprecated"].(bool); ok {
+				param.MetaData.Deprecated = deprecated
+			}
+		}
+
+		// Add parameter to the map
+		r.Properties.Parameters.Parameters[paramName] = param
+	}
 }

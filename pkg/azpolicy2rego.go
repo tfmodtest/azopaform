@@ -142,8 +142,8 @@ func readRuleFromFile(path string) (*Rule, error) {
 		return nil, err
 	}
 
-	var rule Rule
-	err = json.Unmarshal(data, &rule)
+	rule := newRule()
+	err = json.Unmarshal(data, rule)
 	if err != nil {
 		fmt.Printf("unable to unmarshal json %+v\n\n", err)
 		return nil, err
@@ -154,8 +154,9 @@ func readRuleFromFile(path string) (*Rule, error) {
 		return nil, err
 	}
 	rule.path = path
+	rule.ParseParameters(m)
 
-	return &rule, nil
+	return rule, nil
 }
 
 func saveUtilRegoFile(ctx *shared.Context) error {
