@@ -114,7 +114,7 @@ func NewOperationOrCondition(input map[string]any, ctx *shared.Context) (shared.
 	if err != nil {
 		return nil, err
 	}
-	if cond := tryParseCondition(subject, input); cond != nil {
+	if cond := tryParseCondition(subject, input, ctx); cond != nil {
 		return cond, nil
 	}
 	return nil, fmt.Errorf("unknown operation or condition: %v", input)
@@ -158,10 +158,10 @@ func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, error) {
 	return bodies, nil
 }
 
-func tryParseCondition(subject shared.Rego, input map[string]any) shared.Rego {
+func tryParseCondition(subject shared.Rego, input map[string]any, ctx *shared.Context) shared.Rego {
 	for key, conditionValue := range input {
 		key = strings.ToLower(key)
-		if cond := condition.NewCondition(key, subject, conditionValue); cond != nil {
+		if cond := condition.NewCondition(key, subject, conditionValue, ctx); cond != nil {
 			return cond
 		}
 	}

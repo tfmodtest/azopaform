@@ -62,6 +62,7 @@ import rego.v1
 }
 
 func (r *Rule) Parse(ctx *shared.Context) error {
+	ctx.GetParameterFunc = r.Properties.Parameters.GetParameter
 	if ctx.GenerateRuleName() {
 		r.Name = strcase.ToSnake(r.Properties.DisplayName)
 	}

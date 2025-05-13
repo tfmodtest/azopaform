@@ -14,6 +14,7 @@ type Context struct {
 	resourceTypeStack      stacks.Stack
 	fieldNameReplacerStack stacks.Stack
 	helperFunctions        []string
+	GetParameterFunc       func(string) (any, bool)
 }
 
 func NewContext() *Context {
