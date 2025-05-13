@@ -14,7 +14,7 @@ type LiteralValue struct {
 }
 
 func NewLiteralValue(input any, ctx *shared.Context) shared.Rego {
-	v := input.(string)
+	v := shared.ResolveParameterValue[string](input, ctx)
 	v = strings.ReplaceAll(v, "[*]", "[_]")
 	return LiteralValue{
 		Value: v,

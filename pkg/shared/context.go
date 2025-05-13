@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"regexp"
 	"strings"
 
 	"github.com/emirpasic/gods/stacks"
@@ -92,6 +93,28 @@ func (c *Context) GenerateRuleName() bool {
 
 func (c *Context) UtilLibraryPackageName() string {
 	return c.option.UtilLibraryPackageName
+}
+
+var paramRegex = regexp.MustCompile(`\[parameters\('([^']+)'\)\]`)
+
+func ResolveParameterValue[T any](input any, c *Context) T {
+	str, ok := input.(string)
+	if !ok {
+		return input.(T)
+	}
+
+	if matches := paramRegex.FindStringSubmatch(str); len(matches) > 1 {
+		paramName := matches[1]
+
+		if c.GetParameterFunc != nil {
+			if value, ok := c.GetParameterFunc(paramName); ok {
+				return value.(T)
+			}
+		}
+	}
+
+	// Return original input if not a parameter reference or parameter not found
+	return input.(T)
 }
 
 func getOrDefault[T comparable](value, defaultValue T) T {

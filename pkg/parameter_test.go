@@ -54,7 +54,7 @@ func Test_PolicyRuleParameters_GetParameter_Success(t *testing.T) {
 	// Test string parameter
 	value, ok := p.GetParameter("stringParam")
 	assert.True(t, ok)
-	assert.Equal(t, "testValue", value)
+	assert.Equal(t, `"testValue"`, value)
 
 	// Test array parameter
 	value, ok = p.GetParameter("arrayParam")

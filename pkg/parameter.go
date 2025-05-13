@@ -38,5 +38,12 @@ func (p *PolicyRuleParameters) GetParameter(name string) (any, bool) {
 	if !ok || parameter == nil {
 		return nil, false
 	}
-	return parameter.DefaultValue, true
+	if parameter.DefaultValue == nil {
+		panic("only support parameter with default value now")
+	}
+	value := parameter.DefaultValue
+	if parameter.Type == "String" {
+		value = `"` + value.(string) + `"`
+	}
+	return value, true
 }
