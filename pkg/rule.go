@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iancoleman/strcase"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/open-policy-agent/opa/v1/format"
@@ -61,10 +62,12 @@ import rego.v1
 %s`, ctx.PackageName(), rego, ctx.HelperFunctionsRego()), nil
 }
 
+var ruleNameRegex = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
+
 func (r *Rule) Parse(ctx *shared.Context) error {
 	ctx.GetParameterFunc = r.Properties.Parameters.GetParameter
 	if ctx.GenerateRuleName() {
-		r.Name = strcase.ToSnake(r.Properties.DisplayName)
+		r.Name = strcase.ToSnake(ruleNameRegex.ReplaceAllLiteralString(r.Properties.DisplayName, ""))
 	}
 	ruleRego, err := r.Rego(ctx)
 	if err != nil {

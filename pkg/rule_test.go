@@ -144,3 +144,29 @@ func Test_ParseParameters_MissingParametersSection(t *testing.T) {
 	// Assert
 	assert.Empty(t, rule.Properties.Parameters.Parameters)
 }
+
+func Test_RuleNameSanitizesSpecialCharacters(t *testing.T) {
+	// Arrange
+	rule := &Rule{
+		Properties: &PolicyRuleModel{
+			PolicyRule: &PolicyRuleBody{
+				If: map[string]any{
+					"value":  "1",
+					"equals": 1,
+				},
+				Then: &ThenBody{Effect: "deny"},
+			},
+			// Include various special characters that should be removed
+			DisplayName: "[Preview]: Deploy Image Integrity on Azure Kubernetes Service",
+		},
+	}
+
+	// Act
+	err := rule.Parse(shared.NewContextWithOptions(shared.Options{
+		GenerateRuleName: true,
+	}))
+
+	// Assert
+	require.NoError(t, err)
+	assert.Equal(t, "preview_deploy_image_integrity_on_azure_kubernetes_service", rule.Name)
+}
