@@ -37,6 +37,10 @@ func (t *ThenBody) MapEffectToAction(defaultEffect string) (string, error) {
 	if defaultEffect == shared.Modify || defaultEffect == shared.Deny || defaultEffect == shared.Disabled {
 		return shared.Deny, nil
 	}
+	if defaultEffect == shared.DeployIfNotExists {
+		return shared.DeployIfNotExists, nil
+	}
+
 	return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
 }
 
@@ -47,6 +51,7 @@ func (t *ThenBody) Action(ruleName, result, helperFunctionName string, rule *Rul
 		return "", err
 	}
 	var collection string
+	var suffix string
 	switch action {
 	case shared.Deny:
 		fallthrough
@@ -54,12 +59,23 @@ func (t *ThenBody) Action(ruleName, result, helperFunctionName string, rule *Rul
 		collection = shared.Deny
 	case shared.Warn:
 		collection = shared.Warn
+	case shared.DeployIfNotExists:
+		{
+			collection = shared.Deny
+			suffix = "not "
+		}
 	}
 	if ruleName != "" {
 		collection = collection + "_" + ruleName
 	}
 	if helperFunctionName != "" {
-		return collection + " if {\n " + helperFunctionName + "\n}\n" + result, nil
+		return fmt.Sprintf(`%s if {
+ %s%s
+}
+%s`, collection, suffix, helperFunctionName, result), nil // collection + " if {\n " + helperFunctionName + "\n}\n" + result, nil
 	}
-	return collection + " if {\n " + result + "\n}\n", nil
+	return fmt.Sprintf(`%s if {
+ %s%s
+}
+`, collection, suffix, result), nil //collection + " if {\n " + result + "\n}\n", nil
 }

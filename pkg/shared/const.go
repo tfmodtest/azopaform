@@ -14,6 +14,7 @@ const TypeOfResource = "type"
 const KindOfResource = "kind"
 
 const Deny = "deny"
+const DeployIfNotExists = "deployifnotexists"
 const Disabled = "disabled"
 const Modify = "modify"
 const Audit = "audit"
