@@ -33,33 +33,6 @@ type PolicyRuleModel struct {
 	Metadata    *PolicyRuleMetaData
 }
 
-type PolicyRuleParameterType string
-
-type PolicyRuleParameterMetaData struct {
-	Description string
-	DisplayName string
-	Deprecated  bool
-}
-
-type PolicyRuleParameter struct {
-	Name         string
-	Type         PolicyRuleParameterType
-	DefaultValue any
-	MetaData     *PolicyRuleParameterMetaData
-}
-
-type PolicyRuleParameters struct {
-	Effect     *EffectBody
-	Parameters map[string]*PolicyRuleParameter
-}
-
-func (p *PolicyRuleParameters) GetEffect() *EffectBody {
-	if p == nil {
-		return nil
-	}
-	return p.Effect
-}
-
 func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error {
 	var paths []string
 	var err error
