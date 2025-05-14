@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/open-policy-agent/opa/v1/rego"
@@ -33,6 +34,10 @@ func EvaluateRego(t *testing.T, query, cfg string, input map[string]any, ctx *Co
 
 func AssertRegoAllow(t *testing.T, cfg string, input map[string]any, allowed bool, ctx *Context) {
 	AssertRego(t, "data.main.allow", cfg, input, allowed, ctx)
+}
+
+func WithUtilFunctions(exp string) string {
+	return fmt.Sprintf(RegoTestTemplate, exp) + "\n" + UtilsRego
 }
 
 const RegoTestTemplate = `package main

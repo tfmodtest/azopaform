@@ -22,6 +22,12 @@ const Warn = "warn"
 
 const ResourcePathPrefix = "r.values"
 const UtilsRego = `
+arraycontains(arr, element) := contains if {
+    some item in arr
+    item == element
+    contains := true
+} else := false
+
 is_azure_type(resource, azure_type) if {
 	regex.match(sprintf("^%s@", [azure_type]), resource.type)
 }

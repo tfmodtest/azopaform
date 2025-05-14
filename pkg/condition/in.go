@@ -1,8 +1,7 @@
 package condition
 
 import (
-	"strings"
-
+	"fmt"
 	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
@@ -18,5 +17,9 @@ func (i In) Rego(ctx *shared.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Join([]string{"some", fieldName, "in", shared.SliceConstructor(i.Values)}, " "), nil
+	prefix := ""
+	if utilLibraryName := ctx.UtilLibraryPackageName(); utilLibraryName != "" {
+		prefix = fmt.Sprintf("data.%s.", utilLibraryName)
+	}
+	return fmt.Sprintf("%sarraycontains(%s, %s)", prefix, shared.SliceConstructor(i.Values), fieldName), nil
 }

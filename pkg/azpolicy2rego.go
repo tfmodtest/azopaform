@@ -3,6 +3,7 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/afero"
@@ -37,12 +38,13 @@ func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error
 	var paths []string
 	var err error
 
-	//For batch translation
+	skipLoadError := false
 	if dir != "" {
 		paths, err = jsonFiles(dir)
 		if err != nil {
 			return err
 		}
+		skipLoadError = true
 	}
 
 	//Override for hard cases
@@ -52,7 +54,11 @@ func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error
 	for _, path := range paths {
 		rule, err := loadRule(path, ctx)
 		if err != nil {
-			return fmt.Errorf("error when loading rule from path %s, error is %+v", path, err)
+			if !skipLoadError {
+				return fmt.Errorf("error when loading rule from path %s, error is %+v", path, err)
+			}
+			_, _ = fmt.Fprintf(os.Stderr, "skipping loading rule from path %s, error is %+v", path, err)
+			continue
 		}
 		err = rule.SaveToDisk()
 		if err != nil {
