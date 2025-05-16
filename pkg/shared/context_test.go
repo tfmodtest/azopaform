@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +13,8 @@ func Test_ResolveParameterValue_NonStringInput(t *testing.T) {
 	input := 42
 
 	// Act
-	result := ResolveParameterValue[int](input, ctx)
+	result, err := ResolveParameterValue[int](input, ctx)
+	require.NoError(t, err)
 
 	// Assert
 	assert.Equal(t, 42, result)
@@ -24,7 +26,8 @@ func Test_ResolveParameterValue_StringButNotParameter(t *testing.T) {
 	input := "regular string"
 
 	// Act
-	result := ResolveParameterValue[string](input, ctx)
+	result, err := ResolveParameterValue[string](input, ctx)
+	require.NoError(t, err)
 
 	// Assert
 	assert.Equal(t, "regular string", result)
@@ -33,16 +36,17 @@ func Test_ResolveParameterValue_StringButNotParameter(t *testing.T) {
 func Test_ResolveParameterValue_StringWithParameterFormat(t *testing.T) {
 	// Arrange
 	ctx := NewContext()
-	ctx.GetParameterFunc = func(name string) (any, bool) {
+	ctx.GetParameterFunc = func(name string) (any, bool, error) {
 		if name == "testParam" {
-			return "param-value", true
+			return "param-value", true, nil
 		}
-		return nil, false
+		return nil, false, nil
 	}
 	input := "[parameters('testParam')]"
 
 	// Act
-	result := ResolveParameterValue[string](input, ctx)
+	result, err := ResolveParameterValue[string](input, ctx)
+	require.NoError(t, err)
 
 	// Assert - this will fail with the current implementation
 	assert.Equal(t, "param-value", result)
@@ -51,32 +55,31 @@ func Test_ResolveParameterValue_StringWithParameterFormat(t *testing.T) {
 func Test_ResolveParameterValue_NonExistentParameter(t *testing.T) {
 	// Arrange
 	ctx := NewContext()
-	ctx.GetParameterFunc = func(name string) (any, bool) {
-		return nil, false
+	ctx.GetParameterFunc = func(name string) (any, bool, error) {
+		return nil, false, nil
 	}
 	input := "[parameters('nonExistentParam')]"
 
 	// Act
-	result := ResolveParameterValue[string](input, ctx)
-
-	// Assert
-	assert.Equal(t, input, result)
+	_, err := ResolveParameterValue[string](input, ctx)
+	assert.Equal(t, "parameter nonExistentParam not found", err.Error())
 }
 
 func Test_ResolveParameterValue_ArrayParameter(t *testing.T) {
 	// Arrange
 	ctx := NewContext()
 	expectedValue := []string{"rapid", "stable", "patch"}
-	ctx.GetParameterFunc = func(name string) (any, bool) {
+	ctx.GetParameterFunc = func(name string) (any, bool, error) {
 		if name == "allowedClusterAutoUpgradeChannels" {
-			return expectedValue, true
+			return expectedValue, true, nil
 		}
-		return nil, false
+		return nil, false, nil
 	}
 	input := "[parameters('allowedClusterAutoUpgradeChannels')]"
 
 	// Act
-	result := ResolveParameterValue[[]string](input, ctx)
+	result, err := ResolveParameterValue[[]string](input, ctx)
+	require.NoError(t, err)
 
 	// Assert
 	assert.Equal(t, expectedValue, result)
@@ -88,7 +91,8 @@ func Test_ResolveParameterValue_ComplexExpression(t *testing.T) {
 	input := "some text with [parameters('paramName')] in the middle"
 
 	// Act
-	result := ResolveParameterValue[string](input, ctx)
+	result, err := ResolveParameterValue[string](input, ctx)
+	require.NoError(t, err)
 
 	// Assert
 	assert.Equal(t, input, result)

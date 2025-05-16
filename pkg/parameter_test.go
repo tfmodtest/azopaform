@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,8 @@ func Test_PolicyRuleParameters_GetParameter_NonExistent(t *testing.T) {
 			},
 		},
 	}
-	value, ok := p.GetParameter("nonExistentParam")
+	value, ok, err := p.GetParameter("nonExistentParam")
+	require.NoError(t, err)
 	assert.False(t, ok)
 	assert.Nil(t, value)
 }
@@ -29,7 +31,8 @@ func Test_PolicyRuleParameters_GetParameter_NilParameter(t *testing.T) {
 			"nilParam": nil,
 		},
 	}
-	value, ok := p.GetParameter("nilParam")
+	value, ok, err := p.GetParameter("nilParam")
+	require.NoError(t, err)
 	assert.False(t, ok)
 	assert.Nil(t, value)
 }
@@ -52,12 +55,14 @@ func Test_PolicyRuleParameters_GetParameter_Success(t *testing.T) {
 	}
 
 	// Test string parameter
-	value, ok := p.GetParameter("stringParam")
+	value, ok, err := p.GetParameter("stringParam")
+	require.NoError(t, err)
 	assert.True(t, ok)
 	assert.Equal(t, `"testValue"`, value)
 
 	// Test array parameter
-	value, ok = p.GetParameter("arrayParam")
+	value, ok, err = p.GetParameter("arrayParam")
+	require.NoError(t, err)
 	assert.True(t, ok)
 	assert.Equal(t, []any{"rapid", "stable", "patch"}, value)
 }

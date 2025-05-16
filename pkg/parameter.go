@@ -1,5 +1,9 @@
 package pkg
 
+import (
+	"errors"
+)
+
 type PolicyRuleParameterType string
 
 type PolicyRuleParameterMetaData struct {
@@ -27,23 +31,23 @@ func (p *PolicyRuleParameters) GetEffect() *EffectBody {
 	return p.Effect
 }
 
-func (p *PolicyRuleParameters) GetParameter(name string) (any, bool) {
+func (p *PolicyRuleParameters) GetParameter(name string) (any, bool, error) {
 	if p == nil {
-		return nil, false
+		return nil, false, nil
 	}
 	if p.Parameters == nil {
-		return nil, false
+		return nil, false, nil
 	}
 	parameter, ok := p.Parameters[name]
 	if !ok || parameter == nil {
-		return nil, false
+		return nil, false, nil
 	}
 	if parameter.DefaultValue == nil {
-		panic("only support parameter with default value now")
+		return nil, false, errors.New("only support parameter with default value now")
 	}
 	value := parameter.DefaultValue
 	if parameter.Type == "String" {
 		value = `"` + value.(string) + `"`
 	}
-	return value, true
+	return value, true, nil
 }

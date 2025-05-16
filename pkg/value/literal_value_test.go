@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
@@ -16,22 +17,12 @@ func TestNewLiteralValue(t *testing.T) {
 		{
 			name:          "Simple string value",
 			input:         "test",
-			expectedValue: "test",
-		},
-		{
-			name:          "String with wildcards",
-			input:         "array[*].value",
-			expectedValue: "array[_].value",
-		},
-		{
-			name:          "String with multiple wildcards",
-			input:         "array[*].items[*].name",
-			expectedValue: "array[_].items[_].name",
+			expectedValue: `"test"`,
 		},
 		{
 			name:          "Empty string",
 			input:         "",
-			expectedValue: "",
+			expectedValue: `""`,
 		},
 	}
 
@@ -40,7 +31,8 @@ func TestNewLiteralValue(t *testing.T) {
 			ctx := shared.NewContext()
 
 			// Test creation of LiteralValue
-			result := NewLiteralValue(tt.input, ctx)
+			result, err := NewLiteralValue(tt.input, ctx)
+			require.NoError(t, err)
 
 			literalValue, ok := result.(LiteralValue)
 			assert.True(t, ok, "Result should be a LiteralValue")

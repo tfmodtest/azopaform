@@ -13,12 +13,15 @@ type LiteralValue struct {
 	ConditionSet shared.Rego
 }
 
-func NewLiteralValue(input any, ctx *shared.Context) shared.Rego {
-	v := shared.ResolveParameterValue[string](input, ctx)
+func NewLiteralValue(input any, ctx *shared.Context) (shared.Rego, error) {
+	v, err := shared.ResolveParameterValueAsString(input, ctx)
+	if err != nil {
+		return nil, err
+	}
 	v = strings.ReplaceAll(v, "[*]", "[_]")
 	return LiteralValue{
 		Value: v,
-	}
+	}, nil
 }
 
 func (v LiteralValue) Rego(ctx *shared.Context) (string, error) {

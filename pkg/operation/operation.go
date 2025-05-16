@@ -114,7 +114,11 @@ func NewOperationOrCondition(input map[string]any, ctx *shared.Context) (shared.
 	if err != nil {
 		return nil, err
 	}
-	if cond := tryParseCondition(subject, input, ctx); cond != nil {
+	cond, err := tryParseCondition(subject, input, ctx)
+	if err != nil {
+		return nil, err
+	}
+	if cond != nil {
 		return cond, nil
 	}
 	return nil, fmt.Errorf("unknown operation or condition: %v", input)
@@ -123,9 +127,9 @@ func NewOperationOrCondition(input map[string]any, ctx *shared.Context) (shared.
 func NewOperation(operationType string, body any, ctx *shared.Context) (shared.Rego, error) {
 	switch operationType {
 	case shared.AllOf:
-		return ParseAllOf(body, ctx), nil
+		return ParseAllOf(body, ctx)
 	case shared.AnyOf:
-		return ParseAnyOf(body, ctx), nil
+		return ParseAnyOf(body, ctx)
 	case shared.Not:
 		return parseNot(body, ctx)
 	}
@@ -158,14 +162,18 @@ func parseOperationBody(input any, ctx *shared.Context) ([]shared.Rego, error) {
 	return bodies, nil
 }
 
-func tryParseCondition(subject shared.Rego, input map[string]any, ctx *shared.Context) shared.Rego {
+func tryParseCondition(subject shared.Rego, input map[string]any, ctx *shared.Context) (shared.Rego, error) {
 	for key, conditionValue := range input {
 		key = strings.ToLower(key)
-		if cond := condition.NewCondition(key, subject, conditionValue, ctx); cond != nil {
-			return cond
+		cond, err := condition.NewCondition(key, subject, conditionValue, ctx)
+		if err != nil {
+			return nil, err
+		}
+		if cond != nil {
+			return cond, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func tryParseOperation(conditionMap map[string]any, ctx *shared.Context) (shared.Rego, error) {
@@ -196,7 +204,7 @@ func tryParseSubject(conditionMap map[string]any, ctx *shared.Context) (shared.R
 			}
 			return value.NewFieldValue(conditionValue, ctx), nil
 		case shared.Value:
-			return value.NewLiteralValue(conditionValue, ctx), nil
+			return value.NewLiteralValue(conditionValue, ctx)
 		}
 	}
 	return nil, nil

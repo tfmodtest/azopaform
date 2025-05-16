@@ -2,11 +2,12 @@ package shared
 
 import (
 	"context"
-	"regexp"
-	"strings"
-
+	"encoding/json"
+	"fmt"
 	"github.com/emirpasic/gods/stacks"
 	"github.com/emirpasic/gods/stacks/arraystack"
+	"regexp"
+	"strings"
 )
 
 type Context struct {
@@ -15,7 +16,7 @@ type Context struct {
 	resourceTypeStack      stacks.Stack
 	fieldNameReplacerStack stacks.Stack
 	helperFunctions        []string
-	GetParameterFunc       func(string) (any, bool)
+	GetParameterFunc       func(string) (any, bool, error)
 }
 
 func NewContext() *Context {
@@ -97,24 +98,60 @@ func (c *Context) UtilLibraryPackageName() string {
 
 var paramRegex = regexp.MustCompile(`\[parameters\('([^']+)'\)\]`)
 
-func ResolveParameterValue[T any](input any, c *Context) T {
+func ResolveParameterValue[T any](input any, c *Context) (T, error) {
 	str, ok := input.(string)
 	if !ok {
-		return input.(T)
+		return input.(T), nil
 	}
 
 	if matches := paramRegex.FindStringSubmatch(str); len(matches) > 1 {
 		paramName := matches[1]
 
 		if c.GetParameterFunc != nil {
-			if value, ok := c.GetParameterFunc(paramName); ok {
-				return value.(T)
+			value, ok, err := c.GetParameterFunc(paramName)
+			if err != nil {
+				var defaultT T
+				return defaultT, err
 			}
+			if !ok {
+				var defaultT T
+				return defaultT, fmt.Errorf("parameter %s not found", paramName)
+			}
+			return value.(T), nil
 		}
 	}
 
 	// Return original input if not a parameter reference or parameter not found
-	return input.(T)
+	return input.(T), nil
+}
+
+func ResolveParameterValueAsString(input any, c *Context) (string, error) {
+	value, err := ResolveParameterValue[any](input, c)
+	if err != nil {
+		return "", err
+	}
+	strValue, ok := value.(string)
+	if ok {
+		return `"` + strValue + `"`, nil
+	}
+	// Handle other types
+	switch v := value.(type) {
+	case bool:
+		return fmt.Sprintf("%t", v), nil
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return fmt.Sprintf("%d", v), nil
+	case float32, float64:
+		return fmt.Sprintf("%g", v), nil
+	case []interface{}, map[string]interface{}:
+		jsonBytes, err := json.Marshal(v)
+		if err != nil {
+			return "", err
+		}
+		return string(jsonBytes), nil
+	default:
+		// For any other type, convert to string representation
+		return fmt.Sprintf("%v", v), nil
+	}
 }
 
 func getOrDefault[T comparable](value, defaultValue T) T {

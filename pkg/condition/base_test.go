@@ -16,15 +16,16 @@ func Test_NewCondition_WithParameterValue(t *testing.T) {
 	expectedResolvedValue := "resolved-value"
 
 	ctx := shared.NewContext()
-	ctx.GetParameterFunc = func(name string) (any, bool) {
+	ctx.GetParameterFunc = func(name string) (any, bool, error) {
 		if name == "testParam" {
-			return expectedResolvedValue, true
+			return expectedResolvedValue, true, nil
 		}
-		return nil, false
+		return nil, false, nil
 	}
 
 	// Act
-	condition := NewCondition(conditionType, subject, paramValue, ctx)
+	condition, err := NewCondition(conditionType, subject, paramValue, ctx)
+	require.NoError(t, err)
 
 	// Assert
 	// Verify condition is not nil
@@ -46,15 +47,16 @@ func Test_NewCondition_WithArrayParameterValue(t *testing.T) {
 	expectedResolvedValue := []any{"value1", "value2", "value3"}
 
 	ctx := shared.NewContext()
-	ctx.GetParameterFunc = func(name string) (any, bool) {
+	ctx.GetParameterFunc = func(name string) (any, bool, error) {
 		if name == "allowedValues" {
-			return expectedResolvedValue, true
+			return expectedResolvedValue, true, nil
 		}
-		return nil, false
+		return nil, false, nil
 	}
 
 	// Act
-	condition := NewCondition(conditionType, subject, paramValue, ctx)
+	condition, err := NewCondition(conditionType, subject, paramValue, ctx)
+	require.NoError(t, err)
 
 	// Assert
 	// Verify condition is not nil
@@ -77,7 +79,8 @@ func Test_NewCondition_InvalidConditionType(t *testing.T) {
 	ctx := shared.NewContext()
 
 	// Act
-	condition := NewCondition(conditionType, subject, value, ctx)
+	condition, err := NewCondition(conditionType, subject, value, ctx)
+	require.NoError(t, err)
 
 	// Assert
 	assert.Nil(t, condition, "Should return nil for invalid condition type")
