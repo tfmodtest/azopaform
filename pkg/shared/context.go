@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/emirpasic/gods/stacks"
 	"github.com/emirpasic/gods/stacks/arraystack"
-	"regexp"
-	"strings"
 )
 
 type Context struct {
@@ -96,29 +96,20 @@ func (c *Context) UtilLibraryPackageName() string {
 	return c.option.UtilLibraryPackageName
 }
 
-var paramRegex = regexp.MustCompile(`\[parameters\('([^']+)'\)\]`)
-
 func ResolveParameterValue[T any](input any, c *Context) (T, error) {
 	str, ok := input.(string)
 	if !ok {
 		return input.(T), nil
 	}
-
-	if matches := paramRegex.FindStringSubmatch(str); len(matches) > 1 {
-		paramName := matches[1]
-
-		if c.GetParameterFunc != nil {
-			value, ok, err := c.GetParameterFunc(paramName)
-			if err != nil {
+	if funcCall, ok := ParseFunctionCall(str); ok {
+		value, err := EvaluateFunctionCall(funcCall, c)
+		if err != nil {
+			return func() T {
 				var defaultT T
-				return defaultT, err
-			}
-			if !ok {
-				var defaultT T
-				return defaultT, fmt.Errorf("parameter %s not found", paramName)
-			}
-			return value.(T), nil
+				return defaultT
+			}(), err
 		}
+		return value.(T), nil
 	}
 
 	// Return original input if not a parameter reference or parameter not found
@@ -132,7 +123,7 @@ func ResolveParameterValueAsString(input any, c *Context) (string, error) {
 	}
 	strValue, ok := value.(string)
 	if ok {
-		return `"` + strValue + `"`, nil
+		return strValue, nil
 	}
 	// Handle other types
 	switch v := value.(type) {

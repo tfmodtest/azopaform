@@ -17,12 +17,12 @@ func TestNewLiteralValue(t *testing.T) {
 		{
 			name:          "Simple string value",
 			input:         "test",
-			expectedValue: `"test"`,
+			expectedValue: `test`,
 		},
 		{
 			name:          "Empty string",
 			input:         "",
-			expectedValue: `""`,
+			expectedValue: ``,
 		},
 	}
 
