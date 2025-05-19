@@ -55,7 +55,8 @@ func TestNewFieldValue(t *testing.T) {
 			}
 
 			// Test that NewFieldValue correctly sets the Name field
-			result := NewFieldValue(tt.input, ctx)
+			result, err := NewFieldValue(tt.input, ctx)
+			require.NoError(t, err)
 			fieldValue, ok := result.(FieldValue)
 			assert.True(t, ok, "Result should be a FieldValue")
 

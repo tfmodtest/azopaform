@@ -202,7 +202,7 @@ func tryParseSubject(conditionMap map[string]any, ctx *shared.Context) (shared.R
 					ctx.PushResourceType(resourceType)
 				}
 			}
-			return value.NewFieldValue(conditionValue, ctx), nil
+			return value.NewFieldValue(conditionValue, ctx)
 		case shared.Value:
 			return value.NewLiteralValue(conditionValue, ctx)
 		}

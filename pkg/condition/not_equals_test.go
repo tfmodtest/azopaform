@@ -80,9 +80,10 @@ func TestNotEqualsCondition_Parameter(t *testing.T) {
 		return nil, false, nil
 	}
 	rhs := shared.StringRego("[parameters('param1')]")
+	subject, _ := value.NewFieldValue("Microsoft.Storage/storageAccounts/networkAcls.bypass", ctx)
 	sut := NotEquals{
 		BaseCondition: BaseCondition{
-			Subject: value.NewFieldValue("Microsoft.Storage/storageAccounts/networkAcls.bypass", ctx),
+			Subject: subject,
 		},
 		Value: rhs,
 	}

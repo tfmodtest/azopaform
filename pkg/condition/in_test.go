@@ -68,9 +68,10 @@ func TestInConditionWithResourceType(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx := shared.NewContext()
+			subject, _ := value.NewFieldValue("type", ctx)
 			sut := In{
 				BaseCondition: BaseCondition{
-					Subject: value.NewFieldValue("type", ctx),
+					Subject: subject,
 				},
 				Values: c.right,
 			}
