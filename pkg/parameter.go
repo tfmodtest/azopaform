@@ -46,8 +46,5 @@ func (p *PolicyRuleParameters) GetParameter(name string) (any, bool, error) {
 		return nil, false, errors.New("only support parameter with default value now")
 	}
 	value := parameter.DefaultValue
-	if parameter.Type == "String" {
-		value = `"` + value.(string) + `"`
-	}
 	return value, true, nil
 }

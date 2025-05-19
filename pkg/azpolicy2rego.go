@@ -98,18 +98,13 @@ func readJsonFilePaths(path string) ([]string, error) {
 	}
 	for _, entry := range entries {
 		if entry.IsDir() {
-			subFilePaths, err := readJsonFilePaths(path + "/" + entry.Name())
-			if err != nil {
-				return nil, err
-			}
-			filePaths = append(filePaths, subFilePaths...)
 			continue
 		}
 		if filepath.Ext(entry.Name()) != ".json" {
 			continue
 		}
 		fileName := entry.Name()
-		filePath := path + "/" + fileName
+		filePath := filepath.Join(path, fileName)
 		filePaths = append(filePaths, filePath)
 	}
 	return filePaths, nil

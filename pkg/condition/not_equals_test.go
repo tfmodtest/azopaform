@@ -2,6 +2,8 @@ package condition
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"github.com/tfmodtest/azopaform/pkg/value"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -67,4 +69,24 @@ func TestNotEqualsCondition(t *testing.T) {
 			shared.AssertRegoAllow(t, cfg, nil, c.allow, ctx)
 		})
 	}
+}
+
+func TestNotEqualsCondition_Parameter(t *testing.T) {
+	ctx := shared.NewContext()
+	ctx.GetParameterFunc = func(key string) (any, bool, error) {
+		if key == "param1" {
+			return "value1", true, nil
+		}
+		return nil, false, nil
+	}
+	rhs := shared.StringRego("[parameters('param1')]")
+	sut := NotEquals{
+		BaseCondition: BaseCondition{
+			Subject: value.NewFieldValue("Microsoft.Storage/storageAccounts/networkAcls.bypass", ctx),
+		},
+		Value: rhs,
+	}
+	actual, err := sut.Rego(ctx)
+	require.NoError(t, err)
+	assert.NotEqual(t, "", actual)
 }

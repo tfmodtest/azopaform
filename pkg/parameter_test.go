@@ -58,7 +58,7 @@ func Test_PolicyRuleParameters_GetParameter_Success(t *testing.T) {
 	value, ok, err := p.GetParameter("stringParam")
 	require.NoError(t, err)
 	assert.True(t, ok)
-	assert.Equal(t, `"testValue"`, value)
+	assert.Equal(t, `testValue`, value)
 
 	// Test array parameter
 	value, ok, err = p.GetParameter("arrayParam")
