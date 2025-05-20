@@ -99,3 +99,17 @@ func TestEqualsCondition_WithUtilLibraryPackageName(t *testing.T) {
 	expected := `data.util.is_azure_type(r.values, "Microsoft.Network/networkSecurityGroups")`
 	assert.Equal(t, expected, actual)
 }
+
+func TestEqualsCondition_SingleQuoteInFieldShouldBeReplacedByDoubleQuote(t *testing.T) {
+	ctx := shared.NewContext()
+	sut := Equals{
+		BaseCondition: BaseCondition{
+			Subject: value.FieldValue{Name: "tags['aks-managed-poolName']"},
+		},
+		Value: `1`,
+	}
+	actual, err := sut.Rego(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, `tags["aks-managed-poolName"] == "1"`, actual)
+	//assert.Equal(t, `is_azure_type(r.values, "Microsoft.Network/networkSecurityGroups")`, actual)
+}

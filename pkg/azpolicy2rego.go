@@ -52,12 +52,12 @@ func AzurePolicyToRego(policyPath string, dir string, ctx *shared.Context) error
 		paths = []string{policyPath}
 	}
 	for _, path := range paths {
-		rule, err := loadRule(path, ctx)
+		rule, err := loadRule(path, ctx.Fork())
 		if err != nil {
 			if !skipLoadError {
 				return fmt.Errorf("error when loading rule from path %s, error is %+v", path, err)
 			}
-			_, _ = fmt.Fprintf(os.Stderr, "skipping loading rule from path %s, error is %+v", path, err)
+			_, _ = fmt.Fprintf(os.Stderr, "skipping loading rule from path %s, error is %+v\n", path, err)
 			continue
 		}
 		err = rule.SaveToDisk()

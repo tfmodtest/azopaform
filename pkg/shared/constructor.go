@@ -25,6 +25,7 @@ func FieldNameProcessor(fieldName string, ctx *Context) (string, error) {
 }
 
 func processedFieldName(name string) (string, error) {
+	name = fixUnescapedSingleQuotes(name)
 	if !strings.Contains(name, "/") {
 		return name, nil
 	}
@@ -32,6 +33,19 @@ func processedFieldName(name string) (string, error) {
 	propertyPath := split[len(split)-1]
 	propertyPath = strings.ReplaceAll(propertyPath, "[*]", "[_]")
 	return fmt.Sprintf("%s.properties.%s", ResourcePathPrefix, propertyPath), nil
+}
+
+// with double quotes to ensure they're valid for Rego language
+func fixUnescapedSingleQuotes(content string) string {
+	// Step 1: Temporarily mark all escaped single quotes with a unique marker
+	tempMarker := "##ESCAPED_SINGLE_QUOTE##"
+	intermediate := strings.ReplaceAll(content, `\'`, tempMarker)
+
+	// Step 2: Replace all remaining single quotes with double quotes
+	intermediate = strings.ReplaceAll(intermediate, `'`, `"`)
+
+	// Step 3: Restore the escaped single quotes
+	return strings.ReplaceAll(intermediate, tempMarker, `\'`)
 }
 
 func SliceConstructor(input any) string {

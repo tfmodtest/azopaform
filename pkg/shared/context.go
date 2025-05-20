@@ -33,6 +33,12 @@ func NewContextWithOptions(option Options) *Context {
 	return ctx
 }
 
+func (c *Context) Fork() *Context {
+	forkedCtx := NewContextWithOptions(c.option)
+	forkedCtx.GetParameterFunc = c.GetParameterFunc
+	return forkedCtx
+}
+
 func (c *Context) PushFieldName(name string) {
 	c.fieldNameReplacerStack.Push(name)
 }
