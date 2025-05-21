@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tfmodtest/azopaform/pkg/condition"
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"github.com/tfmodtest/azopaform/pkg/value"
 )
 
 func TestNewWhere(t *testing.T) {
@@ -24,7 +23,7 @@ func TestNewWhere(t *testing.T) {
 	expected := Where{
 		Condition: condition.Equals{
 			BaseCondition: condition.BaseCondition{
-				Subject: value.FieldValue{
+				Subject: condition.FieldValue{
 					Name: "Microsoft.Network/networkSecurityGroups/securityRules[*].direction",
 				},
 			},

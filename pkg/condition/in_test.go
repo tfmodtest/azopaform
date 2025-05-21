@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"github.com/tfmodtest/azopaform/pkg/value"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -68,7 +67,7 @@ func TestInConditionWithResourceType(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx := shared.NewContext()
-			subject, _ := value.NewFieldValue("type", ctx)
+			subject, _ := NewFieldValue("type", ctx)
 			sut := In{
 				BaseCondition: BaseCondition{
 					Subject: subject,

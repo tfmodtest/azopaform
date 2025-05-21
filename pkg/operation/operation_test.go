@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tfmodtest/azopaform/pkg/condition"
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"github.com/tfmodtest/azopaform/pkg/value"
 )
 
 func TestParseOperation(t *testing.T) {
@@ -27,7 +26,7 @@ func TestParseOperation(t *testing.T) {
 			},
 			expected: NewNot("condition1", condition.NotEquals{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{
+					Subject: condition.FieldValue{
 						Name: "Microsoft.HealthcareApis/services/corsConfiguration.origins[*]",
 					},
 				},
@@ -68,7 +67,7 @@ func TestParseOperation(t *testing.T) {
 				NewAnyOf("condition1", []shared.Rego{
 					condition.Exists{
 						BaseCondition: condition.BaseCondition{
-							Subject: value.FieldValue{
+							Subject: condition.FieldValue{
 								Name: "Microsoft.Sql/servers/minimalTlsVersion",
 							},
 						},
@@ -76,7 +75,7 @@ func TestParseOperation(t *testing.T) {
 					},
 					condition.Less{
 						BaseCondition: condition.BaseCondition{
-							Subject: value.FieldValue{
+							Subject: condition.FieldValue{
 								Name: "Microsoft.Sql/servers/minimalTlsVersion",
 							},
 						},
@@ -86,7 +85,7 @@ func TestParseOperation(t *testing.T) {
 				NewAllOf("condition1", []shared.Rego{
 					condition.Equals{
 						BaseCondition: condition.BaseCondition{
-							Subject: value.FieldValue{
+							Subject: condition.FieldValue{
 								Name: "type",
 							},
 						},
@@ -94,7 +93,7 @@ func TestParseOperation(t *testing.T) {
 					},
 					condition.Exists{
 						BaseCondition: condition.BaseCondition{
-							Subject: value.FieldValue{
+							Subject: condition.FieldValue{
 								Name: "Microsoft.Sql/servers/minimalTlsVersion",
 							},
 						},
@@ -120,7 +119,7 @@ func TestParseOperation(t *testing.T) {
 			expected: NewAnyOf("condition1", []shared.Rego{
 				condition.Exists{
 					BaseCondition: condition.BaseCondition{
-						Subject: value.FieldValue{
+						Subject: condition.FieldValue{
 							Name: "Microsoft.Sql/servers/minimalTlsVersion",
 						},
 					},
@@ -128,7 +127,7 @@ func TestParseOperation(t *testing.T) {
 				},
 				condition.Less{
 					BaseCondition: condition.BaseCondition{
-						Subject: value.FieldValue{
+						Subject: condition.FieldValue{
 							Name: "Microsoft.Sql/servers/minimalTlsVersion",
 						},
 					},
@@ -153,7 +152,7 @@ func TestParseOperation(t *testing.T) {
 			expected: NewAllOf("condition1", []shared.Rego{
 				condition.Equals{
 					BaseCondition: condition.BaseCondition{
-						Subject: value.FieldValue{
+						Subject: condition.FieldValue{
 							Name: "type",
 						},
 					},
@@ -161,7 +160,7 @@ func TestParseOperation(t *testing.T) {
 				},
 				condition.Exists{
 					BaseCondition: condition.BaseCondition{
-						Subject: value.FieldValue{
+						Subject: condition.FieldValue{
 							Name: "Microsoft.HealthcareApis/services/cosmosDbConfiguration.keyVaultKeyUri",
 						},
 					},

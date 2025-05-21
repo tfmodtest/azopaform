@@ -3,7 +3,6 @@ package condition
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"github.com/tfmodtest/azopaform/pkg/value"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -80,7 +79,7 @@ func TestNotEqualsCondition_Parameter(t *testing.T) {
 		return nil, false, nil
 	}
 	rhs := shared.StringRego("[parameters('param1')]")
-	subject, _ := value.NewFieldValue("Microsoft.Storage/storageAccounts/networkAcls.bypass", ctx)
+	subject, _ := NewFieldValue("Microsoft.Storage/storageAccounts/networkAcls.bypass", ctx)
 	sut := NotEquals{
 		BaseCondition: BaseCondition{
 			Subject: subject,

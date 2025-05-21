@@ -3,7 +3,6 @@ package condition
 import (
 	"fmt"
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"github.com/tfmodtest/azopaform/pkg/value"
 )
 
 var _ Condition = In{}
@@ -18,7 +17,7 @@ func (i In) Rego(ctx *shared.Context) (string, error) {
 	if utilLibraryName := ctx.UtilLibraryPackageName(); utilLibraryName != "" {
 		prefix = fmt.Sprintf("data.%s.", utilLibraryName)
 	}
-	if field, ok := i.GetSubject(ctx).(value.FieldValue); ok && field.Name == "type" {
+	if field, ok := i.GetSubject(ctx).(FieldValue); ok && field.Name == "type" {
 		return fmt.Sprintf("%sis_azure_type(%s, r.values)", prefix, shared.SliceConstructor(i.Values)), nil
 	}
 	fieldName, err := i.GetSubject(ctx).Rego(ctx)

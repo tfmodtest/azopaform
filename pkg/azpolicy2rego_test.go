@@ -14,7 +14,6 @@ import (
 	"github.com/tfmodtest/azopaform/pkg/condition"
 	"github.com/tfmodtest/azopaform/pkg/operation"
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"github.com/tfmodtest/azopaform/pkg/value"
 )
 
 const listFieldJson = `{
@@ -739,7 +738,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.Equals{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{
+					Subject: condition.FieldValue{
 						Name: "type",
 					},
 				},
@@ -754,7 +753,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.NotEquals{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "type"},
+					Subject: condition.FieldValue{Name: "type"},
 				},
 				Value: "Microsoft.Web/serverFarms",
 			},
@@ -767,7 +766,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.Like{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "type"},
+					Subject: condition.FieldValue{Name: "type"},
 				},
 				Value: "Microsoft.Web/serverFarms",
 			},
@@ -780,7 +779,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.NotLike{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "type"},
+					Subject: condition.FieldValue{Name: "type"},
 				},
 				Value: "Microsoft.Web/serverFarms",
 			},
@@ -793,7 +792,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.In{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "type"},
+					Subject: condition.FieldValue{Name: "type"},
 				},
 				Values: []string{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
 			},
@@ -806,7 +805,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.NotIn{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "type"},
+					Subject: condition.FieldValue{Name: "type"},
 				},
 				Values: []string{"Microsoft.Web/serverFarms", "Microsoft.Compute/virtualMachines"},
 			},
@@ -819,7 +818,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.Contains{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "type"},
+					Subject: condition.FieldValue{Name: "type"},
 				},
 				Value: "Microsoft.Web/serverFarms",
 			},
@@ -832,7 +831,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.NotContains{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "type"},
+					Subject: condition.FieldValue{Name: "type"},
 				},
 				Value: "Microsoft.Web/serverFarms",
 			},
@@ -845,7 +844,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.ContainsKey{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "type"},
+					Subject: condition.FieldValue{Name: "type"},
 				},
 				KeyName: "Microsoft.Web/serverFarms",
 			},
@@ -858,7 +857,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.NotContainsKey{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "type"},
+					Subject: condition.FieldValue{Name: "type"},
 				},
 				KeyName: "Microsoft.Web/serverFarms",
 			},
@@ -871,7 +870,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.Less{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "number"},
+					Subject: condition.FieldValue{Name: "number"},
 				},
 				Value: 10,
 			},
@@ -884,7 +883,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.LessOrEquals{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "number"},
+					Subject: condition.FieldValue{Name: "number"},
 				},
 				Value: 10,
 			},
@@ -897,7 +896,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.Greater{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "number"},
+					Subject: condition.FieldValue{Name: "number"},
 				},
 				Value: 10,
 			},
@@ -910,7 +909,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.GreaterOrEquals{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "number"},
+					Subject: condition.FieldValue{Name: "number"},
 				},
 				Value: 10,
 			},
@@ -923,7 +922,7 @@ func TestParseCondition(t *testing.T) {
 			},
 			expected: condition.Exists{
 				BaseCondition: condition.BaseCondition{
-					Subject: value.FieldValue{Name: "type"},
+					Subject: condition.FieldValue{Name: "type"},
 				},
 				Value: true,
 			},

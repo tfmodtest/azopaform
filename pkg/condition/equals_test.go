@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"github.com/tfmodtest/azopaform/pkg/value"
 )
 
 func TestEqualsCondition(t *testing.T) {
@@ -75,7 +74,7 @@ func TestEqualsCondition_SpecialCase_type(t *testing.T) {
 	ctx := shared.NewContext()
 	sut := Equals{
 		BaseCondition: BaseCondition{
-			Subject: value.FieldValue{Name: "type"},
+			Subject: FieldValue{Name: "type"},
 		},
 		Value: "Microsoft.Network/networkSecurityGroups",
 	}
@@ -89,7 +88,7 @@ func TestEqualsCondition_WithUtilLibraryPackageName(t *testing.T) {
 
 	sut := Equals{
 		BaseCondition: BaseCondition{
-			Subject: value.FieldValue{Name: "type"},
+			Subject: FieldValue{Name: "type"},
 		},
 		Value: "Microsoft.Network/networkSecurityGroups",
 	}
@@ -104,7 +103,7 @@ func TestEqualsCondition_SingleQuoteInFieldShouldBeReplacedByDoubleQuote(t *test
 	ctx := shared.NewContext()
 	sut := Equals{
 		BaseCondition: BaseCondition{
-			Subject: value.FieldValue{Name: "tags['aks-managed-poolName']"},
+			Subject: FieldValue{Name: "tags['aks-managed-poolName']"},
 		},
 		Value: `1`,
 	}

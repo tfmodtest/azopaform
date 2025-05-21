@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"github.com/tfmodtest/azopaform/pkg/value"
 )
 
 var _ Condition = Equals{}
@@ -36,7 +35,7 @@ func (e Equals) Rego(ctx *shared.Context) (string, error) {
 	if utilLibraryName := ctx.UtilLibraryPackageName(); utilLibraryName != "" {
 		prefix = fmt.Sprintf("data.%s.", utilLibraryName)
 	}
-	if field, ok := e.Subject.(value.FieldValue); ok && field.Name == shared.TypeOfResource {
+	if field, ok := e.Subject.(FieldValue); ok && field.Name == shared.TypeOfResource {
 		equals = fmt.Sprintf(`%sis_azure_type(%s, %s)`, prefix, shared.ResourcePathPrefix, v)
 	}
 	return equals, nil

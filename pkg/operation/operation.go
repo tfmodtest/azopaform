@@ -7,7 +7,6 @@ import (
 	"github.com/emirpasic/gods/sets/hashset"
 	"github.com/tfmodtest/azopaform/pkg/condition"
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"github.com/tfmodtest/azopaform/pkg/value"
 	"github.com/xyproto/randomstring"
 )
 
@@ -202,9 +201,9 @@ func tryParseSubject(conditionMap map[string]any, ctx *shared.Context) (shared.R
 					ctx.PushResourceType(resourceType)
 				}
 			}
-			return value.NewFieldValue(conditionValue, ctx)
+			return condition.NewFieldValue(conditionValue, ctx)
 		case shared.Value:
-			return value.NewLiteralValue(conditionValue, ctx)
+			return condition.NewLiteralValue(conditionValue, ctx)
 		}
 	}
 	return nil, nil
