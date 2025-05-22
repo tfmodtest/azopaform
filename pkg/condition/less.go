@@ -15,9 +15,11 @@ type Less struct {
 }
 
 func (l Less) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := l.GetSubject(ctx).Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join([]string{fieldName, "<", fmt.Sprint(l.Value)}, " "), nil
+	return subjectRego(l.GetSubject(ctx), l.Value, func(subject shared.Rego, value any, ctx *shared.Context) (string, error) {
+		fieldName, err := subject.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		return strings.Join([]string{fieldName, "<", fmt.Sprint(value)}, " "), nil
+	}, ctx)
 }

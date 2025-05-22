@@ -14,9 +14,11 @@ type NotIn struct {
 }
 
 func (n NotIn) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := n.GetSubject(ctx).Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join([]string{shared.Not, fieldName, "in", shared.SliceConstructor(n.Values)}, " "), nil
+	return subjectRego(n.GetSubject(ctx), n.Values, func(subject shared.Rego, value any, context *shared.Context) (string, error) {
+		fieldName, err := subject.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		return strings.Join([]string{shared.Not, fieldName, "in", shared.SliceConstructor(value.([]string))}, " "), nil
+	}, ctx)
 }

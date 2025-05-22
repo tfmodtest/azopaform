@@ -1,7 +1,6 @@
 package condition
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/tfmodtest/azopaform/pkg/shared"
@@ -15,9 +14,11 @@ type Like struct {
 }
 
 func (l Like) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := l.GetSubject(ctx).Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join([]string{shared.RegexExp, "(", "\"", fmt.Sprintf(l.Value), "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
+	return subjectRego(l.GetSubject(ctx), l.Value, func(subject shared.Rego, value any, ctx *shared.Context) (string, error) {
+		fieldName, err := subject.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		return strings.Join([]string{shared.RegexExp, "(", "\"", value.(string), "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
+	}, ctx)
 }

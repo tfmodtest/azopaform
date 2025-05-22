@@ -9,10 +9,10 @@ type BaseCondition struct {
 }
 
 func (b BaseCondition) GetSubject(ctx *shared.Context) shared.Rego {
-	localName, ok := ctx.FieldNameReplacer()
-	if ok {
-		return shared.StringRego(localName)
-	}
+	//localName, ok := ctx.VarNameForField()
+	//if ok {
+	//	return shared.StringRego(localName)
+	//}
 	return b.Subject
 }
 

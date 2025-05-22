@@ -7,7 +7,6 @@ import (
 	"github.com/emirpasic/gods/sets/hashset"
 	"github.com/tfmodtest/azopaform/pkg/condition"
 	"github.com/tfmodtest/azopaform/pkg/shared"
-	"github.com/xyproto/randomstring"
 )
 
 var usedRandomString = hashset.New()
@@ -29,9 +28,9 @@ func (o baseOperation) wrapToFunction(body func() (string, error), ctx *shared.C
 	}
 
 	res := o.HelperFunctionName() + " " + shared.IfCondition + " {"
-	if _, ok := ctx.FieldNameReplacer(); ok {
-		res = o.HelperFunctionName() + "(x)" + " " + shared.IfCondition + " {"
-	}
+	//if _, ok := ctx.VarNameForField(); ok {
+	//	res = o.HelperFunctionName() + "(x)" + " " + shared.IfCondition + " {"
+	//}
 	sb := strings.Builder{}
 	sb.WriteString(res)
 	sb.WriteString("\n")
@@ -45,9 +44,9 @@ func (o baseOperation) wrapToFunction(body func() (string, error), ctx *shared.C
 func (o baseOperation) asFunctionForOperation(operation Operation, ctx *shared.Context) (string, error) {
 	sb := strings.Builder{}
 	call := operation.HelperFunctionName()
-	if _, ok := ctx.FieldNameReplacer(); ok {
-		call += "(x)"
-	}
+	//if _, ok := ctx.VarNameForField(); ok {
+	//	call += "(x)"
+	//}
 	operationDecl, err := operation.Rego(ctx)
 	if err != nil {
 		return "", err
@@ -65,7 +64,7 @@ func (o baseOperation) forkFunctionForOperation(operation Operation, ctx *shared
 		return "", err
 	}
 	funcDef, _ := o.wrapToFunction(func() (string, error) {
-		if _, ok := ctx.FieldNameReplacer(); ok {
+		if _, ok := ctx.VarNameForField(); ok {
 			return operation.HelperFunctionName() + "(x)", nil
 		}
 		return operation.HelperFunctionName(), nil
@@ -138,7 +137,7 @@ func NewOperation(operationType string, body any, ctx *shared.Context) (shared.R
 var RandomHelperFunctionNameGenerator = func() string {
 	var randomSuffix string
 	for {
-		randomSuffix = randomstring.HumanFriendlyEnglishString(10)
+		randomSuffix = shared.HumanFriendlyEnglishString(10)
 		if !usedRandomString.Contains(randomSuffix) {
 			usedRandomString.Add(randomSuffix)
 			break

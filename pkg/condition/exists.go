@@ -14,22 +14,24 @@ type Exists struct {
 }
 
 func (e Exists) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := e.GetSubject(ctx).Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	assertion := fmt.Sprintf("%s == %s", fieldName, fieldName)
-	var expected, isBool bool
-	expectedStr, isString := e.Value.(string)
-	if isString {
-		expected = expectedStr == "true"
-	}
-	_, isBool = e.Value.(bool)
-	if isBool {
-		expected = e.Value.(bool)
-	}
-	if !expected {
-		assertion = "not " + assertion
-	}
-	return assertion, nil
+	return subjectRego(e.GetSubject(ctx), e.Value, func(subject shared.Rego, value any, ctx *shared.Context) (string, error) {
+		fieldName, err := subject.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		assertion := fmt.Sprintf("%s == %s", fieldName, fieldName)
+		var expected, isBool bool
+		expectedStr, isString := value.(string)
+		if isString {
+			expected = expectedStr == "true"
+		}
+		_, isBool = value.(bool)
+		if isBool {
+			expected = value.(bool)
+		}
+		if !expected {
+			assertion = "not " + assertion
+		}
+		return assertion, nil
+	}, ctx)
 }

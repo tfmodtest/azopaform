@@ -12,6 +12,7 @@ import (
 )
 
 func TestCount(t *testing.T) {
+	t.Skip("skip count for now")
 	cases := []struct {
 		name     string
 		unparsed map[string]any

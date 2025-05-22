@@ -15,9 +15,11 @@ type GreaterOrEquals struct {
 }
 
 func (g GreaterOrEquals) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := g.GetSubject(ctx).Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join([]string{fieldName, ">=", fmt.Sprint(g.Value)}, " "), nil
+	return subjectRego(g.GetSubject(ctx), g.Value, func(subject shared.Rego, value any, ctx *shared.Context) (string, error) {
+		fieldName, err := subject.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		return strings.Join([]string{fieldName, ">=", fmt.Sprint(value)}, " "), nil
+	}, ctx)
 }

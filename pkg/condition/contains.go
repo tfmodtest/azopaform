@@ -15,9 +15,11 @@ type Contains struct {
 }
 
 func (c Contains) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := c.GetSubject(ctx).Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join([]string{shared.RegexExp, "(", "\"", ".*", fmt.Sprint(c.Value), ".*", "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
+	return subjectRego(c.GetSubject(ctx), c.Value, func(subject shared.Rego, value any, ctx *shared.Context) (string, error) {
+		fieldName, err := subject.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		return strings.Join([]string{shared.RegexExp, "(", "\"", ".*", fmt.Sprint(value), ".*", "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
+	}, ctx)
 }

@@ -32,7 +32,7 @@ func NewCount(input any, ctx *shared.Context) (Count, error) {
 	if err != nil {
 		countField = items[shared.Field].(string)
 	}
-	countFieldConverted := replaceIndex(countField)
+	countFieldConverted := countField //replaceIndex(countField)
 	var countBody string
 	if whereBody != nil {
 		countBody = shared.Count + "({x|x:=" + countFieldConverted + ";" + whereBody.HelperFunctionName() + "(x)})"

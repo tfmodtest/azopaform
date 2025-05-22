@@ -3,7 +3,7 @@ package condition
 import (
 	"fmt"
 	"strings"
-	
+
 	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
@@ -15,10 +15,12 @@ type NotLike struct {
 }
 
 func (n NotLike) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := n.GetSubject(ctx).Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	v := strings.Join([]string{"`", fmt.Sprint(n.Value), "`"}, "")
-	return strings.Join([]string{shared.Not, " ", shared.RegexExp, "(", v, ",", fieldName, ")"}, ""), nil
+	return subjectRego(n.GetSubject(ctx), n.Value, func(subject shared.Rego, value any, ctx *shared.Context) (string, error) {
+		fieldName, err := subject.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		v := strings.Join([]string{"`", fmt.Sprint(value), "`"}, "")
+		return strings.Join([]string{shared.Not, " ", shared.RegexExp, "(", v, ",", fieldName, ")"}, ""), nil
+	}, ctx)
 }

@@ -16,17 +16,19 @@ type NotEquals struct {
 }
 
 func (n NotEquals) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := n.GetSubject(ctx).Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	var v string
-	if reflect.TypeOf(n.Value).Kind() == reflect.String {
-		v = strings.Join([]string{"\"", fmt.Sprint(n.Value), "\""}, "")
-	} else if reflect.TypeOf(n.Value).Kind() == reflect.Bool {
-		v = fmt.Sprint(n.Value)
-	} else {
-		v = fmt.Sprint(n.Value)
-	}
-	return strings.Join([]string{fieldName, "!=", v}, " "), nil
+	return subjectRego(n.GetSubject(ctx), n.Value, func(subject shared.Rego, value any, ctx *shared.Context) (string, error) {
+		fieldName, err := subject.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		var v string
+		if reflect.TypeOf(value).Kind() == reflect.String {
+			v = strings.Join([]string{"\"", fmt.Sprint(value), "\""}, "")
+		} else if reflect.TypeOf(value).Kind() == reflect.Bool {
+			v = fmt.Sprint(value)
+		} else {
+			v = fmt.Sprint(value)
+		}
+		return strings.Join([]string{fieldName, "!=", v}, " "), nil
+	}, ctx)
 }

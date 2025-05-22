@@ -1,8 +1,6 @@
 package condition
 
 import (
-	"strings"
-
 	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
@@ -18,7 +16,6 @@ func NewLiteralValue(input any, ctx *shared.Context) (shared.Rego, error) {
 	if err != nil {
 		return nil, err
 	}
-	v = strings.ReplaceAll(v, "[*]", "[_]")
 	return LiteralValue{
 		Value: v,
 	}, nil

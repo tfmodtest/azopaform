@@ -2,26 +2,29 @@ package shared
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 )
 
 func FieldNameProcessor(fieldName string, ctx *Context) (string, error) {
-	var result string
 	if fieldName == TypeOfResource || fieldName == KindOfResource {
 		return fmt.Sprintf("%s.%s", ResourcePathPrefix, fieldName), nil
 	}
-	rt, err := currentResourceType(ctx)
+	resourceType, err := currentResourceType(ctx)
+	// No resource type defined, return the field name as is
 	if err != nil {
 		return processedFieldName(fieldName)
 	}
-	res, err := FieldNameParser(fieldName, rt, "")
-	if err != nil {
-		return "", err
+	if strings.HasPrefix(fieldName, resourceType) {
+		fieldName = strings.TrimPrefix(fieldName, resourceType)
 	}
-	result = TFNameMapping(res)
-
-	return result, nil
+	currentVarName, ok := ctx.VarNameForField()
+	if !ok {
+		currentVarName = "r.values.properties"
+	}
+	if fieldName == "" {
+		return currentVarName, nil
+	}
+	return currentVarName + "." + FieldNameParser(fieldName, ctx), nil
 }
 
 func processedFieldName(name string) (string, error) {
@@ -31,7 +34,6 @@ func processedFieldName(name string) (string, error) {
 	}
 	split := strings.Split(name, "/")
 	propertyPath := split[len(split)-1]
-	propertyPath = strings.ReplaceAll(propertyPath, "[*]", "[_]")
 	return fmt.Sprintf("%s.properties.%s", ResourcePathPrefix, propertyPath), nil
 }
 
@@ -77,36 +79,21 @@ func currentResourceType(ctx *Context) (string, error) {
 	return resourceType, nil
 }
 
-func FieldNameParser(fieldNameRaw, resourceType, version string) (string, error) {
+func FieldNameParser(fieldNameRaw string, ctx *Context) string {
 	if fieldNameRaw == TypeOfResource {
-		return fieldNameRaw, nil
+		return fieldNameRaw
 	}
-	prop := strings.TrimPrefix(fieldNameRaw, resourceType)
 
+	return ConvertAzurePathToObjectPath(fieldNameRaw, ctx)
+}
+
+func ConvertAzurePathToObjectPath(prop string, ctx *Context) string {
+	resourceType, _ := ctx.currentResourceType()
+	prop = strings.TrimPrefix(prop, strings.ReplaceAll(resourceType, "/", "."))
 	prop = strings.Replace(prop, ".", "/", -1)
 	prop = strings.Replace(prop, "[x]", "/*", -1)
 	prop = strings.Replace(prop, "[*]", "/*", -1)
 	prop = strings.TrimPrefix(prop, "/")
-	prop = strings.ReplaceAll(prop, "/*", "[_]")
 	prop = strings.ReplaceAll(prop, "/", ".")
-	prop = "properties." + prop
-	return prop, nil
-}
-
-func TFNameMapping(fieldName string) string {
-	var result string
-	attributes := strings.Split(fieldName, "/")
-	for _, v := range attributes {
-		if v == "" {
-			continue
-		}
-		next := result + "." + v
-		if _, err := strconv.Atoi(v); err == nil || v == "*" {
-			next = result + "[" + v + "]"
-		}
-		result = next
-	}
-	result = ResourcePathPrefix + result
-
-	return result
+	return prop
 }

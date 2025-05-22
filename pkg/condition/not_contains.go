@@ -15,9 +15,11 @@ type NotContains struct {
 }
 
 func (n NotContains) Rego(ctx *shared.Context) (string, error) {
-	fieldName, err := n.GetSubject(ctx).Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return strings.Join([]string{shared.Not, " ", shared.RegexExp, "(", "\"", ".*", fmt.Sprint(n.Value), ".*", "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
+	return subjectRego(n.GetSubject(ctx), n.Value, func(subject shared.Rego, value any, ctx *shared.Context) (string, error) {
+		fieldName, err := subject.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		return strings.Join([]string{shared.Not, " ", shared.RegexExp, "(", "\"", ".*", fmt.Sprint(value), ".*", "\"", ",", "\"", fieldName, "\"", ")"}, ""), nil
+	}, ctx)
 }

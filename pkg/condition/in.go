@@ -13,16 +13,19 @@ type In struct {
 }
 
 func (i In) Rego(ctx *shared.Context) (string, error) {
-	prefix := ""
-	if utilLibraryName := ctx.UtilLibraryPackageName(); utilLibraryName != "" {
-		prefix = fmt.Sprintf("data.%s.", utilLibraryName)
-	}
-	if field, ok := i.GetSubject(ctx).(FieldValue); ok && field.Name == "type" {
-		return fmt.Sprintf("%sis_azure_type(%s, r.values)", prefix, shared.SliceConstructor(i.Values)), nil
-	}
-	fieldName, err := i.GetSubject(ctx).Rego(ctx)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%sarraycontains(%s, %s)", prefix, shared.SliceConstructor(i.Values), fieldName), nil
+	return subjectRego(i.GetSubject(ctx), i.Values, func(subject shared.Rego, value any, ctx *shared.Context) (string, error) {
+		prefix := ""
+		if utilLibraryName := ctx.UtilLibraryPackageName(); utilLibraryName != "" {
+			prefix = fmt.Sprintf("data.%s.", utilLibraryName)
+		}
+		values := value.([]string)
+		if field, ok := subject.(FieldValue); ok && field.Name == "type" {
+			return fmt.Sprintf("%sis_azure_type(%s, r.values)", prefix, shared.SliceConstructor(values)), nil
+		}
+		fieldName, err := subject.Rego(ctx)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%sarraycontains(%s, %s)", prefix, shared.SliceConstructor(values), fieldName), nil
+	}, ctx)
 }

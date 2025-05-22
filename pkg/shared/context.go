@@ -12,18 +12,18 @@ import (
 
 type Context struct {
 	context.Context
-	option                 Options
-	resourceTypeStack      stacks.Stack
-	fieldNameReplacerStack stacks.Stack
-	helperFunctions        []string
-	GetParameterFunc       func(string) (any, bool, error)
+	option               Options
+	resourceTypeStack    stacks.Stack
+	varNameForFieldStack stacks.Stack
+	helperFunctions      []string
+	GetParameterFunc     func(string) (any, bool, error)
 }
 
 func NewContext() *Context {
 	return &Context{
-		Context:                context.Background(),
-		resourceTypeStack:      arraystack.New(),
-		fieldNameReplacerStack: arraystack.New(),
+		Context:              context.Background(),
+		resourceTypeStack:    arraystack.New(),
+		varNameForFieldStack: arraystack.New(),
 	}
 }
 
@@ -39,17 +39,17 @@ func (c *Context) Fork() *Context {
 	return forkedCtx
 }
 
-func (c *Context) PushFieldName(name string) {
-	c.fieldNameReplacerStack.Push(name)
+func (c *Context) PushVarNameForField(name string) {
+	c.varNameForFieldStack.Push(name)
 }
 
-func (c *Context) PopFieldName() {
-	c.fieldNameReplacerStack.Pop()
+func (c *Context) PopVarNameForField() {
+	c.varNameForFieldStack.Pop()
 }
 
 func (c *Context) InHelperFunction(parameterName string, action func() error) error {
-	c.PushFieldName(parameterName)
-	defer c.PopFieldName()
+	c.PushVarNameForField(parameterName)
+	defer c.PopVarNameForField()
 	return action()
 }
 
@@ -61,8 +61,8 @@ func (c *Context) currentResourceType() (string, bool) {
 	return value.(string), true
 }
 
-func (c *Context) FieldNameReplacer() (string, bool) {
-	value, ok := c.fieldNameReplacerStack.Peek()
+func (c *Context) VarNameForField() (string, bool) {
+	value, ok := c.varNameForFieldStack.Peek()
 	if !ok {
 		return "", false
 	}
@@ -71,6 +71,7 @@ func (c *Context) FieldNameReplacer() (string, bool) {
 
 func (c *Context) PushResourceType(rt string) {
 	c.resourceTypeStack.Push(rt)
+	c.PushVarNameForField("r.values.properties")
 }
 
 func (c *Context) EnqueueHelperFunction(funcDec string) {

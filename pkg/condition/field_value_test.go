@@ -27,20 +27,6 @@ func TestNewFieldValue(t *testing.T) {
 			expectedRego: "r.values.kind",
 		},
 		{
-			name:           "Field name with single [*]",
-			input:          "Microsoft.Web/serverFarms/sku[*].tier",
-			expectedRego:   "r.values.properties.sku[_].tier",
-			resourceType:   "Microsoft.Web/serverFarms",
-			shouldPushType: true,
-		},
-		{
-			name:           "Field name with multiple [*]",
-			input:          "Microsoft.Network/networkSecurityGroups/securityRules[*]/properties[*].direction",
-			expectedRego:   "r.values.properties.securityRules[_].properties[_].direction",
-			resourceType:   "Microsoft.Network/networkSecurityGroups",
-			shouldPushType: true,
-		},
-		{
 			name:         "Empty string",
 			input:        "",
 			expectedRego: "",

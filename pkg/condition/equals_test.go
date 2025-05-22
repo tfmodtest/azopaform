@@ -110,5 +110,41 @@ func TestEqualsCondition_SingleQuoteInFieldShouldBeReplacedByDoubleQuote(t *test
 	actual, err := sut.Rego(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, `tags["aks-managed-poolName"] == "1"`, actual)
-	//assert.Equal(t, `is_azure_type(r.values, "Microsoft.Network/networkSecurityGroups")`, actual)
+}
+
+func TestEqualsCondition_WildcardInFieldPathShouldBeEvalAsAllOf(t *testing.T) {
+	ctx := shared.NewContext()
+	ctx.PushResourceType("Microsoft.Network/networkSecurityGroups/securityRules")
+
+	sut := Equals{
+		BaseCondition: BaseCondition{
+			Subject: FieldValue{Name: "Microsoft.Network/networkSecurityGroups/securityRules/port[*]"},
+		},
+		Value: 3,
+	}
+
+	actual, err := sut.Rego(ctx)
+	require.NoError(t, err)
+	cfg := fmt.Sprintf(shared.RegoTestTemplate, actual)
+	cfg = cfg + "\n" + `r := input`
+	shared.AssertRegoAllow(t, cfg, map[string]any{
+		"values": map[string]any{
+			"properties": map[string]any{
+				"port": []int{
+					3,
+					3,
+				},
+			},
+		},
+	}, true, ctx)
+	shared.AssertRegoAllow(t, cfg, map[string]any{
+		"values": map[string]any{
+			"properties": map[string]any{
+				"port": []int{
+					3,
+					4,
+				},
+			},
+		},
+	}, false, ctx)
 }
