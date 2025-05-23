@@ -6,6 +6,9 @@ import (
 )
 
 func FieldNameProcessor(fieldName string, ctx *Context) (string, error) {
+	if strings.Contains(fieldName, VarInCountWhere) {
+		return strings.ReplaceAll(fieldName, VarInCountWhere, "x"), nil
+	}
 	if fieldName == TypeOfResource || fieldName == KindOfResource {
 		return fmt.Sprintf("%s.%s", ResourcePathPrefix, fieldName), nil
 	}

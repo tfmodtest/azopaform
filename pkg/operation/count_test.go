@@ -12,7 +12,7 @@ import (
 )
 
 func TestCount(t *testing.T) {
-	t.Skip("skip count for now")
+	//t.Skip("skip count for now")
 	cases := []struct {
 		name     string
 		unparsed map[string]any
@@ -23,11 +23,15 @@ func TestCount(t *testing.T) {
 		{
 			name: "simple",
 			unparsed: map[string]any{
-				"field": "input.items[*]",
+				"field": "Microsoft.Network/networkSecurityGroups/zones[*]",
 			},
 			input: map[string]any{
-				"items": []any{
-					1, 2, 3,
+				"values": map[string]any{
+					"properties": map[string]any{
+						"zones": []any{
+							1, 2, 3,
+						},
+					},
 				},
 			},
 			query:    "c",
@@ -36,24 +40,55 @@ func TestCount(t *testing.T) {
 		{
 			name: "with where",
 			unparsed: map[string]any{
-				"field": "input.items[*]",
+				"field": "Microsoft.Network/networkSecurityGroups/zones[*]",
 				"where": map[string]any{
-					"field":           "input.items[*]",
+					"field":           "Microsoft.Network/networkSecurityGroups/zones[*]",
 					"greaterOrEquals": 3,
 				},
 			},
 			input: map[string]any{
-				"items": []any{
-					2, 3, 4,
+				"values": map[string]any{
+					"properties": map[string]any{
+						"zones": []any{
+							2, 3, 4,
+						},
+					},
 				},
 			},
 			query:    "c",
 			expected: 2,
 		},
+		{
+			name: "with where and longer field",
+			unparsed: map[string]any{
+				"field": "Microsoft.Network/networkSecurityGroups/zones[*]",
+				"where": map[string]any{
+					"field":  "Microsoft.Network/networkSecurityGroups/zones[*].name",
+					"equals": "test",
+				},
+			},
+			input: map[string]any{
+				"values": map[string]any{
+					"properties": map[string]any{
+						"zones": []map[string]any{
+							{
+								"name": "test",
+							},
+							{
+								"name": "test2",
+							},
+						},
+					},
+				},
+			},
+			query:    "c",
+			expected: 1,
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			ctx := shared.NewContext()
+			ctx.PushResourceType("Microsoft.Network/networkSecurityGroups")
 			sut, err := NewCount(c.unparsed, ctx)
 			require.NoError(t, err)
 			exp, err := sut.Rego(ctx)
@@ -62,7 +97,7 @@ func TestCount(t *testing.T) {
 	package main
 	
 	import rego.v1
-	
+	r := input
 	c := %s
 
 %s

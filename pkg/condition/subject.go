@@ -8,8 +8,15 @@ import (
 )
 
 func subjectRego(subject shared.Rego, value any, callback func(shared.Rego, any, *shared.Context) (string, error), ctx *shared.Context) (string, error) {
-	if field, ok := subject.(FieldValue); ok && strings.Contains(field.Name, "[*]") {
+	if field, ok := subject.(FieldValue); ok && strings.Contains(field.Name, "[*]") && !ctx.IsInCountRego() {
 		return conditionInEvery(strings.ReplaceAll(field.Name, "/", "."), value, callback, ctx)
+	}
+	if field, ok := subject.(FieldValue); ok && ctx.IsInCountRego() {
+		field.Name = strings.TrimPrefix(field.Name, ctx.GetCountFieldName())
+		if strings.HasPrefix(field.Name, ".") {
+			field.Name = field.Name[1:]
+		}
+		subject = field
 	}
 	return callback(subject, value, ctx)
 }

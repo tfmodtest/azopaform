@@ -1,6 +1,7 @@
 package operation
 
 import (
+	"github.com/tfmodtest/azopaform/pkg/condition"
 	"strings"
 
 	"github.com/tfmodtest/azopaform/pkg/shared"
@@ -9,44 +10,57 @@ import (
 var _ shared.Rego = Count{}
 
 type Count struct {
-	Where    Operation
-	CountExp string
+	Where          Operation
+	CountExp       string
+	Subject        shared.Rego
+	countFieldName string
 }
 
 func NewCount(input any, ctx *shared.Context) (Count, error) {
 	items := input.(map[string]any)
-
+	subject, err := tryParseSubject(items, ctx)
+	if err != nil {
+		return Count{}, err
+	}
+	var countFieldName string
+	if field, ok := subject.(condition.FieldValue); ok {
+		ctx.SetCountFieldName(field.Name)
+		countFieldName = field.Name
+		defer ctx.SetCountFieldName("")
+		field.Name = strings.ReplaceAll(field.Name, "[*]", "[_]")
+		subject = field
+	}
 	var whereBody Operation
-	var err error
 	if where, ok := items[shared.Where].(map[string]any); ok {
 		whereBody, err = NewWhere(where, ctx)
 		if err != nil {
 			return Count{}, err
 		}
 	}
-	fieldName := items[shared.Field]
-	if items[shared.Field] == nil {
-		fieldName = items[shared.Value]
-	}
-	countField, err := shared.FieldNameProcessor(fieldName.(string), ctx)
+	countFieldConverted, err := subject.Rego(ctx)
 	if err != nil {
-		countField = items[shared.Field].(string)
+		return Count{}, err
 	}
-	countFieldConverted := countField //replaceIndex(countField)
 	var countBody string
 	if whereBody != nil {
 		countBody = shared.Count + "({x|x:=" + countFieldConverted + ";" + whereBody.HelperFunctionName() + "(x)})"
 	} else {
 		countBody = shared.Count + "({x|x:=" + countFieldConverted + "})"
 	}
-	countBody = strings.Replace(countBody, "*", "x", -1)
+	countBody = strings.ReplaceAll(countBody, "[*]", "[_]")
 	return Count{
-		Where:    whereBody,
-		CountExp: countBody,
+		Where:          whereBody,
+		CountExp:       countBody,
+		Subject:        subject,
+		countFieldName: countFieldName,
 	}, nil
 }
 
 func (c Count) Rego(ctx *shared.Context) (string, error) {
+	ctx.EnterCountRego()
+	defer ctx.ExitCountRego()
+	ctx.SetCountFieldName(c.countFieldName)
+	defer ctx.SetCountFieldName("")
 	res := c.CountExp
 	if c.Where != nil {
 		whereHelperDef, err := c.Where.Rego(ctx)

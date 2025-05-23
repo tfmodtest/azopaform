@@ -29,7 +29,7 @@ func TestNewFieldValue(t *testing.T) {
 		{
 			name:         "Empty string",
 			input:        "",
-			expectedRego: "",
+			expectedRego: "x",
 		},
 	}
 

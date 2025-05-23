@@ -20,6 +20,8 @@ const Modify = "modify"
 const Audit = "audit"
 const Warn = "warn"
 
+const VarInCountWhere = "[VAR_IN_COUNT_WHERE]"
+
 const ResourcePathPrefix = "r.values"
 const UtilsRego = `
 arraycontains(arr, element) := contains if {

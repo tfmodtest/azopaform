@@ -17,6 +17,8 @@ type Context struct {
 	varNameForFieldStack stacks.Stack
 	helperFunctions      []string
 	GetParameterFunc     func(string) (any, bool, error)
+	countFieldName       string
+	countProcess         int
 }
 
 func NewContext() *Context {
@@ -51,6 +53,26 @@ func (c *Context) InHelperFunction(parameterName string, action func() error) er
 	c.PushVarNameForField(parameterName)
 	defer c.PopVarNameForField()
 	return action()
+}
+
+func (c *Context) SetCountFieldName(name string) {
+	c.countFieldName = name
+}
+
+func (c *Context) GetCountFieldName() string {
+	return c.countFieldName
+}
+
+func (c *Context) EnterCountRego() {
+	c.countProcess++
+}
+
+func (c *Context) ExitCountRego() {
+	c.countProcess--
+}
+
+func (c *Context) IsInCountRego() bool {
+	return c.countProcess > 0
 }
 
 func (c *Context) currentResourceType() (string, bool) {

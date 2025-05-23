@@ -7,7 +7,9 @@ import (
 var _ Operation = &Where{}
 
 type Where struct {
-	Condition          shared.Rego
+	Condition shared.Rego
+	//helperFunctionName string
+	//rego               string
 	helperFunctionName string
 }
 
@@ -17,9 +19,16 @@ func NewWhere(input any, ctx *shared.Context) (Operation, error) {
 		return nil, err
 	}
 	return Where{
-		Condition:          whereBody,
 		helperFunctionName: RandomHelperFunctionNameGenerator(),
+		Condition:          whereBody,
 	}, nil
+	//rego, err := whereBody.Rego(ctx)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//return Where{
+	//	rego:               rego,
+	//}, nil
 }
 
 func (w Where) HelperFunctionName() string {
