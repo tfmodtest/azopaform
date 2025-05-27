@@ -43,7 +43,7 @@ func NewCount(input any, ctx *shared.Context) (Count, error) {
 	}
 	var countBody string
 	if whereBody != nil {
-		countBody = shared.Count + "({x|x:=" + countFieldConverted + ";" + whereBody.HelperFunctionName() + "(x)})"
+		countBody = shared.Count + "({x|x:=" + countFieldConverted + ";" + whereBody.HelperFunctionName() + "(r, x)})"
 	} else {
 		countBody = shared.Count + "({x|x:=" + countFieldConverted + "})"
 	}

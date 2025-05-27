@@ -39,7 +39,7 @@ func (w Where) Rego(ctx *shared.Context) (string, error) {
 	var res string
 	item := w.Condition
 	if operation, ok := item.(Operation); ok {
-		res += operation.HelperFunctionName() + "(x)"
+		res += operation.HelperFunctionName() + "(r, x)"
 		if err := ctx.InHelperFunction("x", func() error {
 			helperFunctionBody, err := item.Rego(ctx)
 			if err != nil {
@@ -63,7 +63,7 @@ func (w Where) Rego(ctx *shared.Context) (string, error) {
 		}
 	}
 
-	res = w.helperFunctionName + "(x)" + " " + shared.IfCondition + " {\n" + res
+	res = w.helperFunctionName + "(r, x)" + " " + shared.IfCondition + " {\n" + res
 	res = res + "\n" + "}"
 
 	// add BaseCondition set body at the end

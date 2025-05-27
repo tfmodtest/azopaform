@@ -42,7 +42,8 @@ func (a AllOf) Rego(ctx *shared.Context) (string, error) {
 				if err != nil {
 					return "", err
 				}
-				sb.WriteString("\n" + funcDecl)
+				sb.WriteString("\n")
+				sb.WriteString(funcDecl)
 				continue
 			}
 

@@ -27,14 +27,12 @@ func (o baseOperation) wrapToFunction(body func() (string, error), ctx *shared.C
 		return "", err
 	}
 
-	res := o.HelperFunctionName() + " " + shared.IfCondition + " {"
+	res := o.HelperFunctionName() + "(r) " + shared.IfCondition + " {"
 	//if _, ok := ctx.VarNameForField(); ok {
 	//	res = o.HelperFunctionName() + "(x)" + " " + shared.IfCondition + " {"
 	//}
 	sb := strings.Builder{}
 	sb.WriteString(res)
-	sb.WriteString("\n")
-	sb.WriteString(`r := resource(input, "azapi_resource")[_]`)
 	sb.WriteString("\n")
 	sb.WriteString(bodyContent)
 	sb.WriteString("\n}")
@@ -52,6 +50,7 @@ func (o baseOperation) asFunctionForOperation(operation Operation, ctx *shared.C
 		return "", err
 	}
 	sb.WriteString(call)
+	sb.WriteString("(r)")
 	sb.WriteString("\n")
 	ctx.EnqueueHelperFunction(operationDecl)
 	return sb.String(), nil
@@ -65,9 +64,9 @@ func (o baseOperation) forkFunctionForOperation(operation Operation, ctx *shared
 	}
 	funcDef, _ := o.wrapToFunction(func() (string, error) {
 		if _, ok := ctx.VarNameForField(); ok {
-			return operation.HelperFunctionName() + "(x)", nil
+			return operation.HelperFunctionName() + "(r, x)", nil
 		}
-		return operation.HelperFunctionName(), nil
+		return operation.HelperFunctionName() + "(r)", nil
 	}, ctx)
 	sb.WriteString(funcDef)
 	sb.WriteString("\n")

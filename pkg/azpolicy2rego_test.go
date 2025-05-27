@@ -656,17 +656,14 @@ func TestNeoAzPolicy2Rego(t *testing.T) {
 import rego.v1
 
 warn if {
-    condition2
+    res := resource(input, "azapi_resource")[_]
+    condition2(res)
 }
-condition2 if {
-    r := resource(input, "azapi_resource")[_]
-
+condition2(r) if {
     is_azure_type(r.values, "Microsoft.Web/serverFarms")
-    condition1
+    condition1(r)
 }
-condition1 if {
-    r := resource(input, "azapi_resource")[_]
-
+condition1(r) if {
     not r.values.properties.sku.tier in ["Basic","Standard","ElasticPremium","Premium","PremiumV2","Premium0V3","PremiumV3","PremiumMV3","Isolated","IsolatedV2","WorkflowStandard"]
     not r.values.properties.sku.name in ["B1","B2","B3","S1","S2","S3","EP1","EP2","EP3","P1","P2","P3","P1V2","P2V2","P3V2","P0V3","P1V3","P2V3","P3V3","P1MV3","P2MV3","P3MV3","P4MV3","P5MV3","I1","I2","I3","I1V2","I2V2","I3V2","I4V2","I5V2","I6V2","WS1","WS2","WS3"]
 }

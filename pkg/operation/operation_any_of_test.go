@@ -18,8 +18,9 @@ const testRegoModuleTemplate = `
     %s
 	
 	default allow := false
+    res := resource(input, "azapi_resource")[_]
 	
-	allow if condition0
+	allow if condition0(res)
 	
 	%s
 

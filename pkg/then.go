@@ -51,7 +51,7 @@ func (t *ThenBody) Action(ruleName, result, helperFunctionName string, rule *Rul
 		return "", err
 	}
 	var collection string
-	var suffix string
+	var prefix string
 	switch action {
 	case shared.Deny:
 		fallthrough
@@ -62,7 +62,7 @@ func (t *ThenBody) Action(ruleName, result, helperFunctionName string, rule *Rul
 	case shared.DeployIfNotExists:
 		{
 			collection = shared.Deny
-			suffix = "not "
+			prefix = "not "
 		}
 	}
 	if ruleName != "" {
@@ -70,12 +70,13 @@ func (t *ThenBody) Action(ruleName, result, helperFunctionName string, rule *Rul
 	}
 	if helperFunctionName != "" {
 		return fmt.Sprintf(`%s if {
- %s%s
+  res := resource(input, "azapi_resource")[_]
+ %s%s(res)
 }
-%s`, collection, suffix, helperFunctionName, result), nil // collection + " if {\n " + helperFunctionName + "\n}\n" + result, nil
+%s`, collection, prefix, helperFunctionName, result), nil // collection + " if {\n " + helperFunctionName + "\n}\n" + result, nil
 	}
 	return fmt.Sprintf(`%s if {
  %s%s
 }
-`, collection, suffix, result), nil //collection + " if {\n " + result + "\n}\n", nil
+`, collection, prefix, result), nil //collection + " if {\n " + result + "\n}\n", nil
 }

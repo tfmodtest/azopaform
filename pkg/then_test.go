@@ -114,7 +114,7 @@ func TestThenBody_Action(t *testing.T) {
 					},
 				},
 			},
-			expected:    "deny_test_rule if {\n helper_func\n}\ninput.value == true",
+			expected:    "deny_test_rule if {\n  res := resource(input, \"azapi_resource\")[_]\n helper_func(res)\n}\ninput.value == true",
 			expectError: false,
 		},
 		{
@@ -174,7 +174,7 @@ func TestThenBody_Action(t *testing.T) {
 					},
 				},
 			},
-			expected:    "deny_test_rule if {\n not helper_func\n}\ninput.value == true",
+			expected:    "deny_test_rule if {\n  res := resource(input, \"azapi_resource\")[_]\n not helper_func(res)\n}\ninput.value == true",
 			expectError: false,
 		},
 		{

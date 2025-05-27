@@ -56,8 +56,8 @@ func (n Not) Rego(ctx *shared.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf(`%s if {
-  not %s
+	return fmt.Sprintf(`%s(r) if {
+  not %s(r)
 }
 
 %s`, n.HelperFunctionName(), bodyRes, subSet), nil
