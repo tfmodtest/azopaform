@@ -64,14 +64,6 @@ func TestMapEffectToAction(t *testing.T) {
 			defaultEffect: "Modify",
 			expected:      "deny",
 		},
-		{
-			name: "Effect is [parameters('effect')] and defaultEffect is Modify",
-			thenBody: &pkg.ThenBody{
-				Effect: "[parameters('effect')]",
-			},
-			defaultEffect: "DeployIfNotExists",
-			expected:      "deployifnotexists",
-		},
 	}
 
 	for _, tt := range tests {
@@ -135,46 +127,6 @@ func TestThenBody_Action(t *testing.T) {
 				},
 			},
 			expected:    "warn_warn_rule if {\n input.value == false\n}\n",
-			expectError: false,
-		},
-		{
-			name: "DeployIfNotExists action without helper function",
-			thenBody: &pkg.ThenBody{
-				Effect: "[parameters('effect')]",
-			},
-			ruleName:           "rule1",
-			result:             "input.value == false",
-			helperFunctionName: "",
-			rule: &pkg.Rule{
-				Properties: &pkg.PolicyRuleModel{
-					Parameters: &pkg.PolicyRuleParameters{
-						Effect: &pkg.EffectBody{
-							DefaultValue: "deployIfNotExists",
-						},
-					},
-				},
-			},
-			expected:    "deny_rule1 if {\n not input.value == false\n}\n",
-			expectError: false,
-		},
-		{
-			name: "DeployIfNotExists action with helper function",
-			thenBody: &pkg.ThenBody{
-				Effect: "[parameters('effect')]",
-			},
-			ruleName:           "test_rule",
-			result:             "input.value == true",
-			helperFunctionName: "helper_func",
-			rule: &pkg.Rule{
-				Properties: &pkg.PolicyRuleModel{
-					Parameters: &pkg.PolicyRuleParameters{
-						Effect: &pkg.EffectBody{
-							DefaultValue: "DeployIfNotExists",
-						},
-					},
-				},
-			},
-			expected:    "deny_test_rule if {\n  res := resource(input, \"azapi_resource\")[_]\n not helper_func(res)\n}\ninput.value == true",
 			expectError: false,
 		},
 		{

@@ -56,11 +56,6 @@ func (t *ThenBody) Action(ruleName, result, helperFunctionName string, rule *Rul
 		collection = shared.Deny
 	case shared.Warn:
 		collection = shared.Warn
-	case shared.DeployIfNotExists:
-		{
-			collection = shared.Deny
-			prefix = "not "
-		}
 	}
 	if ruleName != "" {
 		collection = collection + "_" + ruleName
