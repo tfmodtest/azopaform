@@ -37,11 +37,8 @@ func (t *ThenBody) MapEffectToAction(defaultEffect string) (string, error) {
 	if defaultEffect == shared.Modify || defaultEffect == shared.Deny || defaultEffect == shared.Disabled {
 		return shared.Deny, nil
 	}
-	if defaultEffect == shared.DeployIfNotExists {
-		return shared.DeployIfNotExists, nil
-	}
 
-	return "", fmt.Errorf("unexpected input, effect is %s, defaultEffect is %s", effect, defaultEffect)
+	return "", fmt.Errorf("unsupported effect %s, defaultEffect is %s", effect, defaultEffect)
 }
 
 func (t *ThenBody) Action(ruleName, result, helperFunctionName string, rule *Rule) (string, error) {
