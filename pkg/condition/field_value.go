@@ -1,8 +1,9 @@
 package condition
 
 import (
-	"github.com/tfmodtest/azopaform/pkg/shared"
 	"strings"
+	
+	"github.com/tfmodtest/azopaform/pkg/shared"
 )
 
 var _ shared.Rego = FieldValue{}
@@ -16,8 +17,8 @@ func NewFieldValue(input any, ctx *shared.Context) (shared.Rego, error) {
 	if err != nil {
 		return nil, err
 	}
-	if v == ctx.GetCountFieldName() {
-		v = strings.TrimPrefix(v, ctx.GetCountFieldName())
+	if countFieldName := ctx.CurrentCountFieldName(); v == countFieldName {
+		v = strings.TrimPrefix(v, countFieldName)
 		v = shared.VarInCountWhere + v
 	}
 	return FieldValue{

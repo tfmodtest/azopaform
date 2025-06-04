@@ -24,9 +24,9 @@ func NewCount(input any, ctx *shared.Context) (Count, error) {
 	}
 	var countFieldName string
 	if field, ok := subject.(condition.FieldValue); ok {
-		ctx.SetCountFieldName(field.Name)
+		ctx.EnterCountRego(field.Name)
+		defer ctx.ExitCountRego()
 		countFieldName = field.Name
-		defer ctx.SetCountFieldName("")
 		field.Name = strings.ReplaceAll(field.Name, "[*]", "[_]")
 		subject = field
 	}
@@ -57,10 +57,8 @@ func NewCount(input any, ctx *shared.Context) (Count, error) {
 }
 
 func (c Count) Rego(ctx *shared.Context) (string, error) {
-	ctx.EnterCountRego()
+	ctx.EnterCountRego(c.countFieldName)
 	defer ctx.ExitCountRego()
-	ctx.SetCountFieldName(c.countFieldName)
-	defer ctx.SetCountFieldName("")
 	res := c.CountExp
 	if c.Where != nil {
 		whereHelperDef, err := c.Where.Rego(ctx)

@@ -12,7 +12,7 @@ func subjectRego(subject shared.Rego, value any, callback func(shared.Rego, any,
 		return conditionInEvery(strings.ReplaceAll(field.Name, "/", "."), value, callback, ctx)
 	}
 	if field, ok := subject.(FieldValue); ok && ctx.IsInCountRego() {
-		field.Name = strings.TrimPrefix(field.Name, ctx.GetCountFieldName())
+		field.Name = strings.TrimPrefix(field.Name, ctx.CurrentCountFieldName())
 		if strings.HasPrefix(field.Name, ".") {
 			field.Name = field.Name[1:]
 		}
