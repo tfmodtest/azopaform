@@ -129,20 +129,24 @@ func TestEqualsCondition_WildcardInFieldPathShouldBeEvalAsAllOf(t *testing.T) {
 	cfg = cfg + "\n" + `r := input`
 	shared.AssertRegoAllow(t, cfg, map[string]any{
 		"values": map[string]any{
-			"properties": map[string]any{
-				"port": []int{
-					3,
-					3,
+			"body": map[string]any{
+				"properties": map[string]any{
+					"port": []int{
+						3,
+						3,
+					},
 				},
 			},
 		},
 	}, true, ctx)
 	shared.AssertRegoAllow(t, cfg, map[string]any{
 		"values": map[string]any{
-			"properties": map[string]any{
-				"port": []int{
-					3,
-					4,
+			"body": map[string]any{
+				"properties": map[string]any{
+					"port": []int{
+						3,
+						4,
+					},
 				},
 			},
 		},

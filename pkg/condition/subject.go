@@ -47,7 +47,7 @@ func conditionInEvery(name string, value any, callback func(shared.Rego, any, *s
 	currentLeft += shared.HumanFriendlyString(4)
 	currentRightPrefix, ok := ctx.VarNameForField()
 	if !ok {
-		currentRightPrefix = "r.values.properties"
+		currentRightPrefix = "r.values.body.properties"
 	}
 	collection := currentRightPrefix + "." + shared.ConvertAzurePathToObjectPath(arrayPath, ctx)
 

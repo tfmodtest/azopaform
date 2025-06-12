@@ -68,15 +68,19 @@ func TestGreaterCondition_WithoutWildcardFieldPath(t *testing.T) {
 	cfg = cfg + "\n" + `r := input`
 	shared.AssertRegoAllow(t, cfg, map[string]any{
 		"values": map[string]any{
-			"properties": map[string]any{
-				"port": 4,
+			"body": map[string]any{
+				"properties": map[string]any{
+					"port": 4,
+				},
 			},
 		},
 	}, true, ctx)
 	shared.AssertRegoAllow(t, cfg, map[string]any{
 		"values": map[string]any{
-			"properties": map[string]any{
-				"port": 3,
+			"body": map[string]any{
+				"properties": map[string]any{
+					"port": 3,
+				},
 			},
 		},
 	}, false, ctx)
@@ -99,20 +103,24 @@ func TestGreaterCondition_WildcardInFieldPathShouldBeEvalAsAllOf(t *testing.T) {
 	cfg = cfg + "\n" + `r := input`
 	shared.AssertRegoAllow(t, cfg, map[string]any{
 		"values": map[string]any{
-			"properties": map[string]any{
-				"port": []int{
-					5,
-					4,
+			"body": map[string]any{
+				"properties": map[string]any{
+					"port": []int{
+						5,
+						4,
+					},
 				},
 			},
 		},
 	}, true, ctx)
 	shared.AssertRegoAllow(t, cfg, map[string]any{
 		"values": map[string]any{
-			"properties": map[string]any{
-				"port": []int{
-					3,
-					4,
+			"body": map[string]any{
+				"properties": map[string]any{
+					"port": []int{
+						3,
+						4,
+					},
 				},
 			},
 		},
@@ -131,18 +139,20 @@ func TestGreaterCondition_MultipleWildcardInFieldPathShouldBeEvalAsAllOf(t *test
 			path: "Microsoft.Network/networkSecurityGroups/securityRules/profile[*]/port[*]",
 			inputs: map[string]any{
 				"values": map[string]any{
-					"properties": map[string]any{
-						"profile": []map[string]any{
-							{
-								"port": []int{
-									5,
-									4,
+					"body": map[string]any{
+						"properties": map[string]any{
+							"profile": []map[string]any{
+								{
+									"port": []int{
+										5,
+										4,
+									},
 								},
-							},
-							{
-								"port": []int{
-									5,
-									4,
+								{
+									"port": []int{
+										5,
+										4,
+									},
 								},
 							},
 						},
@@ -156,18 +166,20 @@ func TestGreaterCondition_MultipleWildcardInFieldPathShouldBeEvalAsAllOf(t *test
 			path: "Microsoft.Network/networkSecurityGroups/securityRules/profile[*]/port[*]",
 			inputs: map[string]any{
 				"values": map[string]any{
-					"properties": map[string]any{
-						"profile": []map[string]any{
-							{
-								"port": []int{
-									3,
-									4,
+					"body": map[string]any{
+						"properties": map[string]any{
+							"profile": []map[string]any{
+								{
+									"port": []int{
+										3,
+										4,
+									},
 								},
-							},
-							{
-								"port": []int{
-									5,
-									4,
+								{
+									"port": []int{
+										5,
+										4,
+									},
 								},
 							},
 						},
@@ -181,21 +193,23 @@ func TestGreaterCondition_MultipleWildcardInFieldPathShouldBeEvalAsAllOf(t *test
 			path: "Microsoft.Network/networkSecurityGroups/securityRules/profile[*]/network/port[*]",
 			inputs: map[string]any{
 				"values": map[string]any{
-					"properties": map[string]any{
-						"profile": []map[string]any{
-							{
-								"network": map[string]any{
-									"port": []int{
-										5,
-										4,
+					"body": map[string]any{
+						"properties": map[string]any{
+							"profile": []map[string]any{
+								{
+									"network": map[string]any{
+										"port": []int{
+											5,
+											4,
+										},
 									},
 								},
-							},
-							{
-								"network": map[string]any{
-									"port": []int{
-										5,
-										4,
+								{
+									"network": map[string]any{
+										"port": []int{
+											5,
+											4,
+										},
 									},
 								},
 							},
@@ -210,21 +224,23 @@ func TestGreaterCondition_MultipleWildcardInFieldPathShouldBeEvalAsAllOf(t *test
 			path: "Microsoft.Network/networkSecurityGroups/securityRules/profile[*]/network/port[*]",
 			inputs: map[string]any{
 				"values": map[string]any{
-					"properties": map[string]any{
-						"profile": []map[string]any{
-							{
-								"network": map[string]any{
-									"port": []int{
-										3,
-										4,
+					"body": map[string]any{
+						"properties": map[string]any{
+							"profile": []map[string]any{
+								{
+									"network": map[string]any{
+										"port": []int{
+											3,
+											4,
+										},
 									},
 								},
-							},
-							{
-								"network": map[string]any{
-									"port": []int{
-										5,
-										4,
+								{
+									"network": map[string]any{
+										"port": []int{
+											5,
+											4,
+										},
 									},
 								},
 							},

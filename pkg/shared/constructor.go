@@ -22,7 +22,7 @@ func FieldNameProcessor(fieldName string, ctx *Context) (string, error) {
 	}
 	currentVarName, ok := ctx.VarNameForField()
 	if !ok {
-		currentVarName = "r.values.properties"
+		currentVarName = "r.values.body.properties"
 	}
 	if fieldName == "" {
 		return currentVarName, nil

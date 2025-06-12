@@ -27,9 +27,11 @@ func TestCount(t *testing.T) {
 			},
 			input: map[string]any{
 				"values": map[string]any{
-					"properties": map[string]any{
-						"zones": []any{
-							1, 2, 3,
+					"body": map[string]any{
+						"properties": map[string]any{
+							"zones": []any{
+								1, 2, 3,
+							},
 						},
 					},
 				},
@@ -48,9 +50,11 @@ func TestCount(t *testing.T) {
 			},
 			input: map[string]any{
 				"values": map[string]any{
-					"properties": map[string]any{
-						"zones": []any{
-							2, 3, 4,
+					"body": map[string]any{
+						"properties": map[string]any{
+							"zones": []any{
+								2, 3, 4,
+							},
 						},
 					},
 				},
@@ -69,13 +73,15 @@ func TestCount(t *testing.T) {
 			},
 			input: map[string]any{
 				"values": map[string]any{
-					"properties": map[string]any{
-						"zones": []map[string]any{
-							{
-								"name": "test",
-							},
-							{
-								"name": "test2",
+					"body": map[string]any{
+						"properties": map[string]any{
+							"zones": []map[string]any{
+								{
+									"name": "test",
+								},
+								{
+									"name": "test2",
+								},
 							},
 						},
 					},

@@ -93,7 +93,7 @@ func (c *Context) VarNameForField() (string, bool) {
 
 func (c *Context) PushResourceType(rt string) {
 	c.resourceTypeStack.Push(rt)
-	c.PushVarNameForField("r.values.properties")
+	c.PushVarNameForField("r.values.body.properties")
 }
 
 func (c *Context) EnqueueHelperFunction(funcDec string) {
