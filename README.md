@@ -1,4 +1,4 @@
-# json-rule-finder
+# azopaform
 
 A Go-based command-line tool that translates Azure Policy definitions from JSON format to Rego language for use with Open Policy Agent (OPA).
 
@@ -27,9 +27,9 @@ go install github.com/tfmodtest/azopaform@latest
 Or clone and build locally:
 
 ```bash
-git clone https://github.com/jiaweitao001/json-rule-finder.git
-cd json-rule-finder
-go build -o json-rule-finder .
+git clone https://github.com/tfmodtest/azopaform.git
+cd azopaform
+go build -o azopaform .
 ```
 
 ## Usage
@@ -37,19 +37,19 @@ go build -o json-rule-finder .
 ### Process a single policy file
 
 ```bash
-./json-rule-finder -path /path/to/policy.json
+./azopaform -path /path/to/policy.json
 ```
 
 ### Process all JSON files in a directory
 
 ```bash
-./json-rule-finder -dir /path/to/policies/
+./azopaform -dir /path/to/policies/
 ```
 
 ### Advanced options
 
 ```bash
-./json-rule-finder \
+./azopaform \
   -path /path/to/policy.json \
   -package "my.policies" \
   -util-file-name "helpers.rego" \
