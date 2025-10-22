@@ -13,9 +13,7 @@ func subjectRego(subject shared.Rego, value any, callback func(shared.Rego, any,
 	}
 	if field, ok := subject.(FieldValue); ok && ctx.IsInCountRego() {
 		field.Name = strings.TrimPrefix(field.Name, ctx.CurrentCountFieldName())
-		if strings.HasPrefix(field.Name, ".") {
-			field.Name = field.Name[1:]
-		}
+		field.Name = strings.TrimPrefix(field.Name, ".")
 		subject = field
 	}
 	return callback(subject, value, ctx)
@@ -55,9 +53,7 @@ func conditionInEvery(name string, value any, callback func(shared.Rego, any, *s
 	ctx.PushVarNameForField(currentLeft)
 	defer ctx.PopVarNameForField()
 	// Clean up the remaining path if it starts with a dot
-	if strings.HasPrefix(remaining, ".") {
-		remaining = remaining[1:]
-	}
+	remaining = strings.TrimPrefix(remaining, ".")
 
 	// If there are more [*] in the remaining path, handle them recursively
 	if strings.Contains(remaining, "[*]") {

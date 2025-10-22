@@ -46,12 +46,8 @@ func (n Not) Rego(ctx *shared.Context) (string, error) {
 			},
 		}
 	}
-	var bodyRes string
-	//if _, ok := ctx.VarNameForField(); ok {
-	//	bodyRes = body.HelperFunctionName() + "(x)"
-	//} else {
-	bodyRes = body.HelperFunctionName()
-	//}
+	
+	bodyRes := body.HelperFunctionName()
 	subSet, err := body.Rego(ctx)
 	if err != nil {
 		return "", err

@@ -17,9 +17,7 @@ func FieldNameProcessor(fieldName string, ctx *Context) (string, error) {
 	if err != nil {
 		return processedFieldName(fieldName)
 	}
-	if strings.HasPrefix(fieldName, resourceType) {
-		fieldName = strings.TrimPrefix(fieldName, resourceType)
-	}
+	fieldName = strings.TrimPrefix(fieldName, resourceType)
 	currentVarName, ok := ctx.VarNameForField()
 	if !ok {
 		currentVarName = "r.values.body.properties"
