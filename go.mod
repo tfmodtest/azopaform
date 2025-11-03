@@ -5,7 +5,7 @@ go 1.24.6
 require (
 	github.com/emirpasic/gods v1.18.1
 	github.com/iancoleman/strcase v0.3.0
-	github.com/open-policy-agent/opa v1.9.0
+	github.com/open-policy-agent/opa v1.10.0
 	github.com/prashantv/gostub v1.1.0
 	github.com/spf13/afero v1.15.0
 	github.com/stretchr/testify v1.11.1
